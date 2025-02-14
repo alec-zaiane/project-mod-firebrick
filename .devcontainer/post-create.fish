@@ -1,6 +1,8 @@
 #!/usr/bin/fish
 # Install the requirements
-set PATH $PATH:~/.local/bin
+echo '
+set PATH $PATH:/home/dev/.local/bin
+' >> /home/dev/.config/fish/config.fish
 
 pip install -r src/requirements.txt
 
