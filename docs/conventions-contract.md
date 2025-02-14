@@ -23,7 +23,8 @@
 
 ### Source control 
 
-> [!NOTE] Commit/Branch Types
+> [!NOTE] 
+> Commit/Branch Types
 > - `feat`: A new feature
 > - `fix`: A bug fix
 > - `docs`: Documentation changes (e.g., `README`, inline comments)
