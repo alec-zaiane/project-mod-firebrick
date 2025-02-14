@@ -80,7 +80,7 @@ It will be reviewed by someone else - they can add comments to specific lines of
 	- Config files as code (eg `settings.py`) is okay, as long as they don't contain logic beyond what is needed to declare the configuration
 	- (Also helps with the multiple sources of truth issue)
 - When the language allows it, use trailing commas for multi-line data structures, and put the closing bracket on a newline
-	- eg: (Ignore vertical misalignment)
+	- eg:
 	```
 	list = [something_long,
 	        something_long2,
