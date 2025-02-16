@@ -7,6 +7,8 @@ from rest_framework.request import Request # type: ignore # missing stub file
 from django.urls import reverse
 from django.contrib.auth import authenticate, login
 
+from socialnetwork.utils.user_control_decorator import user_control
+
 # General Views
 
 def not_logged_in_view(request:HttpRequest) -> HttpResponse:
@@ -15,14 +17,10 @@ def not_logged_in_view(request:HttpRequest) -> HttpResponse:
         return HttpResponseRedirect(reverse("socialnetwork:home"))
     return render(request, "registration/not_logged_in.html")
 
+@user_control(can_be_author=True, can_be_logged_out=False, can_be_superuser=False)
 def stream_view(request:HttpRequest) -> HttpResponse:
-    """An author's stream view, checks if the user is logged in or is a superuser, only non-superusers get a stream view."""
-    if not request.user.is_authenticated:
-        return HttpResponseRedirect(reverse("socialnetwork:not_logged_in"))
-    if request.user.is_superuser:
-        return HttpResponseRedirect(reverse("adminpanel:adminpanel"))
+    """An author's stream view"""
     return render(request, "stream.html", {"user": request.user})
-
 
 # Views for Authors
 
