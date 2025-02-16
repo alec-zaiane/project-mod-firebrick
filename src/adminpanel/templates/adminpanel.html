@@ -1,0 +1,8 @@
+This is the admin panel for superusers
+Welcome, {{ user }}
+<br>
+If you need to log out,
+<form action="{% url 'logout' %}" method="post">
+  {% csrf_token %}
+    <button type="submit">Log Out</button>
+</form>
