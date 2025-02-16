@@ -47,9 +47,9 @@ class Author(models.Model):
         """Returns true if this author is friends with the other author"""
         return self in other.following and other in self.following
     
-class LocalAuthor(Author, User):
+class LocalAuthor(Author):
     """An author that is on this node"""
-    # auth_user = models.OneToOneField(User, on_delete=models.PROTECT) # see https://docs.djangoproject.com/en/5.1/topics/auth/default/
+    user = models.OneToOneField(User, on_delete=models.CASCADE) # https://docs.djangoproject.com/en/dev/topics/auth/customizing/#extending-the-existing-user-model
     def get_stream(self, paginate_start:int=0, paginate_count:Optional[int]=None) -> models.QuerySet[Post]:
         """Get the stream of posts that this author can see
 

@@ -14,8 +14,11 @@ def user_control(can_be_author:bool=True, can_be_logged_out:bool=False, can_be_s
     """Control what kind of user can access a view
     If can_be_author is True, the view will be passed an author object with `author=` as a keyword
     
-    One of the arguments must be True, otherwise the decorator will raise a ValueError
-    If the user is logged in, but not a superuser or author, a ValueError will be raised (this should never happen)
+    Raises: (none of these should ever happen)
+        ValueError: If none of can_be_author, can_be_logged_out, or can_be_superuser are True
+        ValueError: If the request object does not have a user attribute
+        ValueError: If an unhandled user type was found
+        AssertionError: If the user has an author attribute that is not an Author object
     
 
     Args:
@@ -28,6 +31,8 @@ def user_control(can_be_author:bool=True, can_be_logged_out:bool=False, can_be_s
             raise ValueError("At least one of can_be_author, can_be_logged_out, or can_be_superuser must be True")
         
         def wrapped_f(request:HttpRequest, *args:list[Any], **kwargs:dict[str,Any]) -> HttpResponse:
+            if not hasattr(request, "user"):
+                raise ValueError("The request object does not have a user attribute")
             if not request.user.is_authenticated:
                 if can_be_logged_out:
                     return func(request, *args, **kwargs)
@@ -36,9 +41,11 @@ def user_control(can_be_author:bool=True, can_be_logged_out:bool=False, can_be_s
                 if can_be_superuser:
                     return func(request, *args, **kwargs)
                 return HttpResponseRedirect(reverse("adminpanel:adminpanel"))
-            if isinstance(request.user, Author):
+            if hasattr(request.user, "author"):
+                author = getattr(request.user, "author")
+                assert isinstance(author, Author)
                 if can_be_author:
-                    return func(request, author=request.user, *args, **kwargs)
+                    return func(request, author=author, *args, **kwargs)
                 return HttpResponseRedirect(reverse("socialnetwork:stream"))
             raise ValueError("An unhandled user type was found: "+str(type(request.user)))
         return wrapped_f
