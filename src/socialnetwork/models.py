@@ -4,6 +4,7 @@ import uuid
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from typing import Optional
+from django.contrib.auth.models import User
 
 class RemoteNode(models.Model):
     #TODO will contain fields for the remote nodes that this instance knows about
@@ -24,6 +25,7 @@ class Author(models.Model):
     """
     
     # Fields
+    auth_user = models.OneToOneField(User, on_delete=models.PROTECT) # see https://docs.djangoproject.com/en/5.1/topics/auth/default/
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     date_joined = models.DateTimeField(auto_now_add=True, editable=False)
     username = models.CharField(max_length=50)
