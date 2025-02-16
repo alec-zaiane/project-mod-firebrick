@@ -26,8 +26,6 @@ class Author(models.Model):
     
     # Fields
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    date_joined = models.DateTimeField(auto_now_add=True, editable=False)
-    username = models.CharField(max_length=50)
     following = models.ManyToManyField('self', symmetrical=False, related_name='followers')
     
     # Type Hints *these are not model fields*
@@ -42,15 +40,16 @@ class Author(models.Model):
     def __init__(self):
         if self.__class__ == Author:
             # Abstract-ness is a bit janky due to Django's ORM (cannot make Foreign Keys with an abstract class), this is a workaround
+            # TODO make sure this works
             raise TypeError("Author is an abstract class and cannot be instantiated")
     
     def get_is_friends_with(self, other: Author) -> bool:
         """Returns true if this author is friends with the other author"""
         return self in other.following and other in self.following
     
-class LocalAuthor(Author):
+class LocalAuthor(Author, User):
     """An author that is on this node"""
-    auth_user = models.OneToOneField(User, on_delete=models.PROTECT) # see https://docs.djangoproject.com/en/5.1/topics/auth/default/
+    # auth_user = models.OneToOneField(User, on_delete=models.PROTECT) # see https://docs.djangoproject.com/en/5.1/topics/auth/default/
     def get_stream(self, paginate_start:int=0, paginate_count:Optional[int]=None) -> models.QuerySet[Post]:
         """Get the stream of posts that this author can see
 
@@ -66,7 +65,9 @@ class LocalAuthor(Author):
     
 class RemoteAuthor(Author):
     """An author that is on another node"""
-    pass # Eventually will contain extra fields and methods/overrides for authors on other nodes
+    date_joined = models.DateTimeField(auto_now_add=True, editable=False)
+    username = models.CharField(max_length=50)
+    # Eventually will contain extra fields and methods/overrides for authors on other nodes
     
     
 class Post(models.Model):
