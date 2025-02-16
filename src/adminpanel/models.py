@@ -1,3 +1,49 @@
 from django.db import models
+from socialnetwork.models import LocalAuthor
+from django.contrib.auth.models import User
 
 # Create your models here.
+class AuthorJoinRequest(models.Model):
+    """A request to join the nod
+    Approved requests are deleted, denied requests are kept
+    A request is denied if the `date_denied` field is not null
+    """    
+    date_requested = models.DateTimeField(auto_now_add=True)
+    date_denied = models.DateTimeField(null=True) # if null, request is pending
+    username = models.CharField(max_length=150)
+    password = models.CharField(max_length=128)
+    
+    @property
+    def is_denied(self):
+        return self.date_denied is not None
+    
+    def get_validity_errors(self) -> list[str]:
+        """ returns a list of errors with the request, or an empty list if the request is valid
+
+        Returns:
+            list[str]: Any errors with the request
+        """        
+        errors:list[str] = []
+        if not self.username or not self.password:
+            return ["Username and password must be non-empty"]
+        if User.objects.filter(username=self.username).exists():
+            errors.append("Username already exists")
+        return errors
+    
+    def approve_and_create(self) -> LocalAuthor:
+        """Approve this request and create the user
+        
+        Raises:
+            ValueError: If the request is invalid
+            
+        Returns:
+            LocalAuthor: The created author
+        """
+        if self.get_validity_errors():
+            raise ValueError(f"Request is invalid: {self.get_validity_errors()}")
+        user = User.objects.create_user(username=self.username, password=self.password)
+        author = LocalAuthor.objects.create(user=user)
+        author.save()
+        self.delete()
+        return author
+        
