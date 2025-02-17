@@ -60,6 +60,11 @@ class LocalAuthor(Author):
         #TODO join the self.private_inbox and the public timeline
         raise NotImplementedError()
     
+    def delete(self, using:Any=..., keep_parents:bool=...): # type: ignore # not sure why the default keep_parents value is Ellipsis, clashes with bool type
+        """Delete this author"""
+        self.user.delete()
+        return super().delete(using, keep_parents)
+    
 class RemoteAuthor(Author):
     """An author that is on another node"""
     date_joined = models.DateTimeField(auto_now_add=True, editable=False)
