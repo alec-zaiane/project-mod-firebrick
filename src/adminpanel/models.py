@@ -1,8 +1,9 @@
 from django.db import models
-from socialnetwork.models import LocalAuthor
 from django.contrib.auth.models import User
+from django.utils import timezone
 
-# Create your models here.
+from socialnetwork.models import LocalAuthor
+
 class AuthorJoinRequest(models.Model):
     """A request to join the nod
     Approved requests are deleted, denied requests are kept
@@ -42,8 +43,19 @@ class AuthorJoinRequest(models.Model):
         if self.get_validity_errors():
             raise ValueError(f"Request is invalid: {self.get_validity_errors()}")
         user = User.objects.create_user(username=self.username, password=self.password)
-        author = LocalAuthor.objects.create(user=user)
+        author = LocalAuthor()
+        author.user = user
         author.save()
         self.delete()
         return author
+    
+    def deny(self):
+        """Deny this request"""
+        self.date_denied = timezone.now()
+        self.save()
+        
+    def undeny(self):
+        """Un-deny this request in case of a mistake"""
+        self.date_denied = None
+        self.save()
         

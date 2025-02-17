@@ -1,3 +1,11 @@
 You are not logged in!
 
 <a href="{% url 'login' %}">Click here to login</a>
+<hr/>
+If you don't have an account, request to join here:
+<form action="{% url 'adminpanel:api_create_join_request' %}" method="post">
+    {% csrf_token %}
+    <input name="username" type="text" placeholder="Username" required>
+    <input name="password" type="password" placeholder="Password" required>
+    <input type="submit" value="Request to join">
+</form>

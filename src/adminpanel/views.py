@@ -1,5 +1,9 @@
+from typing import Any
+
 from django.shortcuts import render
+from django.urls import reverse
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
+from django.shortcuts import get_object_or_404
 
 from socialnetwork.utils.user_control_decorator import user_control
 from rest_framework.decorators import api_view # type: ignore # missing stub file
@@ -10,17 +14,24 @@ from django.contrib.auth.models import User
 from socialnetwork.models import LocalAuthor
 from .models import AuthorJoinRequest
 
+from .serializers import AuthorJoinRequestSerializer
+
 # Create your views here.
 @user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
 def adminpanel_view(request:HttpRequest) -> HttpResponse:
-    return render(request, "adminpanel.html")
+    requests_active = AuthorJoinRequest.objects.filter(date_denied=None)
+    requests_denied = AuthorJoinRequest.objects.exclude(date_denied=None)
+    return render(request, "adminpanel.html", {
+        "requests_active": requests_active,
+        "requests_denied": requests_denied
+    })
 
 
 
 # API views
 @api_view(["POST"])
 @user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
-def api_create_user(request:Request) -> Response:
+def api_create_user(request:Request) -> Response|HttpResponse:
     username = request.data.get("username", None) # type: ignore # missing stub file
     password = request.data.get("password", None) # type: ignore # missing stub file
     if not isinstance(username, str) or not isinstance(password, str):
@@ -34,5 +45,52 @@ def api_create_user(request:Request) -> Response:
     if join_request.get_validity_errors():
         join_request.delete()
         return Response({"error": "Invalid request", "invalid": join_request.get_validity_errors()}, status=400)
-    author = join_request.approve_and_create()
-    return Response({"success": "User created", "uuid": author.uuid}, status=201)
+    join_request.approve_and_create()
+    return HttpResponseRedirect(reverse("adminpanel:adminpanel"))
+    # return Response({"success": "User created", "uuid": author.uuid}, status=201)
+
+## Join request API   
+@api_view(["POST"])
+@user_control(can_be_author=False, can_be_logged_out=True, can_be_superuser=True)
+def api_create_join_request(request:Request) -> Response|HttpResponse:
+    if not hasattr(request, "data"):
+        return Response({"error": "Request must have a JSON body"}, status=400)
+    data:dict[str,Any] = request.data # type: ignore # missing stub file
+    serializer = AuthorJoinRequestSerializer(data=data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=400)
+    serializer.save() # type: ignore # missing stub file
+    return HttpResponseRedirect(reverse("socialnetwork:not_logged_in"))
+
+@api_view(["POST"])
+@user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
+def api_join_request_approve(request:Request, join_request_id:int) -> Response|HttpResponse:
+    join_request = get_object_or_404(AuthorJoinRequest, id=join_request_id)
+    try:
+        join_request.approve_and_create()
+    except ValueError as e:
+        return Response({"error": str(e)}, status=400)
+    return HttpResponseRedirect(reverse("adminpanel:adminpanel"))
+
+@api_view(["POST"])
+@user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
+def api_join_request_deny(request:Request, join_request_id:int) -> Response|HttpResponse:
+    join_request = get_object_or_404(AuthorJoinRequest, id=join_request_id)
+    join_request.deny()
+    return HttpResponseRedirect(reverse("adminpanel:adminpanel"))
+
+@api_view(["POST"])
+@user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
+def api_join_request_undeny(request:Request, join_request_id:int) -> Response|HttpResponse:
+    join_request = get_object_or_404(AuthorJoinRequest, id=join_request_id)
+    join_request.undeny()
+    return HttpResponseRedirect(reverse("adminpanel:adminpanel"))
+
+@api_view(["POST"])
+@user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
+def api_join_request_delete(request:Request, join_request_id:int) -> Response|HttpResponse:
+    join_request = get_object_or_404(AuthorJoinRequest, id=join_request_id)
+    if not join_request.is_denied:
+        return Response({"error": "Only denied requests can be deleted"}, status=400)
+    join_request.delete()
+    return HttpResponseRedirect(reverse("adminpanel:adminpanel"))

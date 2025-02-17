@@ -1,7 +1,7 @@
 from typing import Callable, Any
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.contrib.auth import decorators
-from socialnetwork.models import Author
+from socialnetwork.models import LocalAuthor
 from django.urls import reverse
 from django.contrib.auth.models import User
 
@@ -37,13 +37,13 @@ def user_control(can_be_author:bool=True, can_be_logged_out:bool=False, can_be_s
                 if can_be_logged_out:
                     return func(request, *args, **kwargs)
                 return HttpResponseRedirect(reverse("socialnetwork:not_logged_in"))
-            if isinstance(request.user, User) and request.user.is_superuser:
+            if request.user.is_superuser: # type: ignore # missing stub file
                 if can_be_superuser:
                     return func(request, *args, **kwargs)
                 return HttpResponseRedirect(reverse("adminpanel:adminpanel"))
-            if hasattr(request.user, "author"):
-                author = getattr(request.user, "author")
-                assert isinstance(author, Author)
+            is_author = LocalAuthor.objects.filter(user=request.user).exists()
+            if is_author:
+                author = LocalAuthor.objects.get(user=request.user)
                 if can_be_author:
                     return func(request, author=author, *args, **kwargs)
                 return HttpResponseRedirect(reverse("socialnetwork:stream"))

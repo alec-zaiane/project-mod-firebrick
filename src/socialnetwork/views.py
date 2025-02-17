@@ -8,6 +8,7 @@ from django.urls import reverse
 from django.contrib.auth import authenticate, login
 
 from socialnetwork.utils.user_control_decorator import user_control
+from .models import LocalAuthor
 
 # General Views
 
@@ -18,7 +19,7 @@ def not_logged_in_view(request:HttpRequest) -> HttpResponse:
     return render(request, "registration/not_logged_in.html")
 
 @user_control(can_be_author=True, can_be_logged_out=False, can_be_superuser=False)
-def stream_view(request:HttpRequest) -> HttpResponse:
+def stream_view(request:HttpRequest, author:LocalAuthor) -> HttpResponse:
     """An author's stream view"""
     return render(request, "stream.html", {"user": request.user})
 
