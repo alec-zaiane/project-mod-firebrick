@@ -11,7 +11,7 @@ from rest_framework.request import Request # type: ignore # missing stub file
 from rest_framework.response import Response # type: ignore # missing stub file
 
 from django.contrib.auth.models import User
-from socialnetwork.models import LocalAuthor
+from socialnetwork.models import LocalAuthor, RemoteAuthor
 from .models import AuthorJoinRequest
 
 from .serializers import AuthorJoinRequestSerializer
@@ -23,7 +23,9 @@ def adminpanel_view(request:HttpRequest) -> HttpResponse:
     requests_denied = AuthorJoinRequest.objects.exclude(date_denied=None)
     return render(request, "adminpanel.html", {
         "requests_active": requests_active,
-        "requests_denied": requests_denied
+        "requests_denied": requests_denied,
+        "current_authors_local": LocalAuthor.objects.all(),
+        "current_authors_remote": RemoteAuthor.objects.all(),
     })
 
 
