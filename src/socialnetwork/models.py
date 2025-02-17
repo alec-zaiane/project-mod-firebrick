@@ -39,12 +39,6 @@ class Author(models.Model):
         return Author.objects.filter(following=self)
     
     # Methods
-    def __init__(self, *args:list[Any], **kwargs:dict[str,Any]):
-        if self.__class__ == Author:
-            # Abstract-ness is a bit janky due to Django's ORM (cannot make Foreign Keys with an abstract class), this is a workaround
-            # TODO make sure this works
-            raise TypeError("Author is an abstract class and cannot be instantiated")
-        super().__init__(*args, **kwargs)
     
     def get_is_friends_with(self, other: Author) -> bool:
         """Returns true if this author is friends with the other author"""
