@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 from typing import Any, Literal
 
 from django.shortcuts import render
@@ -7,6 +8,11 @@ from typing import Optional
 
 from django.shortcuts import render, get_object_or_404
 >>>>>>> origin/feat/profile-page
+=======
+from typing import Optional, Any, Literal
+
+from django.shortcuts import render, get_object_or_404
+>>>>>>> 9688107 (Merge remote-tracking branch 'origin/feat/profile-page' into feat/create-posts)
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from rest_framework.decorators import api_view # type: ignore # missing stub file
 from rest_framework.response import Response # type: ignore # missing stub file
