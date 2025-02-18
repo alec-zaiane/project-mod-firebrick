@@ -7,4 +7,5 @@ urlpatterns = [
     path("", RedirectView.as_view(url="stream")),
     path("not_logged_in", views.not_logged_in_view, name="not_logged_in"),
     path("stream", views.stream_view, name="stream"),
+    path("author/<uuid:target_author_uuid>", views.author_profile_view, name="author_profile"),
 ]

@@ -1,0 +1,12 @@
+{% if viewer %}
+{% include 'components/author_navbar.html' %}
+{% endif %}
+
+This is the profile page for {{ author.user }}
+{% if viewer %} {# if the viewer is an author #}
+    {% if author == viewer %}
+        <p>This is your profile</p>
+    {% else %}
+        <p>This is not your profile</p>
+    {% endif %}
+{% endif %}
