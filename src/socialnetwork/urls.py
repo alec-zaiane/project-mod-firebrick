@@ -7,4 +7,5 @@ urlpatterns = [
     path("", RedirectView.as_view(url="stream")),
     path("not_logged_in", views.not_logged_in_view, name="not_logged_in"),
     path("stream", views.stream_view, name="stream"),
+    path("api/create_text_post/<str:post_type>", views.api_create_text_post, name="api_create_text_post"),
 ]

@@ -6,7 +6,7 @@ class PostSerializer(serializers.ModelSerializer):
     author = serializers.PrimaryKeyRelatedField(many=False, queryset=models.LocalAuthor.objects.all())
 
 
-class PostTextBased(PostSerializer):
+class PostTextBasedSerializer(PostSerializer):
     class Meta:
         model = models.PostTextBased
         fields = ["content", "author", "visibility_type", "post_type"]
