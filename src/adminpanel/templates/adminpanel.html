@@ -1,0 +1,40 @@
+<h1>Admin Panel</h1>
+<i>Welcome {{ user }} </i>
+<form action="{% url 'logout' %}" method="post" style="display: inline;">
+  {% csrf_token %}
+    <button type="submit">Log Out</button>
+</form>
+<hr/>
+<h1>Join Requests</h1>
+{# https://stackoverflow.com/questions/1465249/get-lengths-of-a-list-in-a-jinja2-template #}
+<h2>Pending Join Requests ({{ requests_active|length }})</h1>
+{% for join_request in requests_active %}
+    <p>{{join_request.date_requested}}-{{ join_request.username }}</p>
+    <form action="{% url 'adminpanel:api_join_request_approve' join_request.pk %}" method="post">
+        {% csrf_token %}
+        <input type="submit" value="Approve">
+    </form>
+    <form action="{% url 'adminpanel:api_join_request_deny' join_request.pk %}" method="post">
+        {% csrf_token %}
+        <input type="submit" value="Deny">
+    </form>
+{% endfor %}
+<h2>Denied Join Requests ({{requests_denied|length}})</h1>
+{% for join_request in requests_denied %}
+    <p>{{ join_request.username }}</p>
+    <form action="{% url 'adminpanel:api_join_request_undeny' join_request.pk %}" method="post">
+        {% csrf_token %}
+        <input type="submit" value="Undeny">
+    </form>
+    <form action="{% url 'adminpanel:api_join_request_delete' join_request.pk %}" method="post">
+        {% csrf_token %}
+        <input type="submit" value="Permanently Delete">
+{% endfor %}
+
+<h1>Current Authors</h1>
+<h2>Local Authors</h2>
+{% for author in current_authors_local %}
+    <p>{{ author.user.username }}</p>
+{% endfor %}
+<h2>Remote Authors</h2>
+<p>This will be populated after part 3</p>

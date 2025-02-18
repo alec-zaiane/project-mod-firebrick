@@ -1,0 +1,37 @@
+{
+    "name": "Firebrick Dev",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": "../"
+    },
+    "portsAttributes":{
+        "8000": {
+            "label": "Django",
+            "onAutoForward": "notify"
+        }
+    },
+    "remoteUser": "dev",
+    "updateRemoteUserUID": true,
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "terminal.integrated.profiles.linux": {
+                    "fish": {
+                        "path": "/usr/bin/fish"
+                    } 
+                },
+                "terminal.integrated.defaultProfile.linux": "fish",
+                "files.eol": "\n",
+                "python.analysis.typeCheckingMode": "strict",
+                "python.analysis.diagnosticSeverityOverrides": {
+                    "reportUnusedImport": "information"
+                }
+            },
+            "extensions": [
+                "ms-python.python",
+                "njpwerner.autodocstring"
+            ]
+        }
+    },
+    "postCreateCommand": "./.devcontainer/post-create.fish"
+}

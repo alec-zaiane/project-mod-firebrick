@@ -1,0 +1,6 @@
+This page tells you you are not authorized to access the admin panel.
+If you want to log out,
+<form action="{% url 'logout' %}" method="post">
+  {% csrf_token %}
+    <button type="submit">Log Out</button>
+</form>
