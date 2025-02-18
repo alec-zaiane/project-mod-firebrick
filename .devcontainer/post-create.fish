@@ -4,6 +4,8 @@ echo '
 set PATH $PATH:/home/dev/.local/bin
 ' >> /home/dev/.config/fish/config.fish
 
+set PATH $PATH:/home/dev/.local/bin
+
 pip install -r src/requirements.txt
 
 # Make the shell look nice :)

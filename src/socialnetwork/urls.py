@@ -1,0 +1,10 @@
+from django.urls import path
+from django.views.generic import RedirectView
+from . import views
+
+app_name = "socialnetwork"
+urlpatterns = [
+    path("", RedirectView.as_view(url="stream")),
+    path("not_logged_in", views.not_logged_in_view, name="not_logged_in"),
+    path("stream", views.stream_view, name="stream"),
+]
