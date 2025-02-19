@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Literal, Optional
 
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
@@ -11,6 +11,7 @@ from django.contrib.auth import authenticate, login
 
 from socialnetwork.utils.user_control_decorator import user_control
 from . import models
+from . import serializers
 
 # General Views
 
@@ -33,3 +34,26 @@ def author_profile_view(request:HttpRequest, target_author_uuid:str, author:Opti
     return render(request, "author_profile.html", {"author": target_author, "viewer": author})
 
 # Views for Posts
+@api_view(["POST"])
+@user_control(can_be_author=True, can_be_logged_out=False, can_be_superuser=False)
+def api_create_text_post(request:Request, author:models.LocalAuthor, post_type:Literal["plaintext", "commonmark"]) -> Response|HttpResponseRedirect:
+    """Create a text based post"""
+    if post_type not in ("plaintext", "commonmark"):
+        return Response({"error": "Invalid type"}, status=400)
+    
+    data:dict[str,Any] = request.data # type: ignore # missing stub file
+    data["author"] = author.uuid
+    if post_type == "plaintext":
+        data["post_type"] = models.PostTextBased.TextPostTypes.PLAINTEXT
+    elif post_type == "commonmark":
+        data["post_type"] = models.PostTextBased.TextPostTypes.MARKDOWN
+    
+    serializer = serializers.PostTextBasedSerializer(data=data)
+    
+    # save it all
+    if serializer.is_valid():
+        post:models.PostTextBased = serializer.save() # type: ignore # missing stub file
+        post.send_to_required_private_inboxes()
+        return Response(serializer.data, status=201)
+    else:
+        return Response(serializer.errors, status=400)
