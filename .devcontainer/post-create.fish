@@ -6,7 +6,9 @@ set PATH $PATH:/home/dev/.local/bin
 
 set PATH $PATH:/home/dev/.local/bin
 
+pip install -r src/requirements-dev.txt
 pip install -r src/requirements.txt
+
 
 # Make the shell look nice :)
 curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher
