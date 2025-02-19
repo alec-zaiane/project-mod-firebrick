@@ -15,5 +15,5 @@ class AuthorJoinRequestSerializer(serializers.ModelSerializer):
                                      validators = [
                                          validators.UniqueValidator(queryset=AuthorJoinRequest.objects.all(), message="Username has already been requested"),
                                          validators.UniqueValidator(queryset=User.objects.all(), message="Username is already taken"),
-                                         UnicodeUsernameValidator()    
+                                         UnicodeUsernameValidator(),    
                                      ])
