@@ -1,8 +1,8 @@
 from django.shortcuts import render
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
-from rest_framework.decorators import api_view # type: ignore # missing stub file
-from rest_framework.response import Response # type: ignore # missing stub file
-from rest_framework.request import Request # type: ignore # missing stub file
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework.request import Request
 
 from django.urls import reverse
 from django.contrib.auth import authenticate, login

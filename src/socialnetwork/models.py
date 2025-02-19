@@ -30,19 +30,18 @@ class Author(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     following = models.ManyToManyField('self', symmetrical=False, related_name='followers')
     
-    # Type Hints *these are not model fields*
-    following: models.ManyToManyField[Author,Author]
-    
     # Computed Properties
     @property
-    def followers(self):
+    def followers(self) -> models.QuerySet[Author]:
         return Author.objects.filter(following=self)
     
     # Methods
     
     def get_is_friends_with(self, other: Author) -> bool:
         """Returns true if this author is friends with the other author"""
-        return self in other.following and other in self.following
+        self_is_following_other = other.following.filter(pk=self.pk).exists()
+        other_is_following_self = self.following.filter(pk=other.pk).exists()
+        return self_is_following_other and other_is_following_self
     
 class LocalAuthor(Author):
     """An author that is on this node"""
@@ -97,16 +96,14 @@ class Post(models.Model):
     # For non-public posts, this value is used to determine who receives this post
     is_in_private_inbox_of = models.ManyToManyField(Author, related_name='%(class)s_private_inbox', blank=True)
     
-    # Type Hints *these are not model fields*
-    is_in_private_inbox_of:models.ManyToManyField["Post",Author]
     
     # Computed Properties
     @property
-    def has_been_edited(self):
+    def has_been_edited(self) -> bool:
         return self.date_edited is not None
     
     # Methods
-    def _finalize_edit(self):
+    def _finalize_edit(self) -> None:
         """Call this after updating a post's content"""
         self.date_edited = timezone.now()
         self.save()

@@ -10,7 +10,7 @@ from django.contrib.auth.models import User
 
 # https://www.artima.com/weblogs/viewpost.jsp?thread=240845#decorator-functions-with-decorator-arguments, accessed 2025-02-15
 
-def user_control(can_be_author:bool=True, can_be_logged_out:bool=False, can_be_superuser:bool=False):
+def user_control(can_be_author:bool=True, can_be_logged_out:bool=False, can_be_superuser:bool=False) -> Callable[[Callable[..., HttpResponse]], Callable[..., HttpResponse]]:
     """Control what kind of user can access a view
     If can_be_author is True, the view will be passed an author object with `author=` as a keyword
     
@@ -26,7 +26,7 @@ def user_control(can_be_author:bool=True, can_be_logged_out:bool=False, can_be_s
         can_be_logged_out (bool, optional): Whether logged out people can view this (otherwise they will be redirected to login page). Defaults to False.
         can_be_superuser (bool, optional): Whether superusers can view this (otherwise they will be redirected to admin panel). Defaults to False.
     """     
-    def wrap(func:Callable[..., HttpResponse]):
+    def wrap(func:Callable[..., HttpResponse]) -> Callable[..., HttpResponse]:
         if (not can_be_author) and (not can_be_logged_out) and (not can_be_superuser):
             raise ValueError("At least one of can_be_author, can_be_logged_out, or can_be_superuser must be True")
         
@@ -37,7 +37,7 @@ def user_control(can_be_author:bool=True, can_be_logged_out:bool=False, can_be_s
                 if can_be_logged_out:
                     return func(request, *args, **kwargs)
                 return HttpResponseRedirect(reverse("socialnetwork:not_logged_in"))
-            if request.user.is_superuser: # type: ignore # missing stub file
+            if request.user.is_superuser:
                 if can_be_superuser:
                     return func(request, *args, **kwargs)
                 return HttpResponseRedirect(reverse("adminpanel:adminpanel"))

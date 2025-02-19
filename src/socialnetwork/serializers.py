@@ -1,2 +1,2 @@
-from rest_framework import serializers # type: ignore # missing stub file
+from rest_framework import serializers
 from . import models

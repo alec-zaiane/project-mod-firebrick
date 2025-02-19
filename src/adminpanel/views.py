@@ -6,9 +6,9 @@ from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 
 from socialnetwork.utils.user_control_decorator import user_control
-from rest_framework.decorators import api_view # type: ignore # missing stub file
-from rest_framework.request import Request # type: ignore # missing stub file
-from rest_framework.response import Response # type: ignore # missing stub file
+from rest_framework.decorators import api_view
+from rest_framework.request import Request
+from rest_framework.response import Response
 
 from django.contrib.auth.models import User
 from socialnetwork.models import LocalAuthor, RemoteAuthor
@@ -34,8 +34,8 @@ def adminpanel_view(request:HttpRequest) -> HttpResponse:
 @api_view(["POST"])
 @user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
 def api_create_user(request:Request) -> Response|HttpResponse:
-    username = request.data.get("username", None) # type: ignore # missing stub file
-    password = request.data.get("password", None) # type: ignore # missing stub file
+    username = request.data.get("username", None)
+    password = request.data.get("password", None)
     if not isinstance(username, str) or not isinstance(password, str):
         return Response({"error": "`username` and `password` fields must provided and be strings"}, status=400)
     if not username or not password:
@@ -57,11 +57,11 @@ def api_create_user(request:Request) -> Response|HttpResponse:
 def api_create_join_request(request:Request) -> Response|HttpResponse:
     if not hasattr(request, "data"):
         return Response({"error": "Request must have a JSON body"}, status=400)
-    data:dict[str,Any] = request.data # type: ignore # missing stub file
+    data:dict[str,Any] = request.data
     serializer = AuthorJoinRequestSerializer(data=data)
     if not serializer.is_valid():
         return Response(serializer.errors, status=400)
-    serializer.save() # type: ignore # missing stub file
+    serializer.save()
     return HttpResponseRedirect(reverse("socialnetwork:not_logged_in"))
 
 @api_view(["POST"])
