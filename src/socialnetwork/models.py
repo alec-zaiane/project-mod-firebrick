@@ -113,6 +113,8 @@ class Post(models.Model):
     
     def _check_can_be_seen_by(self, other: Author) -> bool:
         """Returns true if the other author can see this post"""
+        if self.author == other:
+            return True
         if self.visibility_type == self.VisibilityTypes.PUBLIC:
             return True
         elif self.visibility_type == self.VisibilityTypes.UNLISTED:
