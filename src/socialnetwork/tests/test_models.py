@@ -1,6 +1,6 @@
 from django.test import TestCase
 from django.contrib.auth.models import User
-from socialnetwork.models import LocalAuthor, PostPlainText, Post
+from socialnetwork.models import LocalAuthor, PostTextBased, Post
 
 class AuthorPostVisibilityTest(TestCase):
     def setUp(self):
@@ -11,33 +11,35 @@ class AuthorPostVisibilityTest(TestCase):
         self.author = LocalAuthor.objects.create(user = self.user)
 
         #create a unlistet post
-        self.unlisted_post = PostPlainText.objects.create(author = self.author, 
+        self.unlisted_post = PostTextBased.objects.create(author = self.author, 
                                                           content = "testing unlisted post", 
                                                           visibility_type = Post.VisibilityTypes.UNLISTED
                                                           )
 
         #create a friends-only post
-        self.friends_only_post = PostPlainText.objects.create(author = self.author, 
+        self.friends_only_post = PostTextBased.objects.create(author = self.author, 
                                                               content = "testing friends_only post", 
                                                               visibility_type = Post.VisibilityTypes.FRIENDS_ONLY
                                                               )
 
         #create a public post
-        self.public_post = PostPlainText.objects.create(author = self.author, 
+        self.public_post = PostTextBased.objects.create(author = self.author, 
                                                         content = "testing public post", 
                                                         visibility_type = Post.VisibilityTypes.PUBLIC
                                                         )
+        
+        self.public_post.send_to_required_private_inboxes()
+        self.unlisted_post.send_to_required_private_inboxes()
+        self.friends_only_post.send_to_required_private_inboxes()
 
     def test_author_can_see_own_post(self):
         """
         test to see if the author can see all types of their own post
         """
-        posts = PostPlainText.objects.filter(author = self.author)  #creates a post
-
         #assertions to check
-        self.assertIn(self.public_post, posts)  
-        self.assertIn(self.unlisted_post, posts)
-        self.assertIn(self.friends_only_post, posts)
+        self.assertTrue(self.public_post._check_can_be_seen_by(self.author))
+        self.assertTrue(self.unlisted_post._check_can_be_seen_by(self.author))
+        self.assertTrue(self.friends_only_post._check_can_be_seen_by(self.author))
 
     def test_author_cannot_see_deleted_post(self):
         """
@@ -49,7 +51,6 @@ class AuthorPostVisibilityTest(TestCase):
         self.friends_only_post.delete()
         
         #create a post, but should not be within the authors' post
-        posts = PostPlainText.objects.filter(author=self.author)
-        self.assertNotIn(self.public_post, posts)
-        self.assertNotIn(self.unlisted_post, posts)
-        self.assertNotIn(self.friends_only_post, posts)
+        self.assertFalse(self.public_post._check_can_be_seen_by(self.author))
+        self.assertFalse(self.unlisted_post._check_can_be_seen_by(self.author))
+        self.assertFalse(self.friends_only_post._check_can_be_seen_by(self.author))
