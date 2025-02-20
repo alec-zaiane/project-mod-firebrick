@@ -1,0 +1,11 @@
+<div class="navbar" style="border: 1px solid black; padding:5px; margin:10px;">
+    Temporary Navbar:
+    <a href="{% url 'socialnetwork:stream' %}">Home</a>
+    {% if author %}
+    <a href="{% url 'socialnetwork:author_profile' author.uuid %}">Profile</a>
+    {% endif %}
+    <form action="{% url 'logout' %}" method="post" style="display: inline;">
+        {% csrf_token %}
+        <button type="submit">Log Out</button>
+    </form>
+</div>

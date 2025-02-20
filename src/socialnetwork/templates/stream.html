@@ -1,6 +1,3 @@
-This will be the stream page for the user {{ user }}
+{% include 'components/author_navbar.html' %}
 
-<form action="{% url 'logout' %}" method="post">
-  {% csrf_token %}
-  <button type="submit">Log Out</button>
-</form>
+This will be the stream page for the user {{ author.user }}
