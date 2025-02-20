@@ -33,25 +33,24 @@ class Author(models.Model):
 
     # Fields
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    # following = models.ManyToManyField('self', symmetrical=False, related_name='followers')
+    following = models.ManyToManyField('self', symmetrical=False, related_name='followers', blank=True)
 
-    # # Type Hints *these are not model fields*
-    # following: models.ManyToManyField[Author,Author]
+    # Type Hints *these are not model fields*
+    following: models.ManyToManyField[Author,Author]
 
-    # # Computed Properties
-    # @property
-    # def followers(self):
-    #     return Author.objects.filter(following=self)
-
+    # Computed Properties
+    @property
+    def followers(self) -> models.QuerySet[Author]:
+        return Author.objects.filter(following=self)
+    
     # Methods
 
     def get_is_friends_with(self, other: Author) -> bool:
         """Returns true if this author is friends with the other author"""
         # return self in other.following and other in self.following
-        return (isinstance(self, LocalAuthor) and other in self.following.all()) and (
-            isinstance(other, LocalAuthor) and self in other.following.all()
-        )
-
+        self_is_following_other = other.following.filter(pk=self.pk).exists()
+        other_is_following_self = self.following.filter(pk=other.pk).exists()
+        return self_is_following_other and other_is_following_self
 
 class LocalAuthor(Author):
     """An author that is on this node"""
@@ -59,7 +58,6 @@ class LocalAuthor(Author):
     user = models.OneToOneField(
         User, on_delete=models.CASCADE, related_name="author"
     )  # https://docs.djangoproject.com/en/dev/topics/auth/customizing/#extending-the-existing-user-model
-    following = models.ManyToManyField("Author", related_name="followers", blank=True)
 
     def get_stream(
         self, paginate_start: int = 0, paginate_count: Optional[int] = None
@@ -75,44 +73,32 @@ class LocalAuthor(Author):
         """
         # TODO join the self.private_inbox and the public timeline
 
-        base_query = Q(is_deleted=False)
+        base_query = Q(is_deleted=False)        
         public_posts = Q(visibility_type=Post.VisibilityTypes.PUBLIC)
-
-        # Get followed authors' posts
-        following = self.following.all()
-        followed_posts = Q(
-            author__in=following,
-            visibility_type__in=[
-                Post.VisibilityTypes.PUBLIC,
-                Post.VisibilityTypes.UNLISTED,
-            ],
+        
+        private_inbox = Q(
+            is_in_private_inbox_of=self
         )
 
-        # Get friends-only posts from friends
-        friends = self.following.filter(followers=self)
-        friends_posts = Q(
-            author__in=friends, visibility_type=Post.VisibilityTypes.FRIENDS_ONLY
-        )
-
-        text_posts = PostTextBased.objects.filter(
-            base_query & (public_posts | followed_posts | friends_posts)
-        )
-
-        # Combine posts and sort by date
+        query = base_query & (public_posts | private_inbox)
+        
+        text_posts = PostTextBased.objects.filter(query)
+        
+        # Combine and sort all posts
         all_posts = sorted(
             chain(text_posts),
             key=lambda post: post.date_created,
-            reverse=True,
+            reverse=True
         )
-
-        # Apply pagination if requested
+        
+        # Apply pagination
         if paginate_count is not None:
-            all_posts = all_posts[paginate_start : paginate_start + paginate_count]
+            all_posts = all_posts[paginate_start:paginate_start + paginate_count]
         elif paginate_start > 0:
             all_posts = all_posts[paginate_start:]
-
+        
         return all_posts
-
+    
     def delete(self, using: Any = ..., keep_parents: bool = ...):  # type: ignore # not sure why the default keep_parents value is Ellipsis, clashes with bool type
         """Delete this author"""
         self.user.delete()

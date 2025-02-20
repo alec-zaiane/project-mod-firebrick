@@ -2,6 +2,10 @@
 
 {% block content %}
 <div class="stream-container">
+    <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit">Log Out</button>
+    </form>
     <h1>Your Stream</h1>
     
     {% if posts %}
@@ -34,8 +38,5 @@
         <p>No posts available in your stream.</p>
     {% endif %}
 
-    <div class="user-actions">
-        <a href="{% url 'logout' %}">Log Out</a>
-    </div>
 </div>
 {% endblock %}
