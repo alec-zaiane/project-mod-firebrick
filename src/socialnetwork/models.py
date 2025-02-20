@@ -139,12 +139,12 @@ class PostTextBased(Post):
     content = models.TextField()
     post_type = models.CharField(max_length=2, choices=TextPostTypes.choices, default=TextPostTypes.PLAINTEXT)
     
-    def edit(self, new_content: str):
+    def edit(self, new_content: str) -> None:
         """Edit the content of this post"""
         self.content = new_content
         self._finalize_edit()
         
-    def convert_type(self, new_type: TextPostTypes):
+    def convert_type(self, new_type: TextPostTypes) -> None:
         """Convert this post to a different type"""
         self.post_type = new_type
         self._finalize_edit()
