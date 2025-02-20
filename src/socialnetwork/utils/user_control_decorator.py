@@ -10,9 +10,10 @@ from django.contrib.auth.models import User
 
 # https://www.artima.com/weblogs/viewpost.jsp?thread=240845#decorator-functions-with-decorator-arguments, accessed 2025-02-15
 
-def user_control(can_be_author:bool=True, can_be_logged_out:bool=False, can_be_superuser:bool=False) -> Callable[[Callable[..., HttpResponse]], Callable[..., HttpResponse]]:
-    """Control what kind of user can access a view
-    If can_be_author is True, the view will be passed an author object with `author=` as a keyword
+def user_control(can_be_author:bool=True, can_be_logged_out:bool=False, can_be_superuser:bool=False):
+    """Control what kind of user can access a view\n
+    **Important: If can_be_author is True, the view will be passed an author object with `author=` as a keyword, make sure your view has this parameter**
+    
     
     Raises: (none of these should ever happen)
         ValueError: If none of can_be_author, can_be_logged_out, or can_be_superuser are True

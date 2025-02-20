@@ -127,34 +127,32 @@ class Post(models.Model):
             if self._check_can_be_seen_by(author):
                 self.is_in_private_inbox_of.add(author)
         
-
-class PostPlainText(Post):
+class PostTextBased(Post):
     """
-    A post that contains only plain text
+    A post that contains text
     """
+    class TextPostTypes(models.TextChoices):
+        PLAINTEXT = "PT", _("Plain Text")
+        MARKDOWN = "MD", _("Markdown")
+    
     # Fields
     content = models.TextField()
+    post_type = models.CharField(max_length=2, choices=TextPostTypes.choices, default=TextPostTypes.PLAINTEXT)
     
     def edit(self, new_content: str):
         """Edit the content of this post"""
         self.content = new_content
         self._finalize_edit()
         
-class PostMarkdown(Post):
-    """
-    A post that contains markdown
-    """
-    # Fields
-    content = models.TextField()
-    
-    def edit(self, new_content: str):
-        """Edit the content of this post"""
-        self.content = new_content
+    def convert_type(self, new_type: TextPostTypes):
+        """Convert this post to a different type"""
+        self.post_type = new_type
         self._finalize_edit()
         
-class PostImage(Post):
+class PostMediaBased(Post):
     """
-    A post that contains an image
+    A post that contains an image 
+    TODO consider whether multiple classes or an enum field are better for video vs images
     """
     pass #TODO
 
