@@ -7,19 +7,12 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 
 from django.urls import reverse
-from django.contrib.auth import authenticate, login
 
 from socialnetwork.utils.user_control_decorator import user_control
 from . import models
 from . import serializers
 
-from django.contrib.auth.decorators import login_required
-# being created
 from .forms import PostTextBasedForm  
-
-from django.utils.safestring import mark_safe
-from .models import PostTextBased
-import markdown
 
 
 # General Views
@@ -52,11 +45,7 @@ def author_profile_view(request: HttpRequest, target_author_uuid: str, author: O
     """View `target_author_uuid`'s profile"""
 
     target_author = get_object_or_404(models.LocalAuthor, uuid=target_author_uuid)
-    author_posts = models.PostTextBased.objects.filter(author=target_author)
-
-    # Convert Markdown posts before sending them to the template
-    for post in author_posts:
-        post.content = render_post_content(post)
+    author_posts = models.PostTextBased.objects.filter(base_author=target_author)
 
     return render(request, "author_profile.html", {"author": target_author, "viewer": author, "posts": author_posts})
 
@@ -106,11 +95,3 @@ def create_post_view(request: HttpRequest, author: models.LocalAuthor) -> HttpRe
         form = PostTextBasedForm()
 
     return render(request, "author_create_post.html", {"form": form, "author": author})
-
-
-def render_post_content(post):
-    """Converts Markdown content to HTML securely."""
-    if post.post_type == PostTextBased.TextPostTypes.MARKDOWN:
-        return mark_safe(markdown.markdown(post.content))  
-    # Plain text remains unchanged
-    return post.content  
