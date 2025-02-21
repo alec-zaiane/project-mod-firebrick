@@ -1,12 +1,12 @@
-from rest_framework import serializers # type: ignore # missing stub file
-from rest_framework import validators # type: ignore # missing stub file
+from rest_framework import serializers
+from rest_framework import validators
 from .models import AuthorJoinRequest
 from django.contrib.auth.models import User
 from django.contrib.auth.validators import UnicodeUsernameValidator
 
 # https://www.geeksforgeeks.org/serializers-django-rest-framework/
 
-class AuthorJoinRequestSerializer(serializers.ModelSerializer):
+class AuthorJoinRequestSerializer(serializers.ModelSerializer[AuthorJoinRequest]):
     class Meta:
         model = AuthorJoinRequest
         fields = ["username", "password"]

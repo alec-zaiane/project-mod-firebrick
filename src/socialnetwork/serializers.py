@@ -1,8 +1,8 @@
-from rest_framework import serializers # type: ignore # missing stub file
+from rest_framework import serializers
 from . import models
 
 # https://stackoverflow.com/questions/53687071/django-rest-framework-not-null-constraint-failed
-class PostSerializer(serializers.ModelSerializer):
+class PostSerializer(serializers.ModelSerializer[models.Post]):
     author = serializers.PrimaryKeyRelatedField(many=False, queryset=models.LocalAuthor.objects.all())
 
 

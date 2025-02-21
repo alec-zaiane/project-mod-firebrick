@@ -35,9 +35,6 @@ class Author(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     following = models.ManyToManyField('self', symmetrical=False, related_name='followers', blank=True)
 
-    # Type Hints *these are not model fields*
-    following: models.ManyToManyField[Author,Author]
-
     # Computed Properties
     @property
     def followers(self) -> models.QuerySet[Author]:
@@ -47,11 +44,10 @@ class Author(models.Model):
 
     def get_is_friends_with(self, other: Author) -> bool:
         """Returns true if this author is friends with the other author"""
-        # return self in other.following and other in self.following
         self_is_following_other = other.following.filter(pk=self.pk).exists()
         other_is_following_self = self.following.filter(pk=other.pk).exists()
         return self_is_following_other and other_is_following_self
-
+    
 class LocalAuthor(Author):
     """An author that is on this node"""
 
@@ -61,7 +57,7 @@ class LocalAuthor(Author):
 
     def get_stream(
         self, paginate_start: int = 0, paginate_count: Optional[int] = None
-    ) -> models.QuerySet[Post]:
+    ) -> list[Post]:
         """Get the stream of posts that this author can see
 
         Args:
@@ -69,7 +65,7 @@ class LocalAuthor(Author):
             paginate_end (Optional[int], optional): Get this many posts, or all if None. Defaults to None.
 
         Returns:
-            models.QuerySet[Post]: QuerySet of Post objects that the author is guaranteed to be able to see
+            list[Post]: QuerySet of Post objects that the author is guaranteed to be able to see
         """
         # TODO join the self.private_inbox and the public timeline
 
@@ -85,7 +81,7 @@ class LocalAuthor(Author):
         text_posts = PostTextBased.objects.filter(query)
         
         # Combine and sort all posts
-        all_posts = sorted(
+        all_posts:list[Post] = sorted(
             chain(text_posts),
             key=lambda post: post.date_created,
             reverse=True
@@ -145,16 +141,13 @@ class Post(models.Model):
         Author, related_name="%(class)s_private_inbox", blank=True
     )
 
-    # Type Hints *these are not model fields*
-    is_in_private_inbox_of: models.ManyToManyField["Post", Author]
-
     # Computed Properties
     @property
-    def has_been_edited(self):
+    def has_been_edited(self) -> bool:
         return self.date_edited is not None
 
     # Methods
-    def _finalize_edit(self):
+    def _finalize_edit(self) -> None:
         """Call this after updating a post's content"""
         self.date_edited = timezone.now()
         self.save()
@@ -194,12 +187,12 @@ class PostTextBased(Post):
         max_length=2, choices=TextPostTypes.choices, default=TextPostTypes.PLAINTEXT
     )
 
-    def edit(self, new_content: str):
+    def edit(self, new_content: str) -> None:
         """Edit the content of this post"""
         self.content = new_content
         self._finalize_edit()
-
-    def convert_type(self, new_type: TextPostTypes):
+        
+    def convert_type(self, new_type: TextPostTypes) -> None:
         """Convert this post to a different type"""
         self.post_type = new_type
         self._finalize_edit()

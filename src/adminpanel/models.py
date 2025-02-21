@@ -15,7 +15,7 @@ class AuthorJoinRequest(models.Model):
     password = models.CharField(max_length=128)
     
     @property
-    def is_denied(self):
+    def is_denied(self) -> bool:
         return self.date_denied is not None
     
     def get_validity_errors(self) -> list[str]:
@@ -49,12 +49,12 @@ class AuthorJoinRequest(models.Model):
         self.delete()
         return author
     
-    def deny(self):
+    def deny(self) -> None:
         """Deny this request"""
         self.date_denied = timezone.now()
         self.save()
         
-    def undeny(self):
+    def undeny(self) -> None:
         """Un-deny this request in case of a mistake"""
         self.date_denied = None
         self.save()
