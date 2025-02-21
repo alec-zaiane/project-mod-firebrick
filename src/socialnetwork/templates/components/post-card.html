@@ -1,0 +1,21 @@
+{# expects a post object as a models.Post subclass instance #}
+
+<article class="post-card">
+    <header>
+        <h3>{{ post.author.username }}</h3>
+        <span class="post-meta">
+            Posted: {{ post.date_created|date:"F j, Y, g:i a" }}
+            {% if post.date_edited %}
+            (Edited: {{ post.date_edited|date:"F j, Y, g:i a" }})
+            {% endif %}
+        </span>
+    </header>
+
+    <div class="post-content {{ post.css_class }}">
+        {{ post.content|safe }}
+    </div>
+
+    <footer>
+        <span class="visibility">{{ post.get_visibility_type_display }}</span>
+    </footer>
+</article>

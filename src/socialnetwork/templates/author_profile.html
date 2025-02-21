@@ -17,15 +17,7 @@
 {% if posts %}
     <ul>
         {% for post in posts %}
-            <li>
-                <strong>{{ post.date_created|date:"F j, Y, g:i a" }}</strong>
-                {% if post.post_type == "MD" %}
-                    <p>{{ post.content|safe }}</p> {# Render Markdown safely #}
-                {% else %}
-                    <p>{{ post.content }}</p>
-                {% endif %}
-                <small>Visibility: {{ post.get_visibility_type_display }}</small>
-            </li>
+        {% include 'components/post-card.html' %}
         {% endfor %}
     </ul>
 {% else %}

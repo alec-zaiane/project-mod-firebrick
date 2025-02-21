@@ -138,9 +138,9 @@ class Post(models.Model):
     # Fields
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     
-    # this is the author of the post, Don't use it directly, use the author property
-    # Django doesn't figure out the subclass on foreign keys, so we have to do that manually
-    _author:models.ForeignKey[Author] = models.ForeignKey(Author, on_delete=models.PROTECT) 
+    # this is the author of the post, it always returns a base author object (not a subclass)
+    # use the author property to get the correct author object
+    base_author:models.ForeignKey[Author] = models.ForeignKey(Author, on_delete=models.PROTECT) 
     visibility_type = models.CharField(
         max_length=2, choices=VisibilityTypes.choices, default=VisibilityTypes.PUBLIC
     )
@@ -164,7 +164,7 @@ class Post(models.Model):
     @property
     def author(self) -> Author:
         """The author of this post"""
-        fetched_author:Author = self._author # type: ignore # mypy doesn't know that _author is an Author object
+        fetched_author:Author = self.base_author # type: ignore # mypy doesn't know that _author is an Author object
         fetched_uuid = fetched_author.uuid
 
         if LocalAuthor.objects.filter(uuid=fetched_uuid).exists():
@@ -173,13 +173,16 @@ class Post(models.Model):
             return RemoteAuthor.objects.get(uuid=fetched_uuid)
         else:
             raise ValueError(f"Unknown author type: {fetched_author}")
+        
+    @property
+    def css_class(self) -> str:
+        raise NotImplementedError("This method must be implemented by a subclass")
 
     # Methods
     def _finalize_edit(self) -> None:
         """Call this after updating a post's content"""
         self.date_edited = timezone.now()
         self.save()
-
     def _check_can_be_seen_by(self, other: Author) -> bool:
         """Returns true if the other author can see this post"""
         if self.author == other:
@@ -214,6 +217,16 @@ class PostTextBased(Post):
     post_type = models.CharField(
         max_length=2, choices=TextPostTypes.choices, default=TextPostTypes.PLAINTEXT
     )
+    
+    @property
+    def css_class(self) -> str:
+        if self.post_type == self.TextPostTypes.PLAINTEXT:
+            return "post-plaintext"
+        elif self.post_type == self.TextPostTypes.MARKDOWN:
+            return "post-markdown"
+        else:
+            raise ValueError(f"Unknown post type: {self.post_type}")
+        
 
     def edit(self, new_content: str) -> None:
         """Edit the content of this post"""
