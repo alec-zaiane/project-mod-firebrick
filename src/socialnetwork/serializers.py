@@ -1,23 +1,26 @@
+from typing import Any
+
 from rest_framework import serializers
 from . import models
+from django.contrib.auth.models import User
 
 # https://stackoverflow.com/questions/53687071/django-rest-framework-not-null-constraint-failed
 class PostSerializer(serializers.ModelSerializer[models.Post]):
-    author = serializers.PrimaryKeyRelatedField(many=False, queryset=models.LocalAuthor.objects.all())
+    author = serializers.PrimaryKeyRelatedField(many=False, queryset=models.Author.objects.all())
 
 
 class PostTextBasedSerializer(PostSerializer):
     class Meta:
         model = models.PostTextBased
-        fields = ["content", "author", "visibility_type", "post_type"]
+        fields = ["content", "base_author", "visibility_type", "post_type"]
 
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer[User]):
     class Meta:
-        model = models.User
+        model = User
         fields = ["username", "email", "first_name", "last_name"]
 
 # https://blog.devgenius.io/nested-serializers-in-django-rest-framework-6b36bf011074
-class LocalAuthorSerializer(serializers.ModelSerializer):
+class LocalAuthorSerializer(serializers.ModelSerializer[models.LocalAuthor]):
     user = UserSerializer(many=False)
     
     class Meta:
@@ -25,13 +28,13 @@ class LocalAuthorSerializer(serializers.ModelSerializer):
         fields = ["uuid", "following", "followers"]
         read_only_fields = ["uuid", "followers"]
         
-    def create(self, validated_data):
+    def create(self, validated_data:dict[str,Any]) -> Any:
         user_data = validated_data.pop("user")
-        user = models.User.objects.create_user(**user_data)
-        author = models.LocalAuthor.create(user=user, **validated_data)
+        user = User.objects.create_user(**user_data)
+        author = models.LocalAuthor.objects.create(user=user, **validated_data)
         return author
     
-    def update(self, instance, validated_data):
+    def update(self, instance:models.LocalAuthor, validated_data:dict[str,Any]) -> Any:
         user_data = validated_data.pop("user")
         if user_data:
             user = instance.user
@@ -40,4 +43,4 @@ class LocalAuthorSerializer(serializers.ModelSerializer):
             user.first_name = user_data.get("first_name", user.first_name)
             user.last_name = user_data.get("last_name", user.last_name)
             user.save()
-        return super.update(instance, validated_data)
+        return super().update(instance, validated_data)

@@ -12,8 +12,6 @@ from socialnetwork.utils.user_control_decorator import user_control
 from . import models
 from . import serializers
 
-from .forms import PostTextBasedForm  
-
 
 # General Views
 
@@ -53,23 +51,16 @@ def author_profile_view(request: HttpRequest, target_author_uuid: str, author: O
 # Views for Posts
 @api_view(["POST"])
 @user_control(can_be_author=True, can_be_logged_out=False, can_be_superuser=False)
-def api_create_text_post(request:Request, author:models.LocalAuthor, post_type:Literal["plaintext", "commonmark"]) -> Response|HttpResponseRedirect:
-    """Create a text based post"""
-    if post_type not in ("plaintext", "commonmark"):
-        return Response({"error": "Invalid type"}, status=400)
-    
-    data:dict[str,Any] = request.data # type: ignore # missing stub file
-    data["author"] = author.uuid
-    if post_type == "plaintext":
-        data["post_type"] = models.PostTextBased.TextPostTypes.PLAINTEXT
-    elif post_type == "commonmark":
-        data["post_type"] = models.PostTextBased.TextPostTypes.MARKDOWN
+def api_create_text_post(request:Request, author:models.LocalAuthor) -> Response|HttpResponseRedirect:
+    """Create a text based post"""    
+    data = request.data.copy()
+    data["base_author"] = author.uuid
     
     serializer = serializers.PostTextBasedSerializer(data=data)
     
     # save it all
     if serializer.is_valid():
-        post:models.PostTextBased = serializer.save() # type: ignore # missing stub file
+        post = serializer.save()
         post.send_to_required_private_inboxes()
         return Response(serializer.data, status=201)
     else:
@@ -83,7 +74,7 @@ def api_author_update(request:Request, author:models.LocalAuthor, target_author_
     target_author = get_object_or_404(models.LocalAuthor, uuid=target_author_uuid)
     if author != target_author and not author.user.is_superuser:
         return Response({"error": "You do not have permission to update this author"}, status=403)
-    serializer = serializers.AuthorSerializer(target_author, data=request.data, partial=True)
+    serializer = serializers.LocalAuthorSerializer(target_author, data=request.data, partial=True)
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data)
@@ -95,19 +86,4 @@ def api_author_update(request:Request, author:models.LocalAuthor, target_author_
 @user_control(can_be_author=True, can_be_logged_out=False, can_be_superuser=False)
 def create_post_view(request: HttpRequest, author: models.LocalAuthor) -> HttpResponse:
     """Render a form for authors to create a post."""
-    
-    if request.method == "POST":
-        form = PostTextBasedForm(request.POST)
-        if form.is_valid():
-            post = form.save(commit=False)
-            # Ensure post is linked to the logged-in author
-            post.author = author  
-            post.save()
-            post.send_to_required_private_inboxes()
-            # Redirect to stream after posting
-            return redirect("socialnetwork:stream")  
-
-    else:
-        form = PostTextBasedForm()
-
-    return render(request, "author_create_post.html", {"form": form, "author": author})
+    return render(request, "create_post.html", {"author": author})
