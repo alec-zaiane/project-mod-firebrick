@@ -17,6 +17,10 @@ class AuthorJoinRequest(models.Model):
     @property
     def is_denied(self) -> bool:
         return self.date_denied is not None
+
+    @property
+    def css_status(self):
+        return "denied" if self.is_denied else "pending"
     
     def get_validity_errors(self) -> list[str]:
         """ returns a list of errors with the request, or an empty list if the request is valid

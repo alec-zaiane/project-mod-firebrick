@@ -74,6 +74,22 @@ def api_create_text_post(request:Request, author:models.LocalAuthor, post_type:L
         return Response(serializer.data, status=201)
     else:
         return Response(serializer.errors, status=400)
+
+@api_view(["PUT","PATCH"])
+@user_control(can_be_author=True, can_be_logged_out=False, can_be_superuser=True)
+def api_author_update(request:Request, author:models.LocalAuthor, target_author_uuid:str) -> Response:
+    """Update an author's information, **author kwarg is not the target author, but the viewer author**
+    Only an admin or the author themselves can update their information"""
+    target_author = get_object_or_404(models.LocalAuthor, uuid=target_author_uuid)
+    if author != target_author and not author.user.is_superuser:
+        return Response({"error": "You do not have permission to update this author"}, status=403)
+    serializer = serializers.AuthorSerializer(target_author, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    return Response(serializer.errors, status=400)
+    
+    
     
 
 @user_control(can_be_author=True, can_be_logged_out=False, can_be_superuser=False)
