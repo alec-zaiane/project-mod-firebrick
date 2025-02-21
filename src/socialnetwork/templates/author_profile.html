@@ -1,12 +1,33 @@
 {% if viewer %}
-{% include 'components/author_navbar.html' %}
+    {% include 'components/author_navbar.html' %}
 {% endif %}
 
-This is the profile page for {{ author.user }}
-{% if viewer %} {# if the viewer is an author #}
+<h2>This is the profile page for {{ author.user }}</h2>
+
+{% if viewer %}
     {% if author == viewer %}
         <p>This is your profile</p>
     {% else %}
         <p>This is not your profile</p>
     {% endif %}
+{% endif %}
+
+<h3>Posts by {{ author.user }}</h3>
+
+{% if posts %}
+    <ul>
+        {% for post in posts %}
+            <li>
+                <strong>{{ post.date_created|date:"F j, Y, g:i a" }}</strong>
+                {% if post.post_type == "MD" %}
+                    <p>{{ post.content|safe }}</p> {# Render Markdown safely #}
+                {% else %}
+                    <p>{{ post.content }}</p>
+                {% endif %}
+                <small>Visibility: {{ post.get_visibility_type_display }}</small>
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No posts available.</p>
 {% endif %}

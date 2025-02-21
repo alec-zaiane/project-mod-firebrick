@@ -87,7 +87,9 @@ class Post(models.Model):
     
     # Fields
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    author = models.ForeignKey(Author, on_delete=models.PROTECT)
+    #author = models.ForeignKey(Author, on_delete=models.PROTECT)
+    
+    author = models.ForeignKey('socialnetwork.LocalAuthor', on_delete=models.PROTECT)
     visibility_type = models.CharField(max_length=2, choices=VisibilityTypes.choices, default=VisibilityTypes.PUBLIC)
     is_deleted = models.BooleanField(default=False)
     date_created = models.DateTimeField(auto_now_add=True, editable=False)

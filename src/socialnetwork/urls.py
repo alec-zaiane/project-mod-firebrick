@@ -9,4 +9,5 @@ urlpatterns = [
     path("stream", views.stream_view, name="stream"),
     path("author/<uuid:target_author_uuid>", views.author_profile_view, name="author_profile"),
     path("api/create_text_post/<str:post_type>", views.api_create_text_post, name="api_create_text_post"),
+    path("author_create_post/", views.create_post_view, name="author_create_post"),
 ]

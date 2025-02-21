@@ -1,3 +1,36 @@
-{% include 'components/author_navbar.html' %}
+<!-- {% include 'components/author_navbar.html' %}
 
 This will be the stream page for the user {{ author.user }}
+{% for post in posts %}
+    <div class="post">
+        <h3>{{ post.author.user.username }}</h3>
+        <p>{{ post.content|safe }}</p>  
+    </div>
+{% endfor %} -->
+
+
+{% include 'components/author_navbar.html' %}
+
+<h2>Public Feed</h2>
+
+{% for post in posts %}
+    <div class="post">
+        <p><strong>Author:</strong> 
+            {% if post.author %}
+                {% if post.author.user %}
+                    <a href="{% url 'socialnetwork:author_profile' post.author.uuid %}">
+                        {{ post.author.user.username }}
+                    </a>
+                {% else %}
+                    Unknown Author
+                {% endif %}
+            {% else %}
+                Unknown Author
+            {% endif %}
+        </p>
+        <p>{{ post.content|safe }}</p>  {# Ensures Markdown renders correctly #}
+        <p><em>Visibility: {{ post.get_visibility_type_display }}</em></p>
+    </div>
+{% empty %}
+    <p>No posts available.</p>
+{% endfor %}

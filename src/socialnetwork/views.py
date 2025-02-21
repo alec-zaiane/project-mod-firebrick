@@ -1,6 +1,6 @@
 from typing import Any, Literal, Optional
 
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from rest_framework.decorators import api_view # type: ignore # missing stub file
 from rest_framework.response import Response # type: ignore # missing stub file
@@ -13,6 +13,15 @@ from socialnetwork.utils.user_control_decorator import user_control
 from . import models
 from . import serializers
 
+from django.contrib.auth.decorators import login_required
+# being created
+from .forms import PostTextBasedForm  
+
+from django.utils.safestring import mark_safe
+from .models import PostTextBased
+import markdown
+
+
 # General Views
 
 def not_logged_in_view(request:HttpRequest) -> HttpResponse:
@@ -24,14 +33,29 @@ def not_logged_in_view(request:HttpRequest) -> HttpResponse:
 @user_control(can_be_author=True, can_be_logged_out=False, can_be_superuser=False)
 def stream_view(request:HttpRequest, author:models.LocalAuthor) -> HttpResponse:
     """An author's stream view"""
-    return render(request, "stream.html", {"author": author})
+    # Get latest posts
+    posts = models.PostTextBased.objects.exclude(
+    visibility_type=models.PostTextBased.VisibilityTypes.UNLISTED).order_by("-date_created")
 
-# Views for Authors
+    # Convert Markdown posts to HTML before sending to template
+    for post in posts:
+        post.content = render_post_content(post)  # Convert if it's Markdown
+    return render(request, "stream.html", {"author": author, "posts" : posts})
+
+
 @user_control(can_be_author=True, can_be_logged_out=True, can_be_superuser=True)
-def author_profile_view(request:HttpRequest, target_author_uuid:str, author:Optional[models.LocalAuthor]=None) -> HttpResponse:
+def author_profile_view(request: HttpRequest, target_author_uuid: str, author: Optional[models.LocalAuthor] = None) -> HttpResponse:
     """View `target_author_uuid`'s profile"""
+
     target_author = get_object_or_404(models.LocalAuthor, uuid=target_author_uuid)
-    return render(request, "author_profile.html", {"author": target_author, "viewer": author})
+    author_posts = models.PostTextBased.objects.filter(author=target_author)
+
+    # Convert Markdown posts before sending them to the template
+    for post in author_posts:
+        post.content = render_post_content(post)
+
+    return render(request, "author_profile.html", {"author": target_author, "viewer": author, "posts": author_posts})
+
 
 # Views for Posts
 @api_view(["POST"])
@@ -57,3 +81,32 @@ def api_create_text_post(request:Request, author:models.LocalAuthor, post_type:L
         return Response(serializer.data, status=201)
     else:
         return Response(serializer.errors, status=400)
+    
+
+@user_control(can_be_author=True, can_be_logged_out=False, can_be_superuser=False)
+def create_post_view(request: HttpRequest, author: models.LocalAuthor) -> HttpResponse:
+    """Render a form for authors to create a post."""
+    
+    if request.method == "POST":
+        form = PostTextBasedForm(request.POST)
+        if form.is_valid():
+            post = form.save(commit=False)
+            # Ensure post is linked to the logged-in author
+            post.author = author  
+            post.save()
+            post.send_to_required_private_inboxes()
+            # Redirect to stream after posting
+            return redirect("socialnetwork:stream")  
+
+    else:
+        form = PostTextBasedForm()
+
+    return render(request, "author_create_post.html", {"form": form, "author": author})
+
+
+def render_post_content(post):
+    """Converts Markdown content to HTML securely."""
+    if post.post_type == PostTextBased.TextPostTypes.MARKDOWN:
+        return mark_safe(markdown.markdown(post.content))  
+    # Plain text remains unchanged
+    return post.content  
