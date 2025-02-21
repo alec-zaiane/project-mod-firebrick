@@ -24,7 +24,18 @@ def not_logged_in_view(request:HttpRequest) -> HttpResponse:
 @user_control(can_be_author=True, can_be_logged_out=False, can_be_superuser=False)
 def stream_view(request:HttpRequest, author:models.LocalAuthor) -> HttpResponse:
     """An author's stream view"""
-    return render(request, "stream.html", {"author": author})
+    page = int(request.GET.get('page', '1'))
+    size = int(request.GET.get('size', '10'))
+    start = (page - 1) * size
+    
+    posts = author.get_stream(paginate_start=start, paginate_count=size)
+    
+    return render(request, "stream.html", {
+        "user": request.user,
+        "author": author,
+        "posts": posts,
+        "current_page": page,
+    })
 
 # Views for Authors
 @user_control(can_be_author=True, can_be_logged_out=True, can_be_superuser=True)
