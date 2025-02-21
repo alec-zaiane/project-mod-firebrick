@@ -23,8 +23,16 @@ def not_logged_in_view(request:HttpRequest) -> HttpResponse:
 
 @user_control(can_be_author=True, can_be_logged_out=False, can_be_superuser=False)
 def stream_view(request:HttpRequest, author:models.LocalAuthor) -> HttpResponse:
-    """An author's stream view"""
-    return render(request, "stream.html", {"author": author})
+    """
+    An author's stream view.
+    For non-admin users, filter out posts that are marked as deleted.
+    """
+    if request.user.is_staff:
+        posts = models.PostTextBased.objects.all().order_by('date_created')
+    else:
+        posts = models.PostTextBased.objects.filter(is_deleted=False).order_by('date_created')
+    
+    return render(request, "stream.html", {"author": author, "posts": posts})
 
 # Views for Authors
 @user_control(can_be_author=True, can_be_logged_out=True, can_be_superuser=True)

@@ -112,7 +112,14 @@ class Post(models.Model):
         self.save()
     
     def _check_can_be_seen_by(self, other: Author) -> bool:
-        """Returns true if the other author can see this post"""
+        """Returns true if the other author can see this post. If the post is deleted, only node admin can see it."""
+
+        # Any post marked as deleted will return False for regular users, node admins will still be able to see the post
+        if self.is_deleted:
+            if hasattr(other, 'user') and other.user.is_staff:
+                return True
+            return False
+    
         if self.author == other:
             return True
         if self.visibility_type == self.VisibilityTypes.PUBLIC:
