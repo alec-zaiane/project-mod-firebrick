@@ -40,8 +40,12 @@ class Author(models.Model):
     def followers(self) -> models.QuerySet[Author]:
         return Author.objects.filter(following=self)
     
+    @property
+    def username(self) -> str:
+        raise NotImplementedError("This method must be implemented by a subclass")
+    
     # Methods
-
+    
     def get_is_friends_with(self, other: Author) -> bool:
         """Returns true if this author is friends with the other author"""
         self_is_following_other = other.following.filter(pk=self.pk).exists()
@@ -54,6 +58,10 @@ class LocalAuthor(Author):
     user = models.OneToOneField(
         User, on_delete=models.CASCADE, related_name="author"
     )  # https://docs.djangoproject.com/en/dev/topics/auth/customizing/#extending-the-existing-user-model
+    
+    @property
+    def username(self) -> str:
+        return self.user.username
 
     def get_stream(
         self, paginate_start: int = 0, paginate_count: Optional[int] = None
@@ -105,7 +113,11 @@ class RemoteAuthor(Author):
     """An author that is on another node"""
 
     date_joined = models.DateTimeField(auto_now_add=True, editable=False)
-    username = models.CharField(max_length=50)
+    remote_username = models.CharField(max_length=50)
+    
+    @property
+    def username(self) -> str:
+        return self.remote_username
     # Eventually will contain extra fields and methods/overrides for authors on other nodes
 
 
@@ -125,7 +137,10 @@ class Post(models.Model):
 
     # Fields
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    author = models.ForeignKey(Author, on_delete=models.PROTECT)
+    
+    # this is the author of the post, Don't use it directly, use the author property
+    # Django doesn't figure out the subclass on foreign keys, so we have to do that manually
+    _author:models.ForeignKey[Author] = models.ForeignKey(Author, on_delete=models.PROTECT) 
     visibility_type = models.CharField(
         max_length=2, choices=VisibilityTypes.choices, default=VisibilityTypes.PUBLIC
     )
@@ -145,6 +160,19 @@ class Post(models.Model):
     @property
     def has_been_edited(self) -> bool:
         return self.date_edited is not None
+    
+    @property
+    def author(self) -> Author:
+        """The author of this post"""
+        fetched_author:Author = self._author # type: ignore # mypy doesn't know that _author is an Author object
+        fetched_uuid = fetched_author.uuid
+
+        if LocalAuthor.objects.filter(uuid=fetched_uuid).exists():
+            return LocalAuthor.objects.get(uuid=fetched_uuid)
+        elif RemoteAuthor.objects.filter(uuid=fetched_uuid).exists():
+            return RemoteAuthor.objects.get(uuid=fetched_uuid)
+        else:
+            raise ValueError(f"Unknown author type: {fetched_author}")
 
     # Methods
     def _finalize_edit(self) -> None:

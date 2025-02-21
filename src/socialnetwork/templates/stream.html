@@ -12,7 +12,7 @@
         {% for post in posts %}
         <article class="post-card">
             <header>
-                <h3>{{ post.author.user.username }}</h3>
+                <h3>{{ post.author.username }}</h3>
                 <span class="post-meta">
                     Posted: {{ post.date_created|date:"F j, Y, g:i a" }}
                     {% if post.date_edited %}
