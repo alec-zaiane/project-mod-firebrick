@@ -2,9 +2,9 @@ from typing import Any, Literal, Optional
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
-from rest_framework.decorators import api_view # type: ignore # missing stub file
-from rest_framework.response import Response # type: ignore # missing stub file
-from rest_framework.request import Request # type: ignore # missing stub file
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework.request import Request
 
 from django.urls import reverse
 from django.contrib.auth import authenticate, login
@@ -33,14 +33,18 @@ def not_logged_in_view(request:HttpRequest) -> HttpResponse:
 @user_control(can_be_author=True, can_be_logged_out=False, can_be_superuser=False)
 def stream_view(request:HttpRequest, author:models.LocalAuthor) -> HttpResponse:
     """An author's stream view"""
-    # Get latest posts
-    posts = models.PostTextBased.objects.exclude(
-    visibility_type=models.PostTextBased.VisibilityTypes.UNLISTED).order_by("-date_created")
-
-    # Convert Markdown posts to HTML before sending to template
-    for post in posts:
-        post.content = render_post_content(post)  # Convert if it's Markdown
-    return render(request, "stream.html", {"author": author, "posts" : posts})
+    page = int(request.GET.get('page', '1'))
+    size = int(request.GET.get('size', '10'))
+    start = (page - 1) * size
+    
+    posts = author.get_stream(paginate_start=start, paginate_count=size)
+    
+    return render(request, "stream.html", {
+        "user": request.user,
+        "author": author,
+        "posts": posts,
+        "current_page": page,
+    })
 
 
 @user_control(can_be_author=True, can_be_logged_out=True, can_be_superuser=True)
