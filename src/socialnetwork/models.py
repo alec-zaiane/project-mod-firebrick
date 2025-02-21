@@ -57,7 +57,7 @@ class LocalAuthor(Author):
 
     def get_stream(
         self, paginate_start: int = 0, paginate_count: Optional[int] = None
-    ) -> models.QuerySet[Post]:
+    ) -> list[Post]:
         """Get the stream of posts that this author can see
 
         Args:
@@ -65,7 +65,7 @@ class LocalAuthor(Author):
             paginate_end (Optional[int], optional): Get this many posts, or all if None. Defaults to None.
 
         Returns:
-            models.QuerySet[Post]: QuerySet of Post objects that the author is guaranteed to be able to see
+            list[Post]: QuerySet of Post objects that the author is guaranteed to be able to see
         """
         # TODO join the self.private_inbox and the public timeline
 
@@ -81,7 +81,7 @@ class LocalAuthor(Author):
         text_posts = PostTextBased.objects.filter(query)
         
         # Combine and sort all posts
-        all_posts = sorted(
+        all_posts:list[Post] = sorted(
             chain(text_posts),
             key=lambda post: post.date_created,
             reverse=True
