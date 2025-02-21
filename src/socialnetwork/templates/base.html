@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Social Distribution</title>
+    {% load static %}
+</head>
+<body>
+    <nav>
+        {% if user.is_authenticated %}
+            <span>Welcome, {{ user.username }}</span>
+        {% else %}
+            <a href="{% url 'login' %}">Log In</a>
+        {% endif %}
+    </nav>
+
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+</body>
+</html>

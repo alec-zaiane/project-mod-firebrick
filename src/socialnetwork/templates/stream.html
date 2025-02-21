@@ -1,3 +1,42 @@
-{% include 'components/author_navbar.html' %}
+{% extends 'base.html' %}
 
-This will be the stream page for the user {{ author.user }}
+{% block content %}
+<div class="stream-container">
+    <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit">Log Out</button>
+    </form>
+    <h1>Your Stream</h1>
+    
+    {% if posts %}
+        {% for post in posts %}
+        <article class="post-card">
+            <header>
+                <h3>{{ post.author.user.username }}</h3>
+                <span class="post-meta">
+                    Posted: {{ post.date_created|date:"F j, Y, g:i a" }}
+                    {% if post.date_edited %}
+                        (Edited: {{ post.date_edited|date:"F j, Y, g:i a" }})
+                    {% endif %}
+                </span>
+            </header>
+            
+            <div class="post-content">
+                {% if post.contentType == "text/markdown" %}
+                    {{ post.content|safe }}
+                {% else %}
+                    {{ post.content }}
+                {% endif %}
+            </div>
+
+            <footer>
+                <span class="visibility">{{ post.get_visibility_type_display }}</span>
+            </footer>
+        </article>
+        {% endfor %}
+    {% else %}
+        <p>No posts available in your stream.</p>
+    {% endif %}
+
+</div>
+{% endblock %}
