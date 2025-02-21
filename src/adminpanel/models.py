@@ -19,7 +19,7 @@ class AuthorJoinRequest(models.Model):
         return self.date_denied is not None
 
     @property
-    def css_status(self):
+    def css_status(self) -> str:
         return "denied" if self.is_denied else "pending"
     
     def get_validity_errors(self) -> list[str]:

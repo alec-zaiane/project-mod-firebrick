@@ -10,7 +10,7 @@ from rest_framework.decorators import api_view
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, AnonymousUser
 from socialnetwork.models import LocalAuthor, RemoteAuthor
 from .models import AuthorJoinRequest
 
@@ -19,6 +19,8 @@ from .serializers import AuthorJoinRequestSerializer
 # Create your views here.
 @user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
 def adminpanel_view(request:HttpRequest) -> HttpResponse:
+    if isinstance(request.user, AnonymousUser): # can't ever happen, but needed for type checker
+        return HttpResponseRedirect(reverse("socialnetwork:not_logged_in"))
     requests_active = AuthorJoinRequest.objects.filter(date_denied=None)
     requests_denied = AuthorJoinRequest.objects.exclude(date_denied=None)
     viewer_has_an_author = LocalAuthor.objects.filter(user=request.user).exists()
