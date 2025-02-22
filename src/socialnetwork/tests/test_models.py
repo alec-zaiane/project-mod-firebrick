@@ -50,7 +50,15 @@ class AuthorPostVisibilityTest(TestCase):
         self.unlisted_post.delete()
         self.friends_only_post.delete()
         
-        #create a post, but should not be within the authors' post
+        #refresh the database before checking in case delete() does not refresh
+        with self.assertRaises(PostTextBased.DoesNotExist):
+            self.public_post.refresh_from_db()  
+        with self.assertRaises(PostTextBased.DoesNotExist):
+            self.unlisted_post.refresh_from_db()
+        with self.assertRaises(PostTextBased.DoesNotExist):
+            self.friends_only_post.refresh_from_db()
+
+        #assertions to check
         self.assertTrue(self.public_post._check_can_be_seen_by(self.author))
         self.assertTrue(self.unlisted_post._check_can_be_seen_by(self.author))
         self.assertTrue(self.friends_only_post._check_can_be_seen_by(self.author))
