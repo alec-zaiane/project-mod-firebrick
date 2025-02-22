@@ -1,0 +1,13 @@
+{# Expects: #}
+{#    author: a socialnetwork.models.Author object that is the author to display #}
+{#    viewer_author(optional): a socialnetwork.models.Author object that is the author viewing the page #}
+
+<div class="author-card">
+    <h3>{{author.user.username}}
+        {% if viewer_author == author %}
+        (You)
+        {% endif %}
+    </h3>
+        
+
+</div>

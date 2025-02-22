@@ -1,0 +1,17 @@
+<div class="post-submission-card">
+    <form action="{% url 'socialnetwork:api_create_text_post' %}" method="post">
+        {% csrf_token %}
+        <textarea name="content" rows="4" cols="50"></textarea>
+        <input name="author" type="hidden" value="{{ author.uuid }}">
+        <select name="post_type">
+            <option value="PT">Plaintext</option>
+            <option value="MD">Markdown</option>
+        </select>
+        <select name="visibility_type">
+            <option value="PU">Public</option>
+            <option value="UN">Unlisted</option>
+            <option value="FO">Friends Only</option>
+        </select>
+        <button type="submit">Post</button>
+    </form>
+</div>
