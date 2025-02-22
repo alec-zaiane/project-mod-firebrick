@@ -1,21 +1,25 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Social Distribution</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Social Network</title>
     {% load static %}
 </head>
 <body>
-    <nav>
-        {% if user.is_authenticated %}
-            <span>Welcome, {{ user.username }}</span>
-        {% else %}
-            <a href="{% url 'login' %}">Log In</a>
+    <div class="navbar">
+        <a href="{% url 'socialnetwork:stream' %}">Home</a>
+        {% if author %}
+            <a href="{% url 'socialnetwork:author_profile' author.uuid %}">Profile</a>
         {% endif %}
-    </nav>
+        <form action="{% url 'logout' %}" method="post" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit">Log Out</button>
+        </form>
+    </div>
 
-    <main>
-        {% block content %}
-        {% endblock %}
-    </main>
+    <div class="content">
+        {% block content %}{% endblock %}
+    </div>
 </body>
 </html>

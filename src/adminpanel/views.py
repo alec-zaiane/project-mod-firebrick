@@ -10,7 +10,7 @@ from rest_framework.decorators import api_view
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, AnonymousUser
 from socialnetwork.models import LocalAuthor, RemoteAuthor
 from .models import AuthorJoinRequest
 
@@ -19,9 +19,15 @@ from .serializers import AuthorJoinRequestSerializer
 # Create your views here.
 @user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
 def adminpanel_view(request:HttpRequest) -> HttpResponse:
+    if isinstance(request.user, AnonymousUser): # can't ever happen, but needed for type checker
+        return HttpResponseRedirect(reverse("socialnetwork:not_logged_in"))
     requests_active = AuthorJoinRequest.objects.filter(date_denied=None)
     requests_denied = AuthorJoinRequest.objects.exclude(date_denied=None)
+    viewer_has_an_author = LocalAuthor.objects.filter(user=request.user).exists()
+    viewer_author = LocalAuthor.objects.get(user=request.user) if viewer_has_an_author else None
     return render(request, "adminpanel.html", {
+        "viewer_has_an_author": viewer_has_an_author,
+        "viewer_author": viewer_author,
         "requests_active": requests_active,
         "requests_denied": requests_denied,
         "current_authors_local": LocalAuthor.objects.all(),
@@ -31,6 +37,22 @@ def adminpanel_view(request:HttpRequest) -> HttpResponse:
 
 
 # API views
+@api_view(["POST"])
+@user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
+def api_create_author_for_superuser(request:Request) -> Response|HttpResponse:
+    """Create a LocalAuthor for a superuser, only used in the admin panel for a newly created superuser"""
+    superuser_pk = request.data.get("user_id", None)
+    if not isinstance(superuser_pk, str):
+        return Response({"error": "`user_id` field must be a string"}, status=400)
+    if not superuser_pk:
+        return Response({"error": "`user_id` field must be non-empty"}, status=400)
+    superuser = get_object_or_404(User, pk=superuser_pk)
+    if hasattr(superuser, "author"):
+        return Response({"error": "Author already exists"}, status=400)
+    author = LocalAuthor(user=superuser)
+    author.save()
+    return HttpResponseRedirect(reverse("adminpanel:adminpanel"))
+
 @api_view(["POST"])
 @user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
 def api_create_user(request:Request) -> Response|HttpResponse:
