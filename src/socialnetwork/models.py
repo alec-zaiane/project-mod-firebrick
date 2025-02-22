@@ -185,6 +185,9 @@ class Post(models.Model):
         self.save()
     def _check_can_be_seen_by(self, other: Author) -> bool:
         """Returns true if the other author can see this post"""
+
+        if self.is_deleted:
+            return False
         if self.author == other:
             return True
         if self.visibility_type == self.VisibilityTypes.PUBLIC:
@@ -201,6 +204,13 @@ class Post(models.Model):
         for author in self.author.followers.all():
             if self._check_can_be_seen_by(author):
                 self.is_in_private_inbox_of.add(author)
+
+    def delete(self, using: Any | None = None, keep_parents: bool = False) -> tuple[int, dict[str, int]]:
+        """deletes the Post, overrides django delete. not a permanent delete (not removed from DB)"""
+        #just change the variable for soft deletion
+        self.is_deleted = True 
+        self.save()
+        return (0, {})
 
 
 class PostTextBased(Post):
