@@ -1,0 +1,26 @@
+{# expects a join_request object that is an adminpanel.models.AuthorJoinRequest #}
+
+<div class="join-request-card {{join_request.css_status}}">
+    <p>{{join_request.date_requested}}-{{ join_request.username }}</p>
+    {% if join_request.is_denied %}
+    {# show the delete/undeny buttons #}
+    <form action="{% url 'adminpanel:api_join_request_undeny' join_request.pk %}" method="post">
+        {% csrf_token %}
+        <input type="submit" value="Undeny">
+    </form>
+    <form action="{% url 'adminpanel:api_join_request_delete' join_request.pk %}" method="post">
+        {% csrf_token %}
+        <input type="submit" value="Permanently Delete">
+    {% else %}
+    {# show the approve/deny buttons #}
+    <form action="{% url 'adminpanel:api_join_request_approve' join_request.pk %}" method="post">
+        {% csrf_token %}
+        <input type="submit" value="Approve">
+    </form>
+    <form action="{% url 'adminpanel:api_join_request_deny' join_request.pk %}" method="post">
+        {% csrf_token %}
+        <input type="submit" value="Deny">
+    </form>
+    {% endif %}
+
+</div>

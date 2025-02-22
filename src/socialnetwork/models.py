@@ -8,9 +8,14 @@ from django.utils.translation import gettext_lazy as _
 from typing import Optional
 from django.contrib.auth.models import User
 
+from django.db.models import Q
+from itertools import chain
+
+
 class RemoteNode(models.Model):
-    #TODO will contain fields for the remote nodes that this instance knows about
-    pass 
+    # TODO will contain fields for the remote nodes that this instance knows about
+    pass
+
 
 class Author(models.Model):
     """
@@ -25,29 +30,42 @@ class Author(models.Model):
         Can register with the admins approval
         Can find other authors by using the public timeline
     """
-    
+
     # Fields
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    following = models.ManyToManyField('self', symmetrical=False, related_name='followers')
-    
-    # Type Hints *these are not model fields*
-    following: models.ManyToManyField[Author,Author]
-    
+    following = models.ManyToManyField('self', symmetrical=False, related_name='followers', blank=True)
+
     # Computed Properties
     @property
-    def followers(self):
+    def followers(self) -> models.QuerySet[Author]:
         return Author.objects.filter(following=self)
+    
+    @property
+    def username(self) -> str:
+        raise NotImplementedError("This method must be implemented by a subclass")
     
     # Methods
     
     def get_is_friends_with(self, other: Author) -> bool:
         """Returns true if this author is friends with the other author"""
-        return self in other.following and other in self.following
+        self_is_following_other = other.following.filter(pk=self.pk).exists()
+        other_is_following_self = self.following.filter(pk=other.pk).exists()
+        return self_is_following_other and other_is_following_self
     
 class LocalAuthor(Author):
     """An author that is on this node"""
-    user = models.OneToOneField(User, on_delete=models.CASCADE) # https://docs.djangoproject.com/en/dev/topics/auth/customizing/#extending-the-existing-user-model
-    def get_stream(self, paginate_start:int=0, paginate_count:Optional[int]=None) -> models.QuerySet[Post]:
+
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="author"
+    )  # https://docs.djangoproject.com/en/dev/topics/auth/customizing/#extending-the-existing-user-model
+    
+    @property
+    def username(self) -> str:
+        return self.user.username
+
+    def get_stream(
+        self, paginate_start: int = 0, paginate_count: Optional[int] = None
+    ) -> list[Post]:
         """Get the stream of posts that this author can see
 
         Args:
@@ -55,71 +73,121 @@ class LocalAuthor(Author):
             paginate_end (Optional[int], optional): Get this many posts, or all if None. Defaults to None.
 
         Returns:
-            models.QuerySet[Post]: QuerySet of Post objects that the author is guaranteed to be able to see
+            list[Post]: QuerySet of Post objects that the author is guaranteed to be able to see
         """
-        #TODO join the self.private_inbox and the public timeline
-        raise NotImplementedError()
+        # TODO join the self.private_inbox and the public timeline
+
+        base_query = Q(is_deleted=False)        
+        public_posts = Q(visibility_type=Post.VisibilityTypes.PUBLIC)
+        
+        private_inbox = Q(
+            is_in_private_inbox_of=self
+        )
+
+        query = base_query & (public_posts | private_inbox)
+        
+        text_posts = PostTextBased.objects.filter(query)
+        
+        # Combine and sort all posts
+        all_posts:list[Post] = sorted(
+            chain(text_posts),
+            key=lambda post: post.date_created,
+            reverse=True
+        )
+        
+        # Apply pagination
+        if paginate_count is not None:
+            all_posts = all_posts[paginate_start:paginate_start + paginate_count]
+        elif paginate_start > 0:
+            all_posts = all_posts[paginate_start:]
+        
+        return all_posts
     
-    def delete(self, using:Any=..., keep_parents:bool=...): # type: ignore # not sure why the default keep_parents value is Ellipsis, clashes with bool type
+    def delete(self, using: Any = ..., keep_parents: bool = ...):  # type: ignore # not sure why the default keep_parents value is Ellipsis, clashes with bool type
         """Delete this author"""
         self.user.delete()
         return super().delete(using, keep_parents)
-    
+
+
 class RemoteAuthor(Author):
     """An author that is on another node"""
+
     date_joined = models.DateTimeField(auto_now_add=True, editable=False)
-    username = models.CharField(max_length=50)
+    remote_username = models.CharField(max_length=50)
+    
+    @property
+    def username(self) -> str:
+        return self.remote_username
     # Eventually will contain extra fields and methods/overrides for authors on other nodes
-    
-    
+
+
 class Post(models.Model):
     """
     A post made by an Author, this is an abstract class and should not be instantiated, use one of the subclasses below
     """
+
     class Meta:
         abstract = True
-    
+
     # https://docs.djangoproject.com/en/5.1/ref/models/fields/#enumeration-types
     class VisibilityTypes(models.TextChoices):
         PUBLIC = "PU", _("Public")
         UNLISTED = "UN", _("Unlisted")
         FRIENDS_ONLY = "FO", _("Friends-Only")
-    
+
     # Fields
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    author = models.ForeignKey(Author, on_delete=models.PROTECT)
-    visibility_type = models.CharField(max_length=2, choices=VisibilityTypes.choices, default=VisibilityTypes.PUBLIC)
+    
+    # this is the author of the post, it always returns a base author object (not a subclass)
+    # use the author property to get the correct author object
+    base_author:models.ForeignKey[Author] = models.ForeignKey(Author, on_delete=models.PROTECT) 
+    visibility_type = models.CharField(
+        max_length=2, choices=VisibilityTypes.choices, default=VisibilityTypes.PUBLIC
+    )
     is_deleted = models.BooleanField(default=False)
     date_created = models.DateTimeField(auto_now_add=True, editable=False)
-    date_edited = models.DateTimeField(null=True, default=None) # set to null if never edited
-    
+    date_edited = models.DateTimeField(
+        null=True, default=None
+    )  # set to null if never edited
+
     # Reference: `%(class)s_` from github copilot
     # For non-public posts, this value is used to determine who receives this post
-    is_in_private_inbox_of = models.ManyToManyField(Author, related_name='%(class)s_private_inbox', blank=True)
-    
-    # Type Hints *these are not model fields*
-    is_in_private_inbox_of:models.ManyToManyField["Post",Author]
-    
+    is_in_private_inbox_of = models.ManyToManyField(
+        Author, related_name="%(class)s_private_inbox", blank=True
+    )
+
     # Computed Properties
     @property
-    def has_been_edited(self):
+    def has_been_edited(self) -> bool:
         return self.date_edited is not None
     
+    @property
+    def author(self) -> Author:
+        """The author of this post"""
+        fetched_author:Author = self.base_author # type: ignore # mypy doesn't know that _author is an Author object
+        fetched_uuid = fetched_author.uuid
+
+        if LocalAuthor.objects.filter(uuid=fetched_uuid).exists():
+            return LocalAuthor.objects.get(uuid=fetched_uuid)
+        elif RemoteAuthor.objects.filter(uuid=fetched_uuid).exists():
+            return RemoteAuthor.objects.get(uuid=fetched_uuid)
+        else:
+            raise ValueError(f"Unknown author type: {fetched_author}")
+        
+    @property
+    def css_class(self) -> str:
+        raise NotImplementedError("This method must be implemented by a subclass")
+
     # Methods
-    def _finalize_edit(self):
+    def _finalize_edit(self) -> None:
         """Call this after updating a post's content"""
         self.date_edited = timezone.now()
         self.save()
-    
     def _check_can_be_seen_by(self, other: Author) -> bool:
-        """Returns true if the other author can see this post. If the post is deleted, only node admin can see it."""
+        """Returns true if the other author can see this post"""
 
-        # Any post marked as deleted will return False for regular users, node admins will still be able to see the post
         if self.is_deleted:
-            if hasattr(other, 'user') and other.user.is_staff:
-                return True
             return False
-    
         if self.author == other:
             return True
         if self.visibility_type == self.VisibilityTypes.PUBLIC:
@@ -130,39 +198,61 @@ class Post(models.Model):
             return self.author.get_is_friends_with(other)
         else:
             raise ValueError(f"Unknown visibility type: {self.visibility_type}")
-        
+
     def send_to_required_private_inboxes(self) -> None:
         """Send this post to the required private inboxes, updates the self.is_in_private_inbox_of field"""
         for author in self.author.followers.all():
             if self._check_can_be_seen_by(author):
                 self.is_in_private_inbox_of.add(author)
-        
+
+    def delete(self, using: Any | None = None, keep_parents: bool = False) -> tuple[int, dict[str, int]]:
+        """deletes the Post, overrides django delete. not a permanent delete (not removed from DB)"""
+        #just change the variable for soft deletion
+        self.is_deleted = True 
+        self.save()
+        return (0, {})
+
+
 class PostTextBased(Post):
     """
     A post that contains text
     """
+
     class TextPostTypes(models.TextChoices):
         PLAINTEXT = "PT", _("Plain Text")
         MARKDOWN = "MD", _("Markdown")
-    
+
     # Fields
     content = models.TextField()
-    post_type = models.CharField(max_length=2, choices=TextPostTypes.choices, default=TextPostTypes.PLAINTEXT)
+    post_type = models.CharField(
+        max_length=2, choices=TextPostTypes.choices, default=TextPostTypes.PLAINTEXT
+    )
     
-    def edit(self, new_content: str):
+    @property
+    def css_class(self) -> str:
+        if self.post_type == self.TextPostTypes.PLAINTEXT:
+            return "post-plaintext"
+        elif self.post_type == self.TextPostTypes.MARKDOWN:
+            return "post-markdown"
+        else:
+            raise ValueError(f"Unknown post type: {self.post_type}")
+        
+
+    def edit(self, new_content: str) -> None:
         """Edit the content of this post"""
         self.content = new_content
         self._finalize_edit()
         
-    def convert_type(self, new_type: TextPostTypes):
+    def convert_type(self, new_type: TextPostTypes) -> None:
         """Convert this post to a different type"""
         self.post_type = new_type
         self._finalize_edit()
-        
+
+
 class PostMediaBased(Post):
     """
-    A post that contains an image 
+    A post that contains an image
     TODO consider whether multiple classes or an enum field are better for video vs images
     """
-    pass #TODO
 
+    pass  # TODO

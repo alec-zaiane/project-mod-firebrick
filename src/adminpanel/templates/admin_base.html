@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Social Distribution Admin Panel</title>
+    {% load static %}
+</head>
+
+<body>
+    {% if user.is_authenticated and user.is_staff %}
+    <nav>
+        <span>Welcome, {{ user.username }}</span>
+        <form action="{% url 'logout' %}" method="post" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit">Log Out</button>
+        </form>
+    </nav>
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+    {% else %}
+    <p>You are not authorized to view this page, if you need to log out, use the button below:</p>
+    <form action="{% url 'logout' %}" method="post">
+        {% csrf_token %}
+        <button type="submit">Log Out</button>
+    </form>
+    {% endif %}
+</body>
+
+</html>

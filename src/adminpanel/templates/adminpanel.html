@@ -1,40 +1,32 @@
-<h1>Admin Panel</h1>
-<i>Welcome {{ user }} </i>
-<form action="{% url 'logout' %}" method="post" style="display: inline;">
-  {% csrf_token %}
-    <button type="submit">Log Out</button>
-</form>
-<hr/>
+{% extends 'admin_base.html' %}
+
+{% block content %}
+{% if not viewer_has_an_author %}
+<div class="alert">
+    <p>You don't have an Author associated with your admin account, this normally happens when creating an admin account for the first time</p>
+    <form action="{% url 'adminpanel:api_create_author_for_superuser' %}" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="user_id" value="{{ user.pk }}">
+        <button type="submit">Click here to create your Author</button>
+    </form>
+</div>
+{% endif %}
 <h1>Join Requests</h1>
 {# https://stackoverflow.com/questions/1465249/get-lengths-of-a-list-in-a-jinja2-template #}
-<h2>Pending Join Requests ({{ requests_active|length }})</h1>
+<h2>Pending Join Requests ({{ requests_active|length }})</h2>
 {% for join_request in requests_active %}
-    <p>{{join_request.date_requested}}-{{ join_request.username }}</p>
-    <form action="{% url 'adminpanel:api_join_request_approve' join_request.pk %}" method="post">
-        {% csrf_token %}
-        <input type="submit" value="Approve">
-    </form>
-    <form action="{% url 'adminpanel:api_join_request_deny' join_request.pk %}" method="post">
-        {% csrf_token %}
-        <input type="submit" value="Deny">
-    </form>
+{% include 'components/join_request_card.html' %}
 {% endfor %}
-<h2>Denied Join Requests ({{requests_denied|length}})</h1>
+<h2>Denied Join Requests ({{requests_denied|length}})</h2>
 {% for join_request in requests_denied %}
-    <p>{{ join_request.username }}</p>
-    <form action="{% url 'adminpanel:api_join_request_undeny' join_request.pk %}" method="post">
-        {% csrf_token %}
-        <input type="submit" value="Undeny">
-    </form>
-    <form action="{% url 'adminpanel:api_join_request_delete' join_request.pk %}" method="post">
-        {% csrf_token %}
-        <input type="submit" value="Permanently Delete">
+{% include 'components/join_request_card.html' %}
 {% endfor %}
 
 <h1>Current Authors</h1>
 <h2>Local Authors</h2>
 {% for author in current_authors_local %}
-    <p>{{ author.user.username }}</p>
+{% include 'components/author_card.html' %}
 {% endfor %}
 <h2>Remote Authors</h2>
 <p>This will be populated after part 3</p>
+{% endblock %}

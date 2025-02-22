@@ -3,6 +3,7 @@
     <a href="{% url 'socialnetwork:stream' %}">Home</a>
     {% if author %}
     <a href="{% url 'socialnetwork:author_profile' author.uuid %}">Profile</a>
+    <a href="{% url 'socialnetwork:author_create_post' %}">Create Post</a>
     {% endif %}
     <form action="{% url 'logout' %}" method="post" style="display: inline;">
         {% csrf_token %}
