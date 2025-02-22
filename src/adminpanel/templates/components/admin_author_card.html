@@ -10,10 +10,10 @@
     </h3>
     <a href="{% url 'socialnetwork:author_profile' author.uuid %}">Profile</a>
     <a href="{% url 'socialnetwork:author_modify' author.uuid %}">Modify</a>
-    <!-- <form action="{# url 'adminpanel:author_delete' author.uuid %}" method="post" style="display: inline;">
+    <form action="{% url 'adminpanel:api_author_delete' author.uuid %}" method="post" style="display: inline;">
         {% csrf_token %}
         <button type="submit">Delete</button>
-    </form> -->
+    </form>
 
 
 

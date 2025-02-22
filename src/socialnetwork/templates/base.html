@@ -11,6 +11,9 @@
     <div class="navbar">
         {% if user.is_authenticated %}
             <span>Logged in as {{ user }}</span>
+            {% if user.is_superuser %}
+                <a href="{% url 'adminpanel:adminpanel' %}">Admin Panel</a>
+            {% endif %}
         {% else %}
             <span>Not logged in</span>
         {% endif %}

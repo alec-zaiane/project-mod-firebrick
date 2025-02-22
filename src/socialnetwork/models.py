@@ -45,6 +45,17 @@ class Author(models.Model):
     def username(self) -> str:
         raise NotImplementedError("This method must be implemented by a subclass")
     
+    
+    @property 
+    def posts(self) -> list[Post]:
+        # get all posts by this author
+        text_posts = PostTextBased.objects.filter(base_author=self)
+        media_posts = PostMediaBased.objects.filter(base_author=self)
+        return sorted(
+            chain(text_posts, media_posts),
+            key=lambda post: post.date_created,
+            reverse=True
+        )
     # Methods
     
     def get_is_friends_with(self, other: Author) -> bool:
@@ -52,6 +63,19 @@ class Author(models.Model):
         self_is_following_other = other.following.filter(pk=self.pk).exists()
         other_is_following_self = self.following.filter(pk=other.pk).exists()
         return self_is_following_other and other_is_following_self
+    
+    def delete(self, *args:Any, **kwargs:Any) -> tuple[int, dict[str, int]]:
+        """Delete this author"""
+        # keep all posts from this author until an admin deletes them
+        self.following.clear()
+        for post in self.posts:
+            post.base_author = None
+            post.delete()
+            post.save()
+            
+        if isinstance(self, LocalAuthor):
+            self.user.delete()
+        return super().delete(*args, **kwargs)
     
 class LocalAuthor(Author):
     """An author that is on this node"""
@@ -103,11 +127,6 @@ class LocalAuthor(Author):
             all_posts = all_posts[paginate_start:]
         
         return all_posts
-    
-    def delete(self, using: Any = ..., keep_parents: bool = ...):  # type: ignore # not sure why the default keep_parents value is Ellipsis, clashes with bool type
-        """Delete this author"""
-        self.user.delete()
-        return super().delete(using, keep_parents)
 
 
 class RemoteAuthor(Author):
@@ -141,7 +160,7 @@ class Post(models.Model):
     
     # this is the author of the post, it always returns a base author object (not a subclass)
     # use the author property to get the correct author object
-    base_author:models.ForeignKey[Author] = models.ForeignKey(Author, on_delete=models.PROTECT) 
+    base_author = models.ForeignKey(Author, on_delete=models.PROTECT, blank=True, null=True) 
     visibility_type = models.CharField(
         max_length=2, choices=VisibilityTypes.choices, default=VisibilityTypes.PUBLIC
     )
@@ -163,9 +182,11 @@ class Post(models.Model):
         return self.date_edited is not None
     
     @property
-    def author(self) -> Author:
+    def author(self) -> Author|None:
         """The author of this post"""
-        fetched_author:Author = self.base_author # type: ignore # mypy doesn't know that _author is an Author object
+        fetched_author:Author|None = self.base_author
+        if fetched_author is None:
+            return None
         fetched_uuid = fetched_author.uuid
 
         if LocalAuthor.objects.filter(uuid=fetched_uuid).exists():
@@ -187,7 +208,9 @@ class Post(models.Model):
     def _check_can_be_seen_by(self, other: Author) -> bool:
         """Returns true if the other author can see this post"""
 
-        if self.is_deleted:
+        if isinstance(other, LocalAuthor) and other.user.is_superuser:
+            return True
+        if self.is_deleted or self.author is None:
             return False
         if self.author == other:
             return True
@@ -202,6 +225,8 @@ class Post(models.Model):
 
     def send_to_required_private_inboxes(self) -> None:
         """Send this post to the required private inboxes, updates the self.is_in_private_inbox_of field"""
+        if self.author is None:
+            return None
         for author in self.author.followers.all():
             if self._check_can_be_seen_by(author):
                 self.is_in_private_inbox_of.add(author)
