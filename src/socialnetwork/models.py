@@ -34,7 +34,8 @@ class Author(models.Model):
     # Fields
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     following = models.ManyToManyField('self', symmetrical=False, related_name='followers', blank=True)
-
+    bio = models.TextField(blank=True)
+    
     # Computed Properties
     @property
     def followers(self) -> models.QuerySet[Author]:
@@ -55,7 +56,7 @@ class Author(models.Model):
 class LocalAuthor(Author):
     """An author that is on this node"""
 
-    user = models.OneToOneField(
+    user:models.OneToOneField[User] = models.OneToOneField(
         User, on_delete=models.CASCADE, related_name="author"
     )  # https://docs.djangoproject.com/en/dev/topics/auth/customizing/#extending-the-existing-user-model
     
