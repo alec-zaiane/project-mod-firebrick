@@ -47,6 +47,13 @@ def author_profile_view(request: HttpRequest, target_author_uuid: str, author: O
 
     return render(request, "author_profile.html", {"author": target_author, "viewer": author, "posts": author_posts})
 
+@user_control(can_be_author=True, can_be_logged_out=False, can_be_superuser=True)
+def local_author_modify_view(request: HttpRequest, target_author_uuid: str, author:Optional[models.LocalAuthor]=None) -> HttpResponse:
+    """Modify `target_author_uuid`'s profile"""
+    target_author = get_object_or_404(models.LocalAuthor, uuid=target_author_uuid)
+    if author != target_author and not request.user.is_superuser:
+        return HttpResponse("You do not have permission to modify this author", status=403)
+    return render(request, "local_author_modify.html", {"author": target_author, "viewer": author})
 
 # Views for Posts
 @api_view(["POST"])
@@ -68,15 +75,16 @@ def api_create_text_post(request:Request, author:models.LocalAuthor) -> Response
 
 @api_view(["PUT","PATCH"])
 @user_control(can_be_author=True, can_be_logged_out=False, can_be_superuser=True)
-def api_author_update(request:Request, author:models.LocalAuthor, target_author_uuid:str) -> Response:
+def api_author_update(request:Request, target_author_uuid:str, author:Optional[models.LocalAuthor]=None) -> Response:
     """Update an author's information, **author kwarg is not the target author, but the viewer author**
     Only an admin or the author themselves can update their information"""
     target_author = get_object_or_404(models.LocalAuthor, uuid=target_author_uuid)
-    if author != target_author and not author.user.is_superuser:
+    if author != target_author and not request.user.is_superuser:
         return Response({"error": "You do not have permission to update this author"}, status=403)
     serializer = serializers.LocalAuthorSerializer(target_author, data=request.data, partial=True)
     if serializer.is_valid():
-        serializer.save()
+        serializer.update(target_author, request.data.copy())
+        print("Saved!")
         return Response(serializer.data)
     return Response(serializer.errors, status=400)
     
