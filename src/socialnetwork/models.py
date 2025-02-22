@@ -205,6 +205,12 @@ class Post(models.Model):
             if self._check_can_be_seen_by(author):
                 self.is_in_private_inbox_of.add(author)
 
+    def delete(self) -> None:
+        """Soft delete: Marks the post as deleted instead of removing it from the database."""
+        #just change the variable for soft deletion
+        self.is_deleted = True 
+        self.save()
+
 
 class PostTextBased(Post):
     """

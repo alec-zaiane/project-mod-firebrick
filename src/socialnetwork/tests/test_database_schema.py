@@ -17,8 +17,7 @@ except ImportError:
 class DatabaseSchemaTest(TestCase):
     def test_no_array_or_json_fields_in_models(self) -> None:
         """
-        check if database uses ArrayField or JSONField
-        """
+        check if database uses ArrayField or JSONField"""
         #get all models
         models = apps.get_app_config("socialnetwork").get_models()
 

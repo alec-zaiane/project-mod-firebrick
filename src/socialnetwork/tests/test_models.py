@@ -5,8 +5,7 @@ from socialnetwork.models import LocalAuthor, PostTextBased, Post
 class AuthorPostVisibilityTest(TestCase):
     def setUp(self) -> None:
         """
-        this will set up an author and will also create a post wity different visibility settings
-        """
+        this will set up an author and will also create a post wity different visibility settings"""
         self.user = User.objects.create(username="404")
         self.author = LocalAuthor.objects.create(user = self.user)
 
@@ -34,8 +33,7 @@ class AuthorPostVisibilityTest(TestCase):
 
     def test_author_can_see_own_post(self) -> None:
         """
-        test to see if the author can see all types of their own post
-        """
+        test to see if the author can see all types of their own post"""
         #assertions to check
         self.assertTrue(self.public_post._check_can_be_seen_by(self.author))
         self.assertTrue(self.unlisted_post._check_can_be_seen_by(self.author))
@@ -43,18 +41,13 @@ class AuthorPostVisibilityTest(TestCase):
 
     def test_author_cannot_see_deleted_post(self) -> None:
         """
-        test to see if an author can see deleted posts or not
-        """
+        test to see if an author can see deleted posts or not"""
         #remove the posts
         self.public_post.delete()
         self.unlisted_post.delete()
         self.friends_only_post.delete()
         
-        #if doesnt raise, then itll refresh db
-        with self.assertRaises(PostTextBased.DoesNotExist):
-            self.public_post.refresh_from_db()  
-        with self.assertRaises(PostTextBased.DoesNotExist):
-            self.unlisted_post.refresh_from_db()
-        with self.assertRaises(PostTextBased.DoesNotExist):
-            self.friends_only_post.refresh_from_db()
-        
+        self.assertFalse(self.public_post._check_can_be_seen_by(self.author))
+        self.assertFalse(self.unlisted_post._check_can_be_seen_by(self.author))
+        self.assertFalse(self.friends_only_post._check_can_be_seen_by(self.author))
+            
