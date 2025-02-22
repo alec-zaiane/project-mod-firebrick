@@ -51,6 +51,6 @@ class AuthorPostVisibilityTest(TestCase):
         self.friends_only_post.delete()
         
         #create a post, but should not be within the authors' post
-        self.assertTrue(self.public_post._check_can_be_seen_by(self.author))
-        self.assertTrue(self.unlisted_post._check_can_be_seen_by(self.author))  #since POST class isnt updated, keep it as assertTrue for it to pass. once fixed, change back to assertFalse for valid testcase use
-        self.assertTrue(self.friends_only_post._check_can_be_seen_by(self.author))
+        self.assertFalse(self.public_post._check_can_be_seen_by(self.author))
+        self.assertFalse(self.unlisted_post._check_can_be_seen_by(self.author))
+        self.assertFalse(self.friends_only_post._check_can_be_seen_by(self.author))
