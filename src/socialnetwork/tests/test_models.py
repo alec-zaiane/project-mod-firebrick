@@ -3,6 +3,9 @@ from django.contrib.auth.models import User
 from socialnetwork.models import LocalAuthor, PostTextBased, Post
 
 class AuthorPostVisibilityTest(TestCase):
+    """
+    this class is to test whether the author can see their posts if either deleted or not
+    """
     def setUp(self):
         """
         this will set up an author and will also create a post wity different visibility settings
@@ -11,19 +14,19 @@ class AuthorPostVisibilityTest(TestCase):
         self.author = LocalAuthor.objects.create(user = self.user)
 
         #create a unlistet post
-        self.unlisted_post = PostTextBased.objects.create(author = self.author, 
+        self.unlisted_post = PostTextBased.objects.create(base_author = self.author, 
                                                           content = "testing unlisted post", 
                                                           visibility_type = Post.VisibilityTypes.UNLISTED
                                                           )
 
         #create a friends-only post
-        self.friends_only_post = PostTextBased.objects.create(author = self.author, 
+        self.friends_only_post = PostTextBased.objects.create(base_author = self.author, 
                                                               content = "testing friends_only post", 
                                                               visibility_type = Post.VisibilityTypes.FRIENDS_ONLY
                                                               )
 
         #create a public post
-        self.public_post = PostTextBased.objects.create(author = self.author, 
+        self.public_post = PostTextBased.objects.create(base_author = self.author, 
                                                         content = "testing public post", 
                                                         visibility_type = Post.VisibilityTypes.PUBLIC
                                                         )
@@ -52,5 +55,6 @@ class AuthorPostVisibilityTest(TestCase):
         
         #create a post, but should not be within the authors' post
         self.assertTrue(self.public_post._check_can_be_seen_by(self.author))
-        self.assertTrue(self.unlisted_post._check_can_be_seen_by(self.author))  #since POST class isnt updated, keep it as assertTrue for it to pass. once fixed, change back to assertFalse for valid testcase use
+        self.assertTrue(self.unlisted_post._check_can_be_seen_by(self.author))
         self.assertTrue(self.friends_only_post._check_can_be_seen_by(self.author))
+        
