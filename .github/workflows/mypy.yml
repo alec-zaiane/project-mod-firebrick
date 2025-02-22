@@ -21,6 +21,9 @@ jobs:
     - name: Install dependencies
       run: |
         pip install -r src/requirements.txt
+    - name: Install dev dependencies
+      run: |
+        pip install -r src/requirements-dev.txt
     - name: Run mypy
       run: |
         mypy src/ --config-file .configs/mypy.ini
