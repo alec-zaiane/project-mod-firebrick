@@ -9,6 +9,11 @@
 </head>
 <body>
     <div class="navbar">
+        {% if user.is_authenticated %}
+            <span>Logged in as {{ user }}</span>
+        {% else %}
+            <span>Not logged in</span>
+        {% endif %}
         <a href="{% url 'socialnetwork:stream' %}">Home</a>
         {% if author %}
             <a href="{% url 'socialnetwork:author_profile' author.uuid %}">Profile</a>
