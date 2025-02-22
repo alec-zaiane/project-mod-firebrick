@@ -5,6 +5,8 @@ but rather relationships between models for faster access and better performance
 
 from django.test import TestCase
 from django.apps import apps
+from django.db import connection
+import os
 
 #try importing PostgreSQL-specific fields
 try:

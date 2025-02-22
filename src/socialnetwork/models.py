@@ -210,7 +210,7 @@ class Post(models.Model):
         #just change the variable for soft deletion
         self.is_deleted = True 
         self.save()
-        return (1, {})
+        return (0, {})
 
 
 class PostTextBased(Post):
