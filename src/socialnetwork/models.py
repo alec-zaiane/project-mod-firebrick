@@ -185,6 +185,9 @@ class Post(models.Model):
         self.save()
     def _check_can_be_seen_by(self, other: Author) -> bool:
         """Returns true if the other author can see this post"""
+
+        if self.is_deleted:
+            return False
         if self.author == other:
             return True
         if self.visibility_type == self.VisibilityTypes.PUBLIC:
