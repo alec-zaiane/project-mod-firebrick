@@ -146,7 +146,6 @@ def api_hosted_images(request: Request) -> Response:
             )
         return Response(serializer.errors, status=400)
 
-    # Handle GET
     images: QuerySet[HostedImage] = HostedImage.objects.all().order_by("-uploaded_at")
     data: List[Dict[str, Any]] = []
     for img in images:
@@ -167,8 +166,7 @@ def api_delete_hosted_image(request: Request, image_id: int) -> Response:
     DELETE: Remove an existing hosted image by ID.
     """
     image: HostedImage = get_object_or_404(HostedImage, pk=image_id)
-    # If you want to delete the file from the filesystem as well
     if image.image:
-        image.image.delete()  # type: ignore[attr-defined]
+        image.image.delete()  
     image.delete()
     return Response({"detail": "Image deleted successfully."}, status=204)

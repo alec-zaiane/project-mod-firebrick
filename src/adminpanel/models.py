@@ -69,9 +69,6 @@ class HostedImage(models.Model):
     """
     Stores an uploaded image along with an optional title.
     """
-
-    # The first type parameter is the model name as a string ("HostedImage"),
-    # the second is the Python type the field holds (usually str).
     title: models.CharField["HostedImage", str] = models.CharField(
         max_length=255,
         blank=True
@@ -83,7 +80,6 @@ class HostedImage(models.Model):
         auto_now_add=True
     )
 
-    # Explicitly declare the objects manager so Mypy recognizes it
     objects: models.Manager["HostedImage"] = models.Manager()
 
     def __str__(self) -> str:
