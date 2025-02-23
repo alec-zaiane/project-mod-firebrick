@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from rest_framework import validators
-from .models import AuthorJoinRequest, HostedImage
+from .models import AuthorJoinRequest
 from django.contrib.auth.models import User
 from django.contrib.auth.validators import UnicodeUsernameValidator
 
@@ -17,12 +17,3 @@ class AuthorJoinRequestSerializer(serializers.ModelSerializer[AuthorJoinRequest]
                                          validators.UniqueValidator(queryset=User.objects.all(), message="Username is already taken"),
                                          UnicodeUsernameValidator(),    
                                      ])
-    
-class HostedImageSerializer(serializers.ModelSerializer): # type: ignore[type-arg]
-    """
-    DRF serializer for HostedImage model.
-    """
-
-    class Meta:
-        model = HostedImage
-        fields = ["id", "title", "image", "uploaded_at"]

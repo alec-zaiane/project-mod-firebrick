@@ -64,23 +64,3 @@ class AuthorJoinRequest(models.Model):
         """Un-deny this request in case of a mistake"""
         self.date_denied = None
         self.save()
-
-class HostedImage(models.Model):
-    """
-    Stores an uploaded image along with an optional title.
-    """
-    title: models.CharField["HostedImage", str] = models.CharField(
-        max_length=255,
-        blank=True
-    )
-    image: models.ImageField = models.ImageField(
-        upload_to="hosted_images/"
-    )
-    uploaded_at: models.DateTimeField["HostedImage", datetime] = models.DateTimeField(
-        auto_now_add=True
-    )
-
-    objects: models.Manager["HostedImage"] = models.Manager()
-
-    def __str__(self) -> str:
-        return self.title or str(self.image.name)

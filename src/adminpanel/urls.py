@@ -4,6 +4,7 @@ from . import views
 app_name = "adminpanel"
 urlpatterns = [
     path("", views.adminpanel_view, name="adminpanel"),
+    path("hosted_images/", views.hosted_image_view, name="hosted_images"),
     
     path("api/authors/create", views.author_create, name="api_author_create"),
     path("api/authors/create_for_superuser", views.author_create_for_superuser, name="api_author_create_for_superuser"),

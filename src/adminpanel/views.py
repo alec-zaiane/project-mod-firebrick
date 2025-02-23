@@ -12,13 +12,12 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from django.contrib.auth.models import User, AnonymousUser
-from socialnetwork.models import LocalAuthor, RemoteAuthor
+from socialnetwork import models as socialmodels
+from socialnetwork import serializers as socialserializers
 from .models import AuthorJoinRequest
 
 from .serializers import AuthorJoinRequestSerializer
 from django.contrib.admin.views.decorators import staff_member_required
-from .models import HostedImage
-from .serializers import HostedImageSerializer
 
 # Create your views here.
 @user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
@@ -27,15 +26,22 @@ def adminpanel_view(request:HttpRequest) -> HttpResponse:
         return HttpResponseRedirect(reverse("socialnetwork:not_logged_in"))
     requests_active = AuthorJoinRequest.objects.filter(date_denied=None)
     requests_denied = AuthorJoinRequest.objects.exclude(date_denied=None)
-    viewer_has_an_author = LocalAuthor.objects.filter(user=request.user).exists()
-    viewer_author = LocalAuthor.objects.get(user=request.user) if viewer_has_an_author else None
+    viewer_has_an_author = socialmodels.LocalAuthor.objects.filter(user=request.user).exists()
+    viewer_author = socialmodels.LocalAuthor.objects.get(user=request.user) if viewer_has_an_author else None
     return render(request, "adminpanel.html", {
         "viewer_has_an_author": viewer_has_an_author,
         "viewer_author": viewer_author,
         "requests_active": requests_active,
         "requests_denied": requests_denied,
-        "current_authors_local": LocalAuthor.objects.all(),
-        "current_authors_remote": RemoteAuthor.objects.all(),
+        "current_authors_local": socialmodels.LocalAuthor.objects.all(),
+        "current_authors_remote": socialmodels.RemoteAuthor.objects.all(),
+    })
+
+@user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
+def hosted_image_view(request:HttpRequest) -> HttpResponse:
+    all_hosted_images = socialmodels.HostedImage.objects.all()
+    return render(request, "hosted_images.html", {
+        "images": all_hosted_images
     })
 
 
@@ -53,14 +59,14 @@ def author_create_for_superuser(request:Request) -> Response|HttpResponse:
     superuser = get_object_or_404(User, pk=superuser_pk)
     if hasattr(superuser, "author"):
         return Response({"error": "Author already exists"}, status=400)
-    author = LocalAuthor(user=superuser)
+    author = socialmodels.LocalAuthor(user=superuser)
     author.save()
     return HttpResponseRedirect(reverse("adminpanel:adminpanel"))
 
 @api_view(["POST"])
 @user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
 def api_delete_author(request:Request, author_uuid:str) -> Response:
-    author = get_object_or_404(LocalAuthor, uuid=author_uuid)
+    author = get_object_or_404(socialmodels.LocalAuthor, uuid=author_uuid)
     author.delete()
     return Response({"success": "Author deleted"}, status=200)
     
@@ -140,9 +146,9 @@ def api_hosted_images(request: Request) -> Response:
     """
     if request.method == "POST":
         # Use the DRF serializer to handle file upload & validation
-        serializer: HostedImageSerializer = HostedImageSerializer(data=request.data)
+        serializer = socialserializers.HostedImageSerializer(data=request.data)
         if serializer.is_valid():
-            hosted_image: HostedImage = serializer.save()
+            hosted_image: socialmodels.HostedImage = serializer.save()
             return Response(
                 {
                     "detail": "Image uploaded successfully",
@@ -154,7 +160,7 @@ def api_hosted_images(request: Request) -> Response:
             )
         return Response(serializer.errors, status=400)
 
-    images: QuerySet[HostedImage] = HostedImage.objects.all().order_by("-uploaded_at")
+    images: QuerySet[socialmodels.HostedImage] = socialmodels.HostedImage.objects.all().order_by("-uploaded_at")
     data: List[Dict[str, Any]] = []
     for img in images:
         data.append(
@@ -173,7 +179,7 @@ def api_delete_hosted_image(request: Request, image_id: int) -> Response:
     """
     DELETE: Remove an existing hosted image by ID.
     """
-    image: HostedImage = get_object_or_404(HostedImage, pk=image_id)
+    image = get_object_or_404(socialmodels.HostedImage, pk=image_id)
     if image.image:
         image.image.delete()  
     image.delete()

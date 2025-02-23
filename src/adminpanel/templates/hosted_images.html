@@ -1,3 +1,5 @@
+{# Expects an images list of adminpanel.models.HostedImage #}
+
 {% extends 'admin_base.html' %}
 
 {% block content %}
@@ -6,6 +8,7 @@
 <h2>Upload a New Image</h2>
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
+    <!-- TODO FIXME form does not exist anymore, we need a custom uploading solution -->
     {{ form.as_p }}
     <button type="submit">Upload Image</button>
 </form>
