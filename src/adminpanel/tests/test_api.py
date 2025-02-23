@@ -46,7 +46,7 @@ class AdminPanelAPITest(APITestCase):
         if hasattr(response, "url"):
             self.assertTrue(response.url.endswith(reverse("adminpanel:adminpanel")))
         else:
-            print("Warning: Response object has no `.url` attribute")
+            print("the post request response has no url")
 
         #check if the author was created
         self.assertTrue(LocalAuthor.objects.filter(user=self.admin).exists())
