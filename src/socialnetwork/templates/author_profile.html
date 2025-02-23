@@ -1,7 +1,8 @@
-{% if viewer %}
-    {% include 'components/author_navbar.html' %}
-{% endif %}
+{% extends 'base.html' %}
 
+{% block title %}{{ author.user }}'s Profile{% endblock %}
+
+{% block content %}
 <h2>This is the profile page for {{ author.user }}</h2>
 
 {% if viewer %}
@@ -11,6 +12,8 @@
         <p>This is not your profile</p>
     {% endif %}
 {% endif %}
+<h3>{{ author.user }}'s Bio</h3>
+<p>{{ author.bio }}</p>
 
 <h3>Posts by {{ author.user }}</h3>
 
@@ -23,3 +26,5 @@
 {% else %}
     <p>No posts available.</p>
 {% endif %}
+
+{% endblock %}
