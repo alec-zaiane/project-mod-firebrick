@@ -22,7 +22,6 @@ class UserSerializer(serializers.ModelSerializer[User]):
 # https://blog.devgenius.io/nested-serializers-in-django-rest-framework-6b36bf011074
 class LocalAuthorSerializer(serializers.ModelSerializer[models.LocalAuthor]):
     user = UserSerializer(many=False)
-    
     class Meta:
         model = models.LocalAuthor
         fields = ["uuid", "following", "followers"]

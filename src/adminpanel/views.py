@@ -65,7 +65,7 @@ def api_create_user(request:Request) -> Response|HttpResponse:
     if User.objects.filter(username=username).exists():
         return Response({"error": "Username already exists"}, status=400)
     # Creating a join request to do this might be overkill, but it keeps the code in one place
-    join_request = AuthorJoinRequest(username=username, password=password)
+    join_request = AuthorJoinRequest.objects.create(username=username, password=password)
     if join_request.get_validity_errors():
         join_request.delete()
         return Response({"error": "Invalid request", "invalid": join_request.get_validity_errors()}, status=400)
