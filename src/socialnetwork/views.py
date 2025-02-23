@@ -87,3 +87,25 @@ def api_author_update(request:Request, author:models.LocalAuthor, target_author_
 def create_post_view(request: HttpRequest, author: models.LocalAuthor) -> HttpResponse:
     """Render a form for authors to create a post."""
     return render(request, "create_post.html", {"author": author})
+
+@user_control(can_be_author=True, can_be_logged_out=False, can_be_superuser=False)
+def edit_post_view(request: HttpRequest, post_uuid: str, author: models.LocalAuthor) -> HttpResponse:
+    """Render a form for authors to edit their post and toggle between Plain Text and Markdown."""
+    
+    post = get_object_or_404(models.PostTextBased, uuid=post_uuid)
+
+    # only the author of the post can edit
+    if post.author != author:
+        return HttpResponse("You do not have permission to edit this post.", status=403)
+
+    if request.method == "POST":
+        new_content = request.POST.get("content")
+        new_post_type = request.POST.get("post_type")
+
+        if new_content and new_post_type in [models.PostTextBased.TextPostTypes.PLAINTEXT, models.PostTextBased.TextPostTypes.MARKDOWN]:
+            post.content = new_content
+            post.post_type = new_post_type
+            post._finalize_edit()
+            return redirect("socialnetwork:stream")  
+
+    return render(request, "edit_post.html", {"post": post, "author": author})
