@@ -18,15 +18,19 @@ class AdminPanelAPITest(APITestCase):
         #authenticate as an admin
         self.client.force_authenticate(user=self.admin)
 
-        LocalAuthor.objects.filter(user=self.admin).delete()  
+        LocalAuthor.objects.filter(user=self.admin).delete()
 
         #join request
         self.join_request = AuthorJoinRequest.objects.create(username="new", password="pass")
 
     def get_join_request_id(self) -> int:
-        """get the most recent Id"""
-        return AuthorJoinRequest.objects.first().id
-    
+        """Get the most recent ID or raise an error if no requests exist"""
+        join_request = AuthorJoinRequest.objects.first()
+        #check if its None:
+        if join_request is None:
+            raise ValueError("No join requests found")  
+        return join_request.id 
+        
     def test_create_author_for_superuser(self) -> None:
         """test creating an author for a superuser"""
 
