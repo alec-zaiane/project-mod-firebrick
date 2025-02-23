@@ -1,6 +1,8 @@
+from __future__ import annotations
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+from datetime import datetime
 
 from socialnetwork.models import LocalAuthor
 
@@ -64,9 +66,25 @@ class AuthorJoinRequest(models.Model):
         self.save()
 
 class HostedImage(models.Model):
-    title = models.CharField(max_length=255, blank=True) 
-    image = models.ImageField(upload_to='hosted_images/')
-    uploaded_at = models.DateTimeField(auto_now_add=True)
+    """
+    Stores an uploaded image along with an optional title.
+    """
+
+    # The first type parameter is the model name as a string ("HostedImage"),
+    # the second is the Python type the field holds (usually str).
+    title: models.CharField["HostedImage", str] = models.CharField(
+        max_length=255,
+        blank=True
+    )
+    image: models.ImageField = models.ImageField(
+        upload_to="hosted_images/"
+    )
+    uploaded_at: models.DateTimeField["HostedImage", datetime] = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    # Explicitly declare the objects manager so Mypy recognizes it
+    objects: models.Manager["HostedImage"] = models.Manager()
 
     def __str__(self) -> str:
         return self.title or str(self.image.name)

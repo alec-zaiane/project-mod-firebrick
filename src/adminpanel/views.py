@@ -1,9 +1,10 @@
-from typing import Any
+from typing import Any, List, Dict
 
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from django.urls import reverse
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
+from django.db.models.query import QuerySet
 
 from socialnetwork.utils.user_control_decorator import user_control
 from rest_framework.decorators import api_view
@@ -16,8 +17,8 @@ from .models import AuthorJoinRequest
 
 from .serializers import AuthorJoinRequestSerializer
 from django.contrib.admin.views.decorators import staff_member_required
-from .forms import HostedImageForm
 from .models import HostedImage
+from .serializers import HostedImageSerializer
 
 # Create your views here.
 @user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
@@ -122,31 +123,52 @@ def api_join_request_delete(request:Request, join_request_id:int) -> Response|Ht
     join_request.delete()
     return HttpResponseRedirect(reverse("adminpanel:adminpanel"))
 
+@api_view(["GET", "POST"])
 @staff_member_required
-def hosted_images(request: HttpRequest) -> HttpResponse:
-    if request.method == 'POST':
-        form = HostedImageForm(request.POST, request.FILES)
-        if form.is_valid():
-            form.save()
-            return redirect('adminpanel:hosted_images')
-        
-    else:
-        form = HostedImageForm()
+def api_hosted_images(request: Request) -> Response:
+    """
+    GET: Return a list of all hosted images.
+    POST: Upload a new image.
+    """
+    if request.method == "POST":
+        # Use the DRF serializer to handle file upload & validation
+        serializer: HostedImageSerializer = HostedImageSerializer(data=request.data)
+        if serializer.is_valid():
+            hosted_image: HostedImage = serializer.save()
+            return Response(
+                {
+                    "detail": "Image uploaded successfully",
+                    "id": hosted_image.pk,
+                    "title": hosted_image.title,
+                    "image_url": request.build_absolute_uri(hosted_image.image.url),
+                },
+                status=201,
+            )
+        return Response(serializer.errors, status=400)
 
-    images = HostedImage.objects.all().order_by('-uploaded_at')  # type: ignore[attr-defined]
-    context = {
-        'form': form,
-        'images': images,
-    }
+    # Handle GET
+    images: QuerySet[HostedImage] = HostedImage.objects.all().order_by("-uploaded_at")
+    data: List[Dict[str, Any]] = []
+    for img in images:
+        data.append(
+            {
+                "id": img.pk,
+                "title": img.title,
+                "image_url": request.build_absolute_uri(img.image.url),
+                "uploaded_at": img.uploaded_at.isoformat(),
+            }
+        )
+    return Response(data, status=200)
 
-    return render(request, 'hosted_images.html', context)
-
+@api_view(["DELETE"])
 @staff_member_required
-def delete_hosted_image(request: HttpRequest, image_id: int) -> HttpResponse:
-    image = get_object_or_404(HostedImage, id=image_id)
-
+def api_delete_hosted_image(request: Request, image_id: int) -> Response:
+    """
+    DELETE: Remove an existing hosted image by ID.
+    """
+    image: HostedImage = get_object_or_404(HostedImage, pk=image_id)
+    # If you want to delete the file from the filesystem as well
     if image.image:
-        image.image.delete()  
-
+        image.image.delete()  # type: ignore[attr-defined]
     image.delete()
-    return redirect('adminpanel:hosted_images')
+    return Response({"detail": "Image deleted successfully."}, status=204)
