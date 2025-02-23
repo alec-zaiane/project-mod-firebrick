@@ -1,6 +1,6 @@
 from typing import Any
 
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
@@ -15,6 +15,9 @@ from socialnetwork.models import LocalAuthor, RemoteAuthor
 from .models import AuthorJoinRequest
 
 from .serializers import AuthorJoinRequestSerializer
+from django.contrib.admin.views.decorators import staff_member_required
+from .forms import HostedImageForm
+from .models import HostedImage
 
 # Create your views here.
 @user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
@@ -118,3 +121,32 @@ def api_join_request_delete(request:Request, join_request_id:int) -> Response|Ht
         return Response({"error": "Only denied requests can be deleted"}, status=400)
     join_request.delete()
     return HttpResponseRedirect(reverse("adminpanel:adminpanel"))
+
+@staff_member_required
+def hosted_images(request: HttpRequest) -> HttpResponse:
+    if request.method == 'POST':
+        form = HostedImageForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            return redirect('adminpanel:hosted_images')
+        
+    else:
+        form = HostedImageForm()
+
+    images = HostedImage.objects.all().order_by('-uploaded_at')  # type: ignore[attr-defined]
+    context = {
+        'form': form,
+        'images': images,
+    }
+
+    return render(request, 'hosted_images.html', context)
+
+@staff_member_required
+def delete_hosted_image(request: HttpRequest, image_id: int) -> HttpResponse:
+    image = get_object_or_404(HostedImage, id=image_id)
+
+    if image.image:
+        image.image.delete()  
+
+    image.delete()
+    return redirect('adminpanel:hosted_images')
