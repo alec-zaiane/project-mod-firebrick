@@ -2,6 +2,8 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
+from datetime import datetime
+
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
