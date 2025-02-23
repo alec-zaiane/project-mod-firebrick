@@ -43,7 +43,7 @@ def adminpanel_view(request:HttpRequest) -> HttpResponse:
 # API views
 @api_view(["POST"])
 @user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
-def api_create_author_for_superuser(request:Request) -> Response|HttpResponse:
+def author_create_for_superuser(request:Request) -> Response|HttpResponse:
     """Create a LocalAuthor for a superuser, only used in the admin panel for a newly created superuser"""
     superuser_pk = request.data.get("user_id", None)
     if not isinstance(superuser_pk, str):
@@ -59,7 +59,15 @@ def api_create_author_for_superuser(request:Request) -> Response|HttpResponse:
 
 @api_view(["POST"])
 @user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
-def api_create_user(request:Request) -> Response|HttpResponse:
+def api_delete_author(request:Request, author_uuid:str) -> Response:
+    author = get_object_or_404(LocalAuthor, uuid=author_uuid)
+    author.delete()
+    return Response({"success": "Author deleted"}, status=200)
+    
+
+@api_view(["POST"])
+@user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
+def author_create(request:Request) -> Response|HttpResponse:
     username = request.data.get("username", None)
     password = request.data.get("password", None)
     if not isinstance(username, str) or not isinstance(password, str):

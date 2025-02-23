@@ -25,7 +25,7 @@ class LocalAuthorSerializer(serializers.ModelSerializer[models.LocalAuthor]):
     
     class Meta:
         model = models.LocalAuthor
-        fields = ["uuid", "following", "followers"]
+        fields = ["uuid", "following", "followers", "user", "bio"]
         read_only_fields = ["uuid", "followers"]
         
     def create(self, validated_data:dict[str,Any]) -> Any:
@@ -35,12 +35,21 @@ class LocalAuthorSerializer(serializers.ModelSerializer[models.LocalAuthor]):
         return author
     
     def update(self, instance:models.LocalAuthor, validated_data:dict[str,Any]) -> Any:
-        user_data = validated_data.pop("user")
-        if user_data:
-            user = instance.user
+        user_data:Any|None = validated_data.pop("user", [None])[0]
+        if user_data is None:
+            # should not happen, maybe super can handle it
+            return super().update(instance, validated_data)
+        user = instance.user
+        if isinstance(user_data, dict):
             user.username = user_data.get("username", user.username)
             user.email = user_data.get("email", user.email)
             user.first_name = user_data.get("first_name", user.first_name)
             user.last_name = user_data.get("last_name", user.last_name)
+            user.save()
+        elif isinstance(user_data, str):
+            user.username = validated_data.pop("username", [user.username])[0]
+            user.email = validated_data.pop("email", [user.email])[0]
+            user.first_name = validated_data.pop("first_name", [user.first_name])[0]
+            user.last_name = validated_data.pop("last_name", [user.last_name])[0]
             user.save()
         return super().update(instance, validated_data)
