@@ -4,10 +4,6 @@
 
 {% block content %}
 <div class="stream-container">
-    <form method="post" action="{% url 'logout' %}">
-        {% csrf_token %}
-        <button type="submit">Log Out</button>
-    </form>
     <h1>Your Stream</h1>
     
     {% if posts %}
