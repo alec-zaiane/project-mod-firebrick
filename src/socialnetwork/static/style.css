@@ -196,6 +196,26 @@ a:link:active, a:visited:active  {
     content:"test";
 }
 
+.stream-container, .profile .post-list {
+    padding-left: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.stream-container .stream-title {
+    text-align: center;
+}
+
+.stream-container .post-card, .profile .post {
+    padding: 20px;
+    border: 1px solid #6e6e6e;
+    border-radius: 10px;
+    box-shadow: 0px 2px 4px rgb(255 255 255 / 10%), 0px 8px 16px rgb(255 255 255 / 10%);
+    list-style: none;
+}
+
 @media (max-width: 1200px) {
     .login-page#join {
         flex-direction: column;
