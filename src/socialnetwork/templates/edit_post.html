@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% load static %}
+
 {% block content %}
 <h2>Edit Post</h2>
 <form method="POST">
@@ -17,4 +19,8 @@
     <br><br>
     <button type="submit">Save Changes</button>
 </form>
+
+<h3>Preview</h3>
+<div id="preview"></div>
+<script src="{% static 'markdown-editor.min.js' %}"></script>
 {% endblock %}
