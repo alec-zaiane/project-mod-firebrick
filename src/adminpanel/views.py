@@ -50,7 +50,22 @@ def hosted_image_view(request:HttpRequest) -> HttpResponse:
 @api_view(["POST"])
 @user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
 def author_create_for_superuser(request:Request) -> Response|HttpResponse:
-    """Create a LocalAuthor for a superuser, only used in the admin panel for a newly created superuser"""
+    """Create a LocalAuthor for a superuser, only used in the admin panel for a newly created superuser
+    Will serve a redirect if unauthorized
+    Expects JSON:
+        {
+            "user_id": <uuid of authorless superuser>:str
+        }
+        
+    returns JSON if there are errors (code 400):
+        {
+            "error": <reason>:str
+        }
+    returns JSON on success (code 201):
+        {
+            "success": "created":
+        }
+    """
     superuser_pk = request.data.get("user_id", None)
     if not isinstance(superuser_pk, str):
         return Response({"error": "`user_id` field must be a string"}, status=400)
@@ -61,11 +76,22 @@ def author_create_for_superuser(request:Request) -> Response|HttpResponse:
         return Response({"error": "Author already exists"}, status=400)
     author = socialmodels.LocalAuthor(user=superuser)
     author.save()
-    return HttpResponseRedirect(reverse("adminpanel:adminpanel"))
+    # return HttpResponseRedirect(reverse("adminpanel:adminpanel"))
+    return Response({"success": "created"}, status=201)
 
 @api_view(["POST"])
 @user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
 def api_delete_author(request:Request, author_uuid:str) -> Response:
+    """Delete an author
+    Will serve a redirect if unauthorized
+    
+    Expects no body
+    returns 404 on failure
+    returns JSON on success (code 200)
+        {
+            "success": "Author deleted"
+        }
+    """
     author = get_object_or_404(socialmodels.LocalAuthor, uuid=author_uuid)
     author.delete()
     return Response({"success": "Author deleted"}, status=200)
@@ -74,6 +100,23 @@ def api_delete_author(request:Request, author_uuid:str) -> Response:
 @api_view(["POST"])
 @user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
 def author_create(request:Request) -> Response|HttpResponse:
+    """Create an author directly
+    Will serve a redirect if unauthorized
+    
+    expects JSON
+        {
+            "username": <username of user>:str
+            "password": <password of user>:str
+        }
+        
+    returns JSON on failure (code 400)
+        {
+            "error": <reason>:str
+        }
+        
+    returns redirect to adminpanel on success
+    """
+    
     username = request.data.get("username", None)
     password = request.data.get("password", None)
     if not isinstance(username, str) or not isinstance(password, str):
@@ -83,7 +126,7 @@ def author_create(request:Request) -> Response|HttpResponse:
     if User.objects.filter(username=username).exists():
         return Response({"error": "Username already exists"}, status=400)
     # Creating a join request to do this might be overkill, but it keeps the code in one place
-    join_request = AuthorJoinRequest(username=username, password=password)
+    join_request = AuthorJoinRequest.objects.create(username=username, password=password)
     if join_request.get_validity_errors():
         join_request.delete()
         return Response({"error": "Invalid request", "invalid": join_request.get_validity_errors()}, status=400)
@@ -95,6 +138,23 @@ def author_create(request:Request) -> Response|HttpResponse:
 @api_view(["POST"])
 @user_control(can_be_author=False, can_be_logged_out=True, can_be_superuser=True)
 def api_create_join_request(request:Request) -> Response|HttpResponse:
+    """Create a join request
+    Will serve a redirect if unauthorized
+    
+    expects JSON 
+        {
+            "username": <username>:str
+            "password": <password>:str
+        }
+    
+    returns JSON on failure (code 400)
+        {
+            "username": <error about username>:str (optional)
+            "password": <error about password>:str (optional)
+        }
+        
+    returns redirect to not_logged_in page on success
+    """
     if not hasattr(request, "data"):
         return Response({"error": "Request must have a JSON body"}, status=400)
     data:dict[str,Any] = request.data
@@ -107,16 +167,36 @@ def api_create_join_request(request:Request) -> Response|HttpResponse:
 @api_view(["POST"])
 @user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
 def api_join_request_approve(request:Request, join_request_id:int) -> Response|HttpResponse:
+    """Approve a Join Request
+    Will serve a redirect if unauthorized
+    Expects no body
+    returns a 404 when request not found
+    returns JSON on error (code 500)
+        {
+            "error": <reason_for_error>:str
+        }
+        
+    returns a redirect to adminpanel on success
+    
+    """
     join_request = get_object_or_404(AuthorJoinRequest, id=join_request_id)
     try:
         join_request.approve_and_create()
     except ValueError as e:
-        return Response({"error": str(e)}, status=400)
+        return Response({"error": str(e)}, status=500)
     return HttpResponseRedirect(reverse("adminpanel:adminpanel"))
 
 @api_view(["POST"])
 @user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
 def api_join_request_deny(request:Request, join_request_id:int) -> Response|HttpResponse:
+    """Deny a Join Request
+    Will serve a redirect if unauthorized
+    Expects no body
+    returns a 404 when request not found
+        
+    returns a redirect to adminpanel on success
+    
+    """
     join_request = get_object_or_404(AuthorJoinRequest, id=join_request_id)
     join_request.deny()
     return HttpResponseRedirect(reverse("adminpanel:adminpanel"))
@@ -124,6 +204,14 @@ def api_join_request_deny(request:Request, join_request_id:int) -> Response|Http
 @api_view(["POST"])
 @user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
 def api_join_request_undeny(request:Request, join_request_id:int) -> Response|HttpResponse:
+    """Undeny a Join Request (bring it back into pending state)
+    Will serve a redirect if unauthorized
+    Expects no body
+    returns a 404 when request not found
+        
+    returns a redirect to adminpanel on success
+    
+    """
     join_request = get_object_or_404(AuthorJoinRequest, id=join_request_id)
     join_request.undeny()
     return HttpResponseRedirect(reverse("adminpanel:adminpanel"))
@@ -131,6 +219,19 @@ def api_join_request_undeny(request:Request, join_request_id:int) -> Response|Ht
 @api_view(["POST"])
 @user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
 def api_join_request_delete(request:Request, join_request_id:int) -> Response|HttpResponse:
+    """Delete a denied Join Request
+    Will serve a redirect if unauthorized
+    Expects no body
+    returns a 404 when request not found
+    
+    returns JSON on error (code 400)
+        {
+            "error": <reason>:string
+        }
+        
+    returns a redirect to adminpanel on success
+    
+    """
     join_request = get_object_or_404(AuthorJoinRequest, id=join_request_id)
     if not join_request.is_denied:
         return Response({"error": "Only denied requests can be deleted"}, status=400)
@@ -142,7 +243,28 @@ def api_join_request_delete(request:Request, join_request_id:int) -> Response|Ht
 def api_hosted_images(request: Request) -> Response:
     """
     GET: Return a list of all hosted images.
+        Expects no body
+        returns JSON (code 200)
+            {
+                list of [
+                    "id": <image ID>:str
+                    "title": <image title>:str
+                    "image_url": <URL to fetch to get image file>:str
+                    "uploaded_at": <image's upload date>:datetime
+                ]
+            }
     POST: Upload a new image.
+        expects Multipart formData
+            "title": title of image:str
+            "image": image file:file
+            
+        returns JSON on success (code 201)
+            {
+                "detail": "Image uploaded successfully"
+                "id": <generated ID of uploaded image>:int
+                "title": <title of uploaded image>:str
+                "image_url": <url of the image on the server>:str
+            }
     """
     if request.method == "POST":
         # Use the DRF serializer to handle file upload & validation
@@ -176,8 +298,13 @@ def api_hosted_images(request: Request) -> Response:
 @api_view(["POST"])
 @staff_member_required
 def api_delete_hosted_image(request: Request, image_id: int) -> Response:
-    """
-    DELETE: Remove an existing hosted image by ID.
+    """Delete the hosted image
+    expects no Body
+    returns 404 when image cannot be found
+    returns JSON on success (code 204)
+        {
+            "detail": "Image deleted successfully."
+        }
     """
     image = get_object_or_404(socialmodels.HostedImage, pk=image_id)
     if image.image:
