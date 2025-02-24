@@ -32,6 +32,29 @@ class APICreatePOstTest(APITestCase):
         #to check if its in the DB
         self.assertEqual(PostTextBased.objects.count(), 1)
         
+    def test_delete_post(self) -> None:
+        
+        post = PostTextBased.objects.create(
+            content="Test post",
+            post_type=PostTextBased.TextPostTypes.PLAINTEXT,
+            base_author=self.author,
+            visibility_type=PostTextBased.VisibilityTypes.PUBLIC
+        )
+        
+        self.assertEqual(
+            len(PostTextBased.objects.filter(base_author=self.author)), 
+            1
+        )
+        
+        """delete a post test"""
+        self.client.post(
+            reverse("socialnetwork:api_post_delete", args=[post.uuid]),
+        )
+        
+        self.assertTrue(
+            PostTextBased.objects.filter(base_author=self.author).get().is_deleted
+        )
+        
         
 
 
