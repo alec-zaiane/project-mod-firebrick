@@ -5,7 +5,7 @@ ARG USER_GID=$USER_UID
 
 # Install needed packages
 RUN apk update && apk upgrade
-RUN apk add bash git fish curl sudo
+RUN apk add bash git fish curl sudo nodejs npm
 
 # Create a new non-root user
 RUN apk add shadow

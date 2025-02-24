@@ -1,2 +1,7 @@
 # https://stackoverflow.com/questions/10418975/how-to-change-line-ending-settings
 * text eol=lf
+
+# don't convert images
+*.png binary
+*.jpg binary
+*.webp binary

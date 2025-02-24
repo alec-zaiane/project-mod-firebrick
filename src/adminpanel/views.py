@@ -162,7 +162,10 @@ def api_create_join_request(request: Request) -> Response | HttpResponse:
             "password": <error about password>:str (optional)
         }
 
-    returns redirect to not_logged_in page on success
+    returns JSON on success (code 201)
+        {
+            "detail": "Join request sent successfully"
+        }
     """
     if not hasattr(request, "data"):
         return Response({"error": "Request must have a JSON body"}, status=400)
@@ -171,7 +174,7 @@ def api_create_join_request(request: Request) -> Response | HttpResponse:
     if not serializer.is_valid():
         return Response(serializer.errors, status=400)
     serializer.save()
-    return HttpResponseRedirect(reverse("socialnetwork:not_logged_in"))
+    return Response({"detail": "Join Request sent successfully!"}, status=201)
 
 
 @api_view(["POST"])

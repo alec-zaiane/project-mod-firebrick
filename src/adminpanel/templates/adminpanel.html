@@ -17,19 +17,23 @@
 <h1>Join Requests</h1>
 {# https://stackoverflow.com/questions/1465249/get-lengths-of-a-list-in-a-jinja2-template #}
 <h2>Pending Join Requests ({{ requests_active|length }})</h2>
-{% for join_request in requests_active %}
-{% include 'components/join_request_card.html' %}
-{% endfor %}
-<h2>Denied Join Requests ({{requests_denied|length}})</h2>
-{% for join_request in requests_denied %}
-{% include 'components/join_request_card.html' %}
-{% endfor %}
+<section class="join-requests">
+    {% for join_request in requests_active %}
+    {% include 'components/join_request_card.html' %}
+    {% endfor %}
+    <h2>Denied Join Requests ({{requests_denied|length}})</h2>
+    {% for join_request in requests_denied %}
+    {% include 'components/join_request_card.html' %}
+    {% endfor %}
+</section>
 
 <h1>Current Authors</h1>
 <h2>Local Authors</h2>
-{% for author in current_authors_local %}
-{% include 'components/admin_author_card.html' %}
-{% endfor %}
+<section class="local-authors">
+    {% for author in current_authors_local %}
+    {% include 'components/admin_author_card.html' %}
+    {% endfor %}
+</section>
 <h2>Remote Authors</h2>
 <p>This will be populated after part 3</p>
 {% endblock %}

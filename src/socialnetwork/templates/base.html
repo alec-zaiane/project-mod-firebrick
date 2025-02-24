@@ -1,12 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{% endblock %}</title>
-    {% load static %}
-    {% block head %}{% endblock %}
-</head>
+{% extends "head.html" %}
+
+{% load static %}
+
+{% block body %}
 <body>
     <div class="navbar">
         {% if user.is_authenticated %}
@@ -31,4 +27,5 @@
         {% block content %}{% endblock %}
     </div>
 </body>
-</html>
+
+{% endblock %}
