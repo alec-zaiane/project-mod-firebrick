@@ -9,6 +9,9 @@ set PATH $PATH:/home/dev/.local/bin
 pip install -r src/requirements-dev.txt
 pip install -r src/requirements.txt
 
+# install NPM packages and minify the scripts
+npm install 
+fish .utils_dev/build_js.fish
 
 # Make the shell look nice :)
 curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher
