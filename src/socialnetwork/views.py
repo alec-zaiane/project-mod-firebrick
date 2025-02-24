@@ -1,4 +1,4 @@
-from typing import Any, Literal, Optional
+from typing import Optional
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
@@ -21,7 +21,7 @@ def not_logged_in_view(request:HttpRequest) -> HttpResponse:
         return HttpResponseRedirect(reverse("socialnetwork:home"))
     return render(request, "registration/not_logged_in.html")
 
-@user_control(can_be_author=True, can_be_logged_out=False, can_be_superuser=False)
+@user_control(can_be_author=True, can_be_logged_out=False, can_be_superuser=True, superuser_requires_author=True)
 def stream_view(request:HttpRequest, author:models.LocalAuthor) -> HttpResponse:
     """An author's stream view"""
     page = int(request.GET.get('page', '1'))
@@ -37,15 +37,23 @@ def stream_view(request:HttpRequest, author:models.LocalAuthor) -> HttpResponse:
         "current_page": page,
     })
 
+
 @user_control(can_be_author=True, can_be_logged_out=True, can_be_superuser=True)
 def author_profile_view(request: HttpRequest, target_author_uuid: str, author: Optional[models.LocalAuthor] = None) -> HttpResponse:
     """View `target_author_uuid`'s profile"""
 
     target_author = get_object_or_404(models.LocalAuthor, uuid=target_author_uuid)
-    author_posts = models.PostTextBased.objects.filter(base_author=target_author)
+    author_posts = models.PostTextBased.objects.filter(base_author=target_author, is_deleted=False)
 
     return render(request, "author_profile.html", {"author": target_author, "viewer": author, "posts": author_posts})
 
+@user_control(can_be_author=True, can_be_logged_out=False, can_be_superuser=True)
+def local_author_modify_view(request: HttpRequest, target_author_uuid: str, author:Optional[models.LocalAuthor]=None) -> HttpResponse:
+    """Modify `target_author_uuid`'s profile"""
+    target_author = get_object_or_404(models.LocalAuthor, uuid=target_author_uuid)
+    if author != target_author and not request.user.is_superuser:
+        return HttpResponse("You do not have permission to modify this author", status=403)
+    return render(request, "local_author_modify.html", {"author": target_author, "viewer": author})
 
 # Views for Posts
 @api_view(["POST"])
@@ -67,15 +75,16 @@ def api_create_text_post(request:Request, author:models.LocalAuthor) -> Response
 
 @api_view(["PUT","PATCH"])
 @user_control(can_be_author=True, can_be_logged_out=False, can_be_superuser=True)
-def api_author_update(request:Request, author:models.LocalAuthor, target_author_uuid:str) -> Response:
+def api_author_update(request:Request, target_author_uuid:str, author:Optional[models.LocalAuthor]=None) -> Response:
     """Update an author's information, **author kwarg is not the target author, but the viewer author**
     Only an admin or the author themselves can update their information"""
     target_author = get_object_or_404(models.LocalAuthor, uuid=target_author_uuid)
-    if author != target_author and not author.user.is_superuser:
+    if author != target_author and not request.user.is_superuser:
         return Response({"error": "You do not have permission to update this author"}, status=403)
     serializer = serializers.LocalAuthorSerializer(target_author, data=request.data, partial=True)
     if serializer.is_valid():
-        serializer.save()
+        serializer.update(target_author, request.data.copy())
+        print("Saved!")
         return Response(serializer.data)
     return Response(serializer.errors, status=400)
     
@@ -86,3 +95,40 @@ def api_author_update(request:Request, author:models.LocalAuthor, target_author_
 def create_post_view(request: HttpRequest, author: models.LocalAuthor) -> HttpResponse:
     """Render a form for authors to create a post."""
     return render(request, "create_post.html", {"author": author})
+    
+@api_view(["POST"])
+@user_control(can_be_author=True, can_be_logged_out=False, can_be_superuser=False)
+def api_post_delete(request: Request, author: models.LocalAuthor, post_uuid: str) -> HttpResponse:
+    post = get_object_or_404(models.PostTextBased, uuid=post_uuid)
+    
+    # Only the post's owner can delete
+    if post.author != author:
+        return Response({"error":"You must be the author of this post to delete it"}, 403)
+    
+    # Perform the soft delete
+    # this is ssetting is_deleted to = True which is added field to author_posts above
+    post.delete()
+    return Response({"success":"Post deleted successfully"}, 200)
+
+
+@user_control(can_be_author=True, can_be_logged_out=False, can_be_superuser=False)
+def edit_post_view(request: HttpRequest, post_uuid: str, author: models.LocalAuthor) -> HttpResponse:
+    """Render a form for authors to edit their post and toggle between Plain Text and Markdown."""
+    
+    post = get_object_or_404(models.PostTextBased, uuid=post_uuid)
+
+    # only the author of the post can edit
+    if post.author != author:
+        return HttpResponse("You do not have permission to edit this post.", status=403)
+
+    if request.method == "POST":
+        new_content = request.POST.get("content")
+        new_post_type = request.POST.get("post_type")
+
+        if new_content and new_post_type in [models.PostTextBased.TextPostTypes.PLAINTEXT, models.PostTextBased.TextPostTypes.MARKDOWN]:
+            post.content = new_content
+            post.post_type = new_post_type
+            post._finalize_edit()
+            return redirect("socialnetwork:stream")  
+
+    return render(request, "edit_post.html", {"post": post, "author": author})
