@@ -63,8 +63,7 @@ class LocalAuthorSerializer(serializers.ModelSerializer[models.LocalAuthor]):
         return super().update(instance, validated_data)
 
 
-# type: ignore[type-arg]
-class HostedImageSerializer(serializers.ModelSerializer):
+class HostedImageSerializer(serializers.ModelSerializer[models.HostedImage]):
     """
     DRF serializer for HostedImage model.
     """
