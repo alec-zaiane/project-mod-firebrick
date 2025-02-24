@@ -1,0 +1,176 @@
+:root {
+    --bg: rgb(18, 17, 20);
+    --color: rgb(247, 247, 247);
+}
+
+body {
+    padding: 0;
+    margin: 0;
+    height: 100vh;
+    background-color: var(--bg);
+    color: var(--color);
+    font-family: sans-serif;
+}
+
+a:link {
+    color: rgb(144, 141, 234);
+}
+
+a:visited {
+    color: rgb(163, 134, 231);
+}
+
+a:link:active, a:visited:active  {
+    color: rgb(254, 206, 248);
+}
+
+.login {
+    display: block;
+    height: 22px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    border: 1px solid firebrick;
+    box-shadow: 0 0 0 9999px #222222 inset;
+    color: firebrick !important;
+    text-decoration: none;
+    text-align: center;
+}
+
+.login:focus {
+    box-shadow: 0 0 0 9999px #1f1f1f inset;
+}
+
+.login:active {
+    box-shadow: 0 0 0 9999px #313131 inset;
+}
+
+#join-page {
+    padding: 0 5%;
+    display: flex;
+    height: 100%;
+    align-items: center;
+    box-sizing: border-box;
+    justify-content: center;
+    gap: 10%;
+}
+
+#join-page section {
+    margin-bottom: 10%;
+}
+
+#join-page .left-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#join-page .logo {
+    min-width: 50px;
+    width: 200px;
+    filter: drop-shadow(3px 3px 1px rgb(247, 247, 247));
+}
+
+#join-page .title {
+    position: relative;
+    font-family: sans-serif;
+    color: firebrick;
+    font-size: 5em;
+}
+
+#join-page .title::after {
+    content: "Firebrick";
+    position: absolute;
+    left: -20px;
+    top: -20px;
+    padding: 20px;
+    color: firebrick;
+    background: rgb(247, 247, 247);
+    background-clip: text;
+    -webkit-text-stroke-color: transparent;
+    -webkit-text-stroke-width: 4px;
+    -webkit-background-clip: text;
+    filter: drop-shadow(1px 1px 1px rgb(247, 247, 247)) ;
+}
+
+#join-page .right-panel {
+    min-width: 300px;
+    margin-right: 10%;
+    background: #161519;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid rgb(54 54 54);
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0px 2px 4px rgb(255 255 255 / 10%), 0px 8px 16px rgb(255 255 255 / 10%);
+}
+
+#join-page .right-panel .join-request {
+    text-align: center;
+}
+
+#join-page .right-panel form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#join-page .right-panel form input {
+    height: 22px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    border: 1px solid #686868;
+    box-shadow: 0 0 0 9999px #222222 inset;
+    color: var(--color);
+    caret-color: var(--color);
+}
+
+#join-page .right-panel form input[type="submit"] {
+    box-shadow: 0 0 0 9999px firebrick inset;
+    border: 0;
+    height: 44px;
+    cursor: pointer;
+}
+
+#join-page .right-panel form input:focus {
+    outline: solid 2px firebrick;
+}
+
+#join-page .right-panel form input[type="submit"]:hover {
+    box-shadow: 0 0 0 9999px rgb(159, 30, 30) inset;
+}
+
+#join-page .right-panel form input[type="submit"]:focus {
+    outline: 0;
+    box-shadow: 0 0 0 9999px rgb(199, 69, 69) inset;
+}
+
+#join-page .right-panel form input:-webkit-autofill{
+    -webkit-text-fill-color: var(--color);
+}
+
+#join-page .right-panel .or-segment {
+    margin: 30px 20px 0 20px;
+    border: 1px solid var(--color);
+    border-right: 0;
+    border-left: 0;
+    border-bottom: 0;
+    padding: 0;
+}
+
+#join-page .right-panel .or-text {
+    padding: 0 10px 0 10px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+@media (max-width: 1200px) {
+    #join-page {
+        flex-direction: column;
+    }
+    #join-page .left-panel {
+        flex-grow: 0;
+    }
+    #join-page .right-panel {
+        margin-right: 0;
+    }
+}
