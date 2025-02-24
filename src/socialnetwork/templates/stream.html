@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 
+{% load static %}
+
 {% block content %}
 <div class="stream-container">
     <form method="post" action="{% url 'logout' %}">
@@ -17,4 +19,8 @@
     {% endif %}
 
 </div>
+
+<script src="{% static 'posts.min.js' %}"></script>
+<script src="{% static 'markdown-renderer.min.js' %}"></script>
+
 {% endblock %}
