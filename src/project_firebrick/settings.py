@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-_-$8#4znxw*g^d!kam^2j4aw2b^a-#4gr-&#qvjv_5_5mshzp-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS:list[str] = []
+ALLOWED_HOSTS: list[str] = []
 
 
 # Application definition
@@ -56,7 +56,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'project_firebrick.urls'
 
-TEMPLATES:list[dict[str,Any]] = [
+TEMPLATES: list[dict[str, Any]] = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [os.path.join(BASE_DIR, 'adminpanel', 'templates')],
@@ -78,7 +78,7 @@ WSGI_APPLICATION = 'project_firebrick.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASES:dict[str,dict[str,Any]] = {
+DATABASES: dict[str, dict[str, Any]] = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',

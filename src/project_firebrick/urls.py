@@ -25,10 +25,11 @@ urlpatterns = [
     path("", include("socialnetwork.urls")),
     path('admin/', admin.site.urls),
     path('adminpanel/', include("adminpanel.urls")),
-    path('accounts/login/', auth_views.LoginView.as_view(authentication_form=LoginForm), name='login'),
+    path('accounts/login/',
+         auth_views.LoginView.as_view(authentication_form=LoginForm), name='login'),
     path('accounts/', include('django.contrib.auth.urls'), name="accounts"),
 ]
 
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
+    urlpatterns += static(settings.MEDIA_URL,
+                          document_root=settings.MEDIA_ROOT)

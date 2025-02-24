@@ -31,11 +31,18 @@
                 "mypy.targets": [
                     "src"
                 ],
+                "editor.formatOnSave": true,
+                "editor.formatOnType": true,
+                "editor.formatOnPaste": true,
+                "editor.defaultFormatter": "ms-python.autopep8",
+                "files.insertFinalNewline": true,
+                "files.trimTrailingWhitespace": true,
             },
             "extensions": [
                 "ms-python.python",
                 "njpwerner.autodocstring",
                 "matangover.mypy",
+                "ms-python.autopep8",
             ]
         }
     },
