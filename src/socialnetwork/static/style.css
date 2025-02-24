@@ -44,7 +44,7 @@ a:link:active, a:visited:active  {
     box-shadow: 0 0 0 9999px #313131 inset;
 }
 
-#join-page {
+.login-page {
     padding: 0 5%;
     display: flex;
     height: 100%;
@@ -54,30 +54,30 @@ a:link:active, a:visited:active  {
     gap: 10%;
 }
 
-#join-page section {
+.login-page section {
     margin-bottom: 10%;
 }
 
-#join-page .left-panel {
+.login-page .left-panel {
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-#join-page .logo {
+.login-page .logo {
     min-width: 50px;
     width: 200px;
     filter: drop-shadow(3px 3px 1px rgb(247, 247, 247));
 }
 
-#join-page .title {
+.login-page .title {
     position: relative;
     font-family: sans-serif;
     color: firebrick;
     font-size: 5em;
 }
 
-#join-page .title::after {
+.login-page .title::after {
     content: "Firebrick";
     position: absolute;
     left: -20px;
@@ -92,7 +92,7 @@ a:link:active, a:visited:active  {
     filter: drop-shadow(1px 1px 1px rgb(247, 247, 247)) ;
 }
 
-#join-page .right-panel {
+.login-page .right-panel {
     min-width: 300px;
     margin-right: 10%;
     background: #161519;
@@ -104,17 +104,17 @@ a:link:active, a:visited:active  {
     box-shadow: 0px 2px 4px rgb(255 255 255 / 10%), 0px 8px 16px rgb(255 255 255 / 10%);
 }
 
-#join-page .right-panel .join-request {
+.login-page .right-panel .join-request {
     text-align: center;
 }
 
-#join-page .right-panel form {
+.login-page .right-panel form {
     display: flex;
     flex-direction: column;
     gap: 10px;
 }
 
-#join-page .right-panel form input {
+.login-page .right-panel form input {
     height: 22px;
     padding: 14px 16px;
     border-radius: 10px;
@@ -124,53 +124,84 @@ a:link:active, a:visited:active  {
     caret-color: var(--color);
 }
 
-#join-page .right-panel form input[type="submit"] {
+.login-page .right-panel form input[type="submit"] {
     box-shadow: 0 0 0 9999px firebrick inset;
     border: 0;
     height: 44px;
     cursor: pointer;
 }
 
-#join-page .right-panel form input:focus {
+.login-page .right-panel form input:focus {
     outline: solid 2px firebrick;
 }
 
-#join-page .right-panel form input[type="submit"]:hover {
+.login-page .right-panel form input[type="submit"]:hover {
     box-shadow: 0 0 0 9999px rgb(159, 30, 30) inset;
 }
 
-#join-page .right-panel form input[type="submit"]:focus {
+.login-page .right-panel form input[type="submit"]:focus {
     outline: 0;
     box-shadow: 0 0 0 9999px rgb(199, 69, 69) inset;
 }
 
-#join-page .right-panel form input:-webkit-autofill{
+.login-page .right-panel form input:-webkit-autofill{
     -webkit-text-fill-color: var(--color);
 }
 
-#join-page .right-panel .or-segment {
+.login-page .right-panel .or-segment {
     margin: 30px 20px 0 20px;
-    border: 1px solid var(--color);
+    border: 1px solid #747474;
     border-right: 0;
     border-left: 0;
     border-bottom: 0;
     padding: 0;
 }
 
-#join-page .right-panel .or-text {
+.login-page .right-panel .or-text {
     padding: 0 10px 0 10px;
     margin-bottom: 20px;
     text-align: center;
+    color: #a2a2a2;
+}
+
+.login-page#login {
+    flex-direction: column;
+    gap: 50px;
+}
+
+.login-page#login section {
+    margin-bottom: 0;
+}
+
+.login-page#login .right-panel {
+    margin-right: 0;
+    margin-bottom: 15%;
+}
+
+.login-page#login input[name="username"]::placeholder {
+    content: "username";
+}
+
+.login-page#login .field-wrapper {
+    display: flex;
+    align-items: stretch;
+}
+
+.login-page#login input {
+    width: 100%;
+}
+
+.login-page#login input::-webkit-input-placeholder::before {
+    color:#666;
+    content:"test";
 }
 
 @media (max-width: 1200px) {
-    #join-page {
+    .login-page#join {
         flex-direction: column;
+        gap: 0;
     }
-    #join-page .left-panel {
-        flex-grow: 0;
-    }
-    #join-page .right-panel {
+    .login-page#join .right-panel {
         margin-right: 0;
     }
 }
