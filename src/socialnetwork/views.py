@@ -1,7 +1,7 @@
-from typing import Any, Literal, Optional
+from typing import Optional
 
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, HttpResponseForbidden
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.request import Request
