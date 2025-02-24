@@ -18,4 +18,5 @@ urlpatterns = [
     path("api/join_request/<int:join_request_id>/delete", views.api_join_request_delete, name="api_join_request_delete"),
     path('api/hosted_images/', views.api_hosted_images, name='hosted_images_api'),
     path('api/hosted_images/<int:image_id>/delete', views.api_delete_hosted_image, name='delete_hosted_image_api'),
+    path("hosted_images/public/", views.public_hosted_images, name="public_hosted_images"),
 ]

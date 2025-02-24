@@ -184,3 +184,10 @@ def api_delete_hosted_image(request: Request, image_id: int) -> Response:
         image.image.delete()  
     image.delete()
     return Response({"detail": "Image deleted successfully."}, status=204)
+
+def public_hosted_images(request: HttpRequest) -> HttpResponse:
+    """
+    A public view listing all hosted images, so regular users can copy their URLs.
+    """
+    images = socialmodels.HostedImage.objects.all().order_by("-uploaded_at")
+    return render(request, "public_hosted_images.html", {"images": images})
