@@ -182,3 +182,6 @@ jspm_packages/
 
 # Optional npm cache directory
 .npm
+
+# Esbuild output
+src/socialnetwork/static/*.min.*
