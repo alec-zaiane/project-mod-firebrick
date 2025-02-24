@@ -2,9 +2,11 @@
 
 {% load static %}
 
-{% block body %}
+{% block head %}
+    <script src="{% static 'join-request.min.js' %}"></script>
+{% endblock %}
 
-<!-- TODO: Replace with {{form}} object -->
+{% block body %}
 
 <main class="login-page" id="join">
     <section class="left-panel">
@@ -13,9 +15,13 @@
     </section>
     <section class="right-panel">
         <h2 class="join-request">Request to Join</h2>
-        <form action="{% url 'adminpanel:api_create_join_request' %}" method="post">
+        <form name="join-request-form" action="{% url 'adminpanel:api_create_join_request' %}" method="post">
+            <div id="generic_response"></div>
             {% csrf_token %}
+            <input type="hidden" name="_method" value="POST">
+            <div id="username_response"></div>
             <input name="username" type="text" placeholder="Username" required>
+            <div id="password_response"></div>
             <input name="password" type="password" placeholder="Password" required>
             <input type="submit" value="Request to join">
         </form>
