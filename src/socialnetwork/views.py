@@ -1,4 +1,4 @@
-from typing import Any, Literal, Optional
+from typing import Optional
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
@@ -43,7 +43,7 @@ def author_profile_view(request: HttpRequest, target_author_uuid: str, author: O
     """View `target_author_uuid`'s profile"""
 
     target_author = get_object_or_404(models.LocalAuthor, uuid=target_author_uuid)
-    author_posts = models.PostTextBased.objects.filter(base_author=target_author)
+    author_posts = models.PostTextBased.objects.filter(base_author=target_author, is_deleted=False)
 
     return render(request, "author_profile.html", {"author": target_author, "viewer": author, "posts": author_posts})
 
@@ -95,6 +95,21 @@ def api_author_update(request:Request, target_author_uuid:str, author:Optional[m
 def create_post_view(request: HttpRequest, author: models.LocalAuthor) -> HttpResponse:
     """Render a form for authors to create a post."""
     return render(request, "create_post.html", {"author": author})
+    
+@api_view(["POST"])
+@user_control(can_be_author=True, can_be_logged_out=False, can_be_superuser=False)
+def api_post_delete(request: Request, author: models.LocalAuthor, post_uuid: str) -> HttpResponse:
+    post = get_object_or_404(models.PostTextBased, uuid=post_uuid)
+    
+    # Only the post's owner can delete
+    if post.author != author:
+        return Response({"error":"You must be the author of this post to delete it"}, 403)
+    
+    # Perform the soft delete
+    # this is ssetting is_deleted to = True which is added field to author_posts above
+    post.delete()
+    return Response({"success":"Post deleted successfully"}, 200)
+
 
 @user_control(can_be_author=True, can_be_logged_out=False, can_be_superuser=False)
 def edit_post_view(request: HttpRequest, post_uuid: str, author: models.LocalAuthor) -> HttpResponse:
