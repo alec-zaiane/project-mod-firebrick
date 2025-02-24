@@ -1,3 +1,6 @@
+{% extends "base.html" %}
+
+{% block content %}
 You are not logged in!
 
 <a href="{% url 'login' %}">Click here to login</a>
@@ -9,3 +12,5 @@ If you don't have an account, request to join here:
     <input name="password" type="password" placeholder="Password" required>
     <input type="submit" value="Request to join">
 </form>
+
+{% endblock %}

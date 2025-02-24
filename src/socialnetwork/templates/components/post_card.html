@@ -16,7 +16,7 @@
     </div>
 
     <footer>
-        <span class="visibility">{{ post.get_visibility_type_display }}</span>
+        <span class="visibility">Visibility: {{ post.get_visibility_type_display }}</span>
         {% if post.author == viewer %}
          <a href="{% url 'socialnetwork:edit_post' post.uuid %}" class="edit-button">Edit</a>
         {% endif %}

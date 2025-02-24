@@ -1,0 +1,65 @@
+/*  temporary messy CSS, will be completely overwritten after halfway checkpoint */
+:root {
+    font-family: sans-serif;
+}
+
+div.navbar {
+    margin: 10px;
+    background: whitesmoke;
+    border-radius: 5px;
+    padding: 5px;
+    display: flex;
+    flex-direction: row;
+}
+
+div.navbar *{
+    margin-right: 10px;
+    background: none;
+    border: none;
+    font-size: 20px;
+}
+
+div.navbar *:not(span){
+    text-decoration: underline;
+    color: chocolate;
+}
+
+div.navbar button {
+    color: firebrick;
+}
+
+div.content {
+    margin: 10px;
+    border-left: 1px solid black;
+    padding-left: 10px;
+    padding-top: 1px;
+    padding-bottom: 1px;
+    border-radius: 5px;
+}
+
+
+form * {
+    display:block;
+}
+
+
+article.post-card {
+    border: 1px solid black;
+    border-radius: 5px;
+    padding: 5px;
+}
+
+article.post-card  h3 {
+    margin-top: 1px;
+    margin-bottom: 5px;
+}
+
+span.post-meta, article.post-card footer *{
+    font-style: italic;
+    font-size: 80%;
+}
+
+div.post-content {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
