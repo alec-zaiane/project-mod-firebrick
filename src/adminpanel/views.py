@@ -173,7 +173,7 @@ def api_hosted_images(request: Request) -> Response:
         )
     return Response(data, status=200)
 
-@api_view(["DELETE"])
+@api_view(["POST"])
 @staff_member_required
 def api_delete_hosted_image(request: Request, image_id: int) -> Response:
     """
