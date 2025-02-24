@@ -21,8 +21,8 @@ def not_logged_in_view(request:HttpRequest) -> HttpResponse:
         return HttpResponseRedirect(reverse("socialnetwork:home"))
     return render(request, "registration/not_logged_in.html")
 
-@user_control(can_be_author=True, can_be_logged_out=False, can_be_superuser=True)
-def stream_view(request: HttpRequest, author: models.LocalAuthor) -> HttpResponse:
+@user_control(can_be_author=True, can_be_logged_out=False, can_be_superuser=True, superuser_requires_author=True)
+def stream_view(request:HttpRequest, author:models.LocalAuthor) -> HttpResponse:
     """An author's stream view"""
     page = int(request.GET.get('page', '1'))
     size = int(request.GET.get('size', '10'))
@@ -32,7 +32,7 @@ def stream_view(request: HttpRequest, author: models.LocalAuthor) -> HttpRespons
     
     return render(request, "stream.html", {
         "user": request.user,
-        "author": author,
+        "viewer": author,
         "posts": posts,
         "current_page": page,
     })

@@ -3,14 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Social Network</title>
+    <title>{% block title %}{% endblock %}</title>
     {% load static %}
+    {% block head %}{% endblock %}
 </head>
 <body>
     <div class="navbar">
+        {% if user.is_authenticated %}
+            <span>Logged in as {{ user }}</span>
+            {% if user.is_superuser %}
+                <a href="{% url 'adminpanel:adminpanel' %}">Admin Panel</a>
+            {% endif %}
+        {% else %}
+            <span>Not logged in</span>
+        {% endif %}
         <a href="{% url 'socialnetwork:stream' %}">Home</a>
-        {% if author %}
-            <a href="{% url 'socialnetwork:author_profile' author.uuid %}">Profile</a>
+        {% if viewer %}
+            <a href="{% url 'socialnetwork:author_profile' viewer.uuid %}">Profile</a>
         {% endif %}
         <form action="{% url 'logout' %}" method="post" style="display: inline;">
             {% csrf_token %}

@@ -1,0 +1,71 @@
+{# expects author and viewer objects, both of type socialnetwork.models.LocalAuthor #}
+
+{% extends "base.html" %}
+
+{% block title %}Modify Author{% endblock %}
+
+{% block head %}
+<script>
+    //TODO move this to a static file
+    document.addEventListener("DOMContentLoaded", function() {
+        forms = document.getElementsByName("modify-author-form");
+        forms.forEach(function(form) {
+            responseDiv = form.querySelector("[name=server-response]");
+            form.addEventListener("submit", function(event) {
+                event.preventDefault();
+                let formData = new FormData(form);
+                let url = form.action;
+                let method = formData.get("_method");
+                formData.delete("_method");
+                fetch(url, {
+                    method: method,
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': document.getElementsByName("csrfmiddlewaretoken")[0].value,
+                        'Accept': 'application/json',
+                    }
+                }).then(response => {
+                    if (response.ok) {
+                        response.json().then(data => {
+                            console.log(response);
+                            responseDiv.innerHTML = "Success!";
+                        });
+                    } else {
+                        response.json().then(data => {
+                            console.log(response);
+                            responseDiv.innerHTML = "Error: " + data.error;
+                        });
+                    }
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+<h1>Modify {{ author.username}} </h1>
+<form name=modify-author-form action="{% url 'socialnetwork:api_author_update' author.uuid %}">
+    <div name="server-response"></div>
+    {% csrf_token %}
+    <input type="hidden" name="_method" value="PUT">
+    <input type="hidden" name="user" value="{{ author.uuid }}">
+    <label for="username">Username:</label>
+    <input type="text" id="username" name="username" value="{{ author.username }}" required>
+    <br>
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" value="{{ author.user.email }}" required>
+    <br>
+    <label for="first_name">First Name:</label>
+    <input type="text" id="first_name" name="first_name" value="{{ author.user.first_name }}" required>
+    <br>
+    <label for="last_name">Last Name:</label>
+    <input type="text" id="last_name" name="last_name" value="{{ author.user.last_name }}" required>
+    <br>
+    <label for="bio">Bio:</label>
+    <textarea id="bio" name="bio">{{ author.bio }}</textarea>
+    <br>
+    <input type="submit" value="Submit">
+    <a href="{% url 'socialnetwork:author_profile' author.uuid %}">Cancel</a>
+</form>
+{% endblock %}
