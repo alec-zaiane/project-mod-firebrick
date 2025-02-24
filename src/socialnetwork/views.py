@@ -47,8 +47,10 @@ def author_profile_view(request: HttpRequest, target_author_uuid: str, author: O
         models.LocalAuthor, uuid=target_author_uuid)
     author_posts = models.PostTextBased.objects.filter(
         base_author=target_author, is_deleted=False)
+    author_posts_sorted = sorted(
+        author_posts, key=lambda x: x.date_created, reverse=True)
 
-    return render(request, "author_profile.html", {"author": target_author, "viewer": author, "posts": author_posts})
+    return render(request, "author_profile.html", {"author": target_author, "viewer": author, "posts": author_posts_sorted})
 
 
 @user_control(can_be_author=True, can_be_logged_out=False, can_be_superuser=True)
@@ -98,7 +100,7 @@ def api_author_update(request: Request, target_author_uuid: str, author: Optiona
     Only an admin or the author themselves can update their information"
 
     Will serve a redirect if unauthorized
-    expects JSON 
+    expects JSON
         {
             "following":<list of author uuids>:list[str] (optional)
             "username":<updated username>:str (optional)
@@ -112,7 +114,7 @@ def api_author_update(request: Request, target_author_uuid: str, author: Optiona
                 "username":<updated username>:str (optional)
                 "first_name":<updated first name>:str (optional)
                 "last_name":<updated last name>:str (optional)
-                "email":<updated email>:str (optional) 
+                "email":<updated email>:str (optional)
             }
             "following":<list of author uuids>:list[str] (optional)
         }
