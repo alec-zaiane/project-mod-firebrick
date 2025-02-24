@@ -96,19 +96,19 @@ def create_post_view(request: HttpRequest, author: models.LocalAuthor) -> HttpRe
     """Render a form for authors to create a post."""
     return render(request, "create_post.html", {"author": author})
     
-    
+@api_view(["POST"])
 @user_control(can_be_author=True, can_be_logged_out=False, can_be_superuser=False)
-def delete_post_view(request: HttpRequest, author: models.LocalAuthor, post_uuid: str) -> HttpResponse:
+def api_post_delete(request: Request, author: models.LocalAuthor, post_uuid: str) -> HttpResponse:
     post = get_object_or_404(models.PostTextBased, uuid=post_uuid)
     
     # Only the post's owner can delete
     if post.author != author:
-        return HttpResponseForbidden("You don't have permission to delete this post.")
+        return Response({"error":"You must be the author of this post to delete it"}, 403)
     
     # Perform the soft delete
     # this is ssetting is_deleted to = True which is added field to author_posts above
     post.delete()
-    return redirect("socialnetwork:author_profile", target_author_uuid=author.uuid)
+    return Response({"success":"Post deleted successfully"}, 200)
 
 
 @user_control(can_be_author=True, can_be_logged_out=False, can_be_superuser=False)
