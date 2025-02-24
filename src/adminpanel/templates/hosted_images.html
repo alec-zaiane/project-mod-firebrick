@@ -6,7 +6,7 @@
 <h1>Hosted Images</h1>
 
 <h2>Upload a New Image</h2>
-<form method="post" action="{% url 'adminpanel:hosted_images_api' %}" enctype="multipart/form-data">
+<form method="post" action="{% url 'adminpanel:api_hosted_images' %}" enctype="multipart/form-data">
     {% csrf_token %}
     <label>Title: <input type="text" name="title"></label><br>
     <label>Image: <input type="file" name="image"></label><br>
@@ -21,7 +21,7 @@
         <strong>{{ image.title|default:"(No Title)" }}</strong><br>
         <img src="{{ image.image.url }}" alt="{{ image.title }}" style="max-width:200px;"><br>
         <a href="{{ image.image.url }}" target="_blank">View Image URL</a><br>
-        <form method="post" action="{% url 'adminpanel:delete_hosted_image_api' image.id %}">
+        <form method="post" action="{% url 'adminpanel:api_hosted_image_delete' image.id %}">
             {% csrf_token %}
             <button type="submit">Delete</button>
         </form>
