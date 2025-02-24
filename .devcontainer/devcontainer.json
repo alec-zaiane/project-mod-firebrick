@@ -35,6 +35,8 @@
                 "editor.formatOnType": true,
                 "editor.formatOnPaste": true,
                 "editor.defaultFormatter": "ms-python.autopep8",
+                "files.insertFinalNewline": true,
+                "files.trimTrailingWhitespace": true,
             },
             "extensions": [
                 "ms-python.python",
