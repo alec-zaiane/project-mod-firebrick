@@ -43,7 +43,7 @@ class AdminPanelAPITest(APITestCase):
         response = self.client.post(url, data, format="json")
 
         # check if the codes are correct
-        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         # check if url exists, and if redirect still exists
         if hasattr(response, "url"):
@@ -67,7 +67,7 @@ class AdminPanelAPITest(APITestCase):
         response = self.client.post(url, data, format="json")
 
         # check if the redirect is correct
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
 
         # check if the user has been created
         self.assertTrue(User.objects.filter(username="newuser").exists())
