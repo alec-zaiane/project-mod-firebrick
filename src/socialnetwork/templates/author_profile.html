@@ -17,6 +17,8 @@
     <h3>{{ author.user }}'s Bio</h3>
     <p>{{ author.bio }}</p>
 
+    <a href="{% url 'socialnetwork:author_create_post' %}" class="create-post">Create Post</a>
+
     <h3>Posts by {{ author.user }}</h3>
 
     {% if posts %}
