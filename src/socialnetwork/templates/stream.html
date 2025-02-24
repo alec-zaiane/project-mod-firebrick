@@ -1,12 +1,10 @@
 {% extends 'base.html' %}
 
+{% load static %}
+
 {% block content %}
 <div class="stream-container">
-    <form method="post" action="{% url 'logout' %}">
-        {% csrf_token %}
-        <button type="submit">Log Out</button>
-    </form>
-    <h1>Your Stream</h1>
+    <h1 class="stream-title">Your Stream</h1>
     
     {% if posts %}
         {% for post in posts %}
@@ -17,4 +15,8 @@
     {% endif %}
 
 </div>
+
+<script src="{% static 'posts.min.js' %}"></script>
+<script src="{% static 'markdown-renderer.min.js' %}"></script>
+
 {% endblock %}

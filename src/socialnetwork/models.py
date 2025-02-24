@@ -2,6 +2,8 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
+from datetime import datetime
+
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -32,21 +34,23 @@ class Author(models.Model):
     """
 
     # Fields
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    following = models.ManyToManyField('self', symmetrical=False, related_name='followers', blank=True)
+    uuid = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False)
+    following = models.ManyToManyField(
+        'self', symmetrical=False, related_name='followers', blank=True)
     bio = models.TextField(blank=True)
-    
+
     # Computed Properties
     @property
     def followers(self) -> models.QuerySet[Author]:
         return Author.objects.filter(following=self)
-    
+
     @property
     def username(self) -> str:
-        raise NotImplementedError("This method must be implemented by a subclass")
-    
-    
-    @property 
+        raise NotImplementedError(
+            "This method must be implemented by a subclass")
+
+    @property
     def posts(self) -> list[Post]:
         # get all posts by this author
         text_posts = PostTextBased.objects.filter(base_author=self)
@@ -57,14 +61,14 @@ class Author(models.Model):
             reverse=True
         )
     # Methods
-    
+
     def get_is_friends_with(self, other: Author) -> bool:
         """Returns true if this author is friends with the other author"""
         self_is_following_other = other.following.filter(pk=self.pk).exists()
         other_is_following_self = self.following.filter(pk=other.pk).exists()
         return self_is_following_other and other_is_following_self
-    
-    def delete(self, *args:Any, **kwargs:Any) -> tuple[int, dict[str, int]]:
+
+    def delete(self, *args: Any, **kwargs: Any) -> tuple[int, dict[str, int]]:
         """Delete this author"""
         # keep all posts from this author until an admin deletes them
         self.following.clear()
@@ -72,18 +76,19 @@ class Author(models.Model):
             post.base_author = None
             post.delete()
             post.save()
-            
+
         if isinstance(self, LocalAuthor):
             self.user.delete()
         return super().delete(*args, **kwargs)
-    
+
+
 class LocalAuthor(Author):
     """An author that is on this node"""
 
-    user:models.OneToOneField[User] = models.OneToOneField(
+    user: models.OneToOneField[User] = models.OneToOneField(
         User, on_delete=models.CASCADE, related_name="author"
     )  # https://docs.djangoproject.com/en/dev/topics/auth/customizing/#extending-the-existing-user-model
-    
+
     @property
     def username(self) -> str:
         return self.user.username
@@ -102,30 +107,30 @@ class LocalAuthor(Author):
         """
         # TODO join the self.private_inbox and the public timeline
 
-        base_query = Q(is_deleted=False)        
+        base_query = Q(is_deleted=False)
         public_posts = Q(visibility_type=Post.VisibilityTypes.PUBLIC)
-        
+
         private_inbox = Q(
             is_in_private_inbox_of=self
         )
 
         query = base_query & (public_posts | private_inbox)
-        
+
         text_posts = PostTextBased.objects.filter(query)
-        
+
         # Combine and sort all posts
-        all_posts:list[Post] = sorted(
+        all_posts: list[Post] = sorted(
             chain(text_posts),
             key=lambda post: post.date_created,
             reverse=True
         )
-        
+
         # Apply pagination
         if paginate_count is not None:
             all_posts = all_posts[paginate_start:paginate_start + paginate_count]
         elif paginate_start > 0:
             all_posts = all_posts[paginate_start:]
-        
+
         return all_posts
 
 
@@ -134,7 +139,7 @@ class RemoteAuthor(Author):
 
     date_joined = models.DateTimeField(auto_now_add=True, editable=False)
     remote_username = models.CharField(max_length=50)
-    
+
     @property
     def username(self) -> str:
         return self.remote_username
@@ -156,11 +161,13 @@ class Post(models.Model):
         FRIENDS_ONLY = "FO", _("Friends-Only")
 
     # Fields
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    
+    uuid = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False)
+
     # this is the author of the post, it always returns a base author object (not a subclass)
     # use the author property to get the correct author object
-    base_author = models.ForeignKey(Author, on_delete=models.PROTECT, blank=True, null=True) 
+    base_author = models.ForeignKey(
+        Author, on_delete=models.PROTECT, blank=True, null=True)
     visibility_type = models.CharField(
         max_length=2, choices=VisibilityTypes.choices, default=VisibilityTypes.PUBLIC
     )
@@ -180,11 +187,11 @@ class Post(models.Model):
     @property
     def has_been_edited(self) -> bool:
         return self.date_edited is not None
-    
+
     @property
-    def author(self) -> Author|None:
+    def author(self) -> Author | None:
         """The author of this post"""
-        fetched_author:Author|None = self.base_author
+        fetched_author: Author | None = self.base_author
         if fetched_author is None:
             return None
         fetched_uuid = fetched_author.uuid
@@ -195,16 +202,18 @@ class Post(models.Model):
             return RemoteAuthor.objects.get(uuid=fetched_uuid)
         else:
             raise ValueError(f"Unknown author type: {fetched_author}")
-        
+
     @property
     def css_class(self) -> str:
-        raise NotImplementedError("This method must be implemented by a subclass")
+        raise NotImplementedError(
+            "This method must be implemented by a subclass")
 
     # Methods
     def _finalize_edit(self) -> None:
         """Call this after updating a post's content"""
         self.date_edited = timezone.now()
         self.save()
+
     def _check_can_be_seen_by(self, other: Author) -> bool:
         """Returns true if the other author can see this post"""
 
@@ -221,7 +230,8 @@ class Post(models.Model):
         elif self.visibility_type == self.VisibilityTypes.FRIENDS_ONLY:
             return self.author.get_is_friends_with(other)
         else:
-            raise ValueError(f"Unknown visibility type: {self.visibility_type}")
+            raise ValueError(
+                f"Unknown visibility type: {self.visibility_type}")
 
     def send_to_required_private_inboxes(self) -> None:
         """Send this post to the required private inboxes, updates the self.is_in_private_inbox_of field"""
@@ -233,8 +243,8 @@ class Post(models.Model):
 
     def delete(self, using: Any | None = None, keep_parents: bool = False) -> tuple[int, dict[str, int]]:
         """deletes the Post, overrides django delete. not a permanent delete (not removed from DB)"""
-        #just change the variable for soft deletion
-        self.is_deleted = True 
+        # just change the variable for soft deletion
+        self.is_deleted = True
         self.save()
         return (0, {})
 
@@ -253,7 +263,7 @@ class PostTextBased(Post):
     post_type = models.CharField(
         max_length=2, choices=TextPostTypes.choices, default=TextPostTypes.PLAINTEXT
     )
-    
+
     @property
     def css_class(self) -> str:
         if self.post_type == self.TextPostTypes.PLAINTEXT:
@@ -262,13 +272,12 @@ class PostTextBased(Post):
             return "post-markdown"
         else:
             raise ValueError(f"Unknown post type: {self.post_type}")
-        
 
     def edit(self, new_content: str) -> None:
         """Edit the content of this post"""
         self.content = new_content
         self._finalize_edit()
-        
+
     def convert_type(self, new_type: TextPostTypes) -> None:
         """Convert this post to a different type"""
         self.post_type = new_type
@@ -282,3 +291,24 @@ class PostMediaBased(Post):
     """
 
     pass  # TODO
+
+
+class HostedImage(models.Model):
+    """
+    Stores an uploaded image along with an optional title.
+    """
+    title: models.CharField["HostedImage", str] = models.CharField(
+        max_length=255,
+        blank=True
+    )
+    image: models.ImageField = models.ImageField(
+        upload_to="hosted_images/"
+    )
+    uploaded_at: models.DateTimeField["HostedImage", datetime] = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    objects: models.Manager["HostedImage"] = models.Manager()
+
+    def __str__(self) -> str:
+        return self.title or str(self.image.name)

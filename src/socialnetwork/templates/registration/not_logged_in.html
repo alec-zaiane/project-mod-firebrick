@@ -1,11 +1,36 @@
-You are not logged in!
+{% extends "head.html" %}
 
-<a href="{% url 'login' %}">Click here to login</a>
-<hr/>
-If you don't have an account, request to join here:
-<form action="{% url 'adminpanel:api_create_join_request' %}" method="post">
-    {% csrf_token %}
-    <input name="username" type="text" placeholder="Username" required>
-    <input name="password" type="password" placeholder="Password" required>
-    <input type="submit" value="Request to join">
-</form>
+{% load static %}
+
+{% block head %}
+    <script src="{% static 'join-request.min.js' %}"></script>
+{% endblock %}
+
+{% block body %}
+
+<main class="login-page" id="join">
+    <section class="left-panel">
+        <img class="logo" src="{% static 'firebrick.webp' %}" />
+        <h1 class="title">Firebrick</h1>
+    </section>
+    <section class="right-panel">
+        <h2 class="join-request">Request to Join</h2>
+        <form name="join-request-form" action="{% url 'adminpanel:api_create_join_request' %}" method="post">
+            <div id="generic_response"></div>
+            {% csrf_token %}
+            <input type="hidden" name="_method" value="POST">
+            <div id="username_response"></div>
+            <input name="username" type="text" placeholder="Username" required>
+            <div id="password_response"></div>
+            <input name="password" type="password" placeholder="Password" required>
+            <input type="submit" value="Request to join">
+        </form>
+        <fieldset class="or-segment">
+            <legend class="or-text">OR</legend>
+            <a class="login" href="{% url 'login' %}">Log In</a>
+        </fieldset>
+        
+    </section>
+</main>
+
+{% endblock %}

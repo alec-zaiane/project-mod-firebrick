@@ -12,10 +12,13 @@
     </header>
 
     <div class="post-content {{ post.css_class }}">
-        {{ post.content|safe }}
+        {{ post.content }}
     </div>
 
     <footer>
         <span class="visibility">{{ post.get_visibility_type_display }}</span>
+        {% if post.author == viewer %}
+         <a href="{% url 'socialnetwork:edit_post' post.uuid %}" class="edit-button">Edit</a>
+        {% endif %}
     </footer>
 </article>
