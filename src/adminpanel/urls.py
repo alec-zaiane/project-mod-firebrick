@@ -4,6 +4,7 @@ from . import views
 app_name = "adminpanel"
 urlpatterns = [
     path("", views.adminpanel_view, name="adminpanel"),
+    path("hosted_images/", views.hosted_image_view, name="hosted_images"),
     
     path("api/authors/create", views.author_create, name="api_author_create"),
     path("api/authors/create_for_superuser", views.author_create_for_superuser, name="api_author_create_for_superuser"),
@@ -15,5 +16,7 @@ urlpatterns = [
     path("api/join_request/<int:join_request_id>/deny", views.api_join_request_deny, name="api_join_request_deny"),
     path("api/join_request/<int:join_request_id>/undeny", views.api_join_request_undeny, name="api_join_request_undeny"),
     path("api/join_request/<int:join_request_id>/delete", views.api_join_request_delete, name="api_join_request_delete"),
-    
+    path('api/hosted_images/', views.api_hosted_images, name='api_hosted_images'),
+    path('api/hosted_images/<int:image_id>/delete', views.api_delete_hosted_image, name='api_hosted_image_delete'),
+    path("hosted_images/public/", views.public_hosted_images, name="public_hosted_images"),
 ]

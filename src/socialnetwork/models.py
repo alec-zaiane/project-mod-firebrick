@@ -2,6 +2,8 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
+from datetime import datetime
+
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -282,3 +284,25 @@ class PostMediaBased(Post):
     """
 
     pass  # TODO
+
+
+
+class HostedImage(models.Model):
+    """
+    Stores an uploaded image along with an optional title.
+    """
+    title: models.CharField["HostedImage", str] = models.CharField(
+        max_length=255,
+        blank=True
+    )
+    image: models.ImageField = models.ImageField(
+        upload_to="hosted_images/"
+    )
+    uploaded_at: models.DateTimeField["HostedImage", datetime] = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    objects: models.Manager["HostedImage"] = models.Manager()
+
+    def __str__(self) -> str:
+        return self.title or str(self.image.name)

@@ -1,3 +1,4 @@
+from __future__ import annotations
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -62,4 +63,3 @@ class AuthorJoinRequest(models.Model):
         """Un-deny this request in case of a mistake"""
         self.date_denied = None
         self.save()
-        

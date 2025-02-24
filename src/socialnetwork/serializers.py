@@ -53,3 +53,13 @@ class LocalAuthorSerializer(serializers.ModelSerializer[models.LocalAuthor]):
             user.last_name = validated_data.pop("last_name", [user.last_name])[0]
             user.save()
         return super().update(instance, validated_data)
+
+        
+class HostedImageSerializer(serializers.ModelSerializer): # type: ignore[type-arg]
+    """
+    DRF serializer for HostedImage model.
+    """
+
+    class Meta:
+        model = models.HostedImage
+        fields = ["id", "title", "image", "uploaded_at"]
