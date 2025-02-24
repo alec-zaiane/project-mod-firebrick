@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 
+{% load static %}
+
 {% block title %}{{ author.user }}'s Profile{% endblock %}
 
 {% block content %}
@@ -41,5 +43,8 @@
         <p>No posts available.</p>
     {% endif %}
 </main>
+
+<script src="{% static 'posts.min.js' %}"></script>
+<script src="{% static 'markdown-renderer.min.js' %}"></script>
 {% endblock %}
 
