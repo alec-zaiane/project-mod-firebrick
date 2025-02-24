@@ -3,7 +3,8 @@
 {% block content %}
 {% if not viewer_has_an_author %}
 <div class="alert">
-    <p>You don't have an Author associated with your admin account, this normally happens when creating an admin account for the first time</p>
+    <p>You don't have an Author associated with your admin account, this normally happens when creating an admin account
+        for the first time</p>
     <form action="{% url 'adminpanel:api_author_create_for_superuser' %}" method="post">
         {% csrf_token %}
         <input type="hidden" name="user_id" value="{{ user.pk }}">
@@ -12,6 +13,7 @@
 </div>
 {% else %}
 <a href="{% url 'socialnetwork:stream' %}">Stream</a>
+<a href="{% url 'adminpanel:hosted_images' %}">Hosted Images</a>
 {% endif %}
 
 <h1>Join Requests</h1>
