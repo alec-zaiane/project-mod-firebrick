@@ -1,6 +1,12 @@
 {% extends "base.html" %}
 
+{% load static %}
+
 {% block content %}
   <h2>Create a Post</h2>
   {% include 'components/post_submission_card.html' %}
+  <h3>Preview</h3>
+  <div id="preview"></div>
+
+  <script src="{% static 'markdown-editor.min.js' %}"></script>
 {% endblock %}
