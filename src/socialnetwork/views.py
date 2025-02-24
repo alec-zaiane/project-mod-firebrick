@@ -32,7 +32,7 @@ def stream_view(request:HttpRequest, author:models.LocalAuthor) -> HttpResponse:
     
     return render(request, "stream.html", {
         "user": request.user,
-        "author": author,
+        "viewer": author,
         "posts": posts,
         "current_page": page,
     })

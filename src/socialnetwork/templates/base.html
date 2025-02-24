@@ -18,8 +18,8 @@
             <span>Not logged in</span>
         {% endif %}
         <a href="{% url 'socialnetwork:stream' %}">Home</a>
-        {% if author %}
-            <a href="{% url 'socialnetwork:author_profile' author.uuid %}">Profile</a>
+        {% if viewer %}
+            <a href="{% url 'socialnetwork:author_profile' viewer.uuid %}">Profile</a>
         {% endif %}
         <form action="{% url 'logout' %}" method="post" style="display: inline;">
             {% csrf_token %}
