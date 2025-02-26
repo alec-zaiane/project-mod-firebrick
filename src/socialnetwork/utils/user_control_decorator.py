@@ -46,9 +46,9 @@ def user_control(must_be_logged_in: bool = False, must_be_author: bool = False, 
             FAILURE_RESPONSE: HttpResponse | Response
             if IS_API:
                 if request.user.is_authenticated:
-                    FAILURE_RESPONSE = Response(403)
+                    FAILURE_RESPONSE = Response(status=403)
                 else:
-                    FAILURE_RESPONSE = Response(401)
+                    FAILURE_RESPONSE = Response(status=401)
             else:
                 if redirect_url is not None:
                     FAILURE_RESPONSE = HttpResponseRedirect(redirect_url)

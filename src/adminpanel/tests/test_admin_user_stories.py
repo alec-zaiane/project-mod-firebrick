@@ -17,7 +17,8 @@ from socialnetwork import models as socialmodels
 
 class NodeAdminUserStoryApiTest(APITestCase):
     def setUp(self) -> None:
-        self.user = User.objects.create(username="admin", password="pass")
+        self.user = User.objects.create_superuser(
+            username="admin", password="pass")
         self.user.save()
         self.author = socialmodels.LocalAuthor.objects.create(user=self.user)
         self.author.save()
@@ -48,7 +49,7 @@ class TestUserStory44(NodeAdminUserStoryApiTest):
                 user__username=sample_username).exists()
         )
 
-    def test_double_add_author_fails(self) -> None:
+    def test_fail_on_add_existing_username(self) -> None:
         """Test that you cannot add another author with the same username"""
         sample_username = "double_author"
         self.assertFalse(
