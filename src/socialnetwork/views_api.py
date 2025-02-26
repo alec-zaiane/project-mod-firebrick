@@ -12,10 +12,12 @@ from socialnetwork.utils.user_control_decorator import user_control
 from socialnetwork import serializers
 from socialnetwork import models
 
+UNAUTHENTICATED_RESPONSE_API = Response(status=401)
+
 
 @api_view(["POST"])
-@user_control(can_be_author=True, can_be_logged_out=False, can_be_superuser=False)
-def api_create_text_post(request: Request, author: models.LocalAuthor) -> Response:
+@user_control(must_be_logged_in=True, must_be_author=True)
+def api_create_text_post(request: Request, viewer: Optional[models.LocalAuthor]) -> Response:
     """Create a text based post
     Will serve a redirect if unauthorized
     Expects JSON
@@ -39,8 +41,11 @@ def api_create_text_post(request: Request, author: models.LocalAuthor) -> Respon
             }
         }
     """
+    if viewer is None:  # shouldn't be possible, needed for mypy
+        return UNAUTHENTICATED_RESPONSE_API
+
     data = request.data.copy()
-    data["base_author"] = author.uuid
+    data["base_author"] = viewer.uuid
 
     serializer = serializers.PostTextBasedSerializer(data=data)
 
@@ -54,8 +59,8 @@ def api_create_text_post(request: Request, author: models.LocalAuthor) -> Respon
 
 
 @api_view(["PUT", "PATCH"])
-@user_control(can_be_author=True, can_be_logged_out=False, can_be_superuser=True)
-def api_author_update(request: Request, target_author_uuid: str, author: Optional[models.LocalAuthor] = None) -> Response:
+@user_control(must_be_logged_in=True, must_be_author=True)
+def api_author_update(request: Request, target_author_uuid: str, viewer: Optional[models.LocalAuthor] = None) -> Response:
     """Update an author's information, **author kwarg is not the target author, but the viewer author**
     Only an admin or the author themselves can update their information"
 
@@ -102,7 +107,7 @@ def api_author_update(request: Request, target_author_uuid: str, author: Optiona
     """
     target_author = get_object_or_404(
         models.LocalAuthor, uuid=target_author_uuid)
-    if author != target_author and not request.user.is_superuser:
+    if viewer != target_author and not request.user.is_superuser:
         return Response({"error": "You do not have permission to update this author"}, status=403)
     serializer = serializers.LocalAuthorSerializer(
         target_author, data=request.data, partial=True)
@@ -113,8 +118,8 @@ def api_author_update(request: Request, target_author_uuid: str, author: Optiona
 
 
 @api_view(["POST"])
-@user_control(can_be_author=True, can_be_logged_out=False, can_be_superuser=False)
-def api_post_delete(request: Request, author: models.LocalAuthor, post_uuid: str) -> Response:
+@user_control(must_be_logged_in=True, must_be_author=True)
+def api_post_delete(request: Request, viewer: Optional[models.LocalAuthor], post_uuid: str) -> Response:
     """Delete a post
     Will serve a redirect if unauthorized
 
@@ -134,7 +139,7 @@ def api_post_delete(request: Request, author: models.LocalAuthor, post_uuid: str
     post = get_object_or_404(models.PostTextBased, uuid=post_uuid)
 
     # Only the post's owner can delete
-    if post.author != author:
+    if post.author != viewer:
         return Response({"error": "You must be the author of this post to delete it"}, 403)
 
     # Perform the soft delete
