@@ -129,13 +129,18 @@ def api_create_join_request(request: Request) -> Response:
 
     returns JSON on failure (code 400)
         {
-            "username": <error about username>:str (optional)
-            "password": <error about password>:str (optional)
+            "error": "error creating join request"
+            "joinrequest"{
+                <errors with fields>
+            }
         }
 
     returns JSON on success (code 201)
         {
             "detail": "Join request sent successfully"
+            "joinrequest": {
+                <fields of join request>
+            }
         }
     """
     if not hasattr(request, "data"):
@@ -143,9 +148,9 @@ def api_create_join_request(request: Request) -> Response:
     data: dict[str, Any] = request.data
     serializer = adminserializers.AuthorJoinRequestSerializer(data=data)
     if not serializer.is_valid():
-        return Response(serializer.errors, status=400)
+        return Response({"error": "error creating join request", "joinrequest": serializer.errors}, status=400)
     serializer.save()
-    return Response({"detail": "Join Request sent successfully!"}, status=201)
+    return Response({"detail": "Join Request sent successfully!", "joinrequest": serializer.data}, status=201)
 
 
 @api_view(["POST"])
@@ -287,19 +292,22 @@ def api_hosted_images(request: Request) -> Response:
             )
         return Response(serializer.errors, status=400)
 
-    images = socialmodels.HostedImage.objects.all(
-    ).order_by("-uploaded_at")
-    data: list[dict[str, Any]] = []
-    for img in images:
-        data.append(
-            {
-                "id": img.pk,
-                "title": img.title,
-                "image_url": request.build_absolute_uri(img.image.url),
-                "uploaded_at": img.uploaded_at.isoformat(),
-            }
-        )
-    return Response(data, status=200)
+    elif request.method == "GET":
+        images = socialmodels.HostedImage.objects.all(
+        ).order_by("-uploaded_at")
+        data: list[dict[str, Any]] = []
+        for img in images:
+            data.append(
+                {
+                    "id": img.pk,
+                    "title": img.title,
+                    "image_url": request.build_absolute_uri(img.image.url),
+                    "uploaded_at": img.uploaded_at.isoformat(),
+                }
+            )
+        return Response(data, status=200)
+
+    return Response(status=405)
 
 
 @api_view(["POST"])
