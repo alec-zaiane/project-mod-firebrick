@@ -66,8 +66,8 @@ class AdminPanelAPITest(APITestCase):
 
         response = self.client.post(url, data, format="json")
 
-        # check if the redirect is correct
-        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        # check if the return is successful
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         # check if the user has been created
         self.assertTrue(User.objects.filter(username="newuser").exists())
@@ -80,7 +80,7 @@ class AdminPanelAPITest(APITestCase):
 
         response = self.client.post(url, data, format="json")
 
-        # check the redirect
+        # check the return is successful
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         # check if the request was created
@@ -97,7 +97,7 @@ class AdminPanelAPITest(APITestCase):
         response = self.client.post(url)
 
         # check the redirect
-        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         # check if the request was created
         self.assertFalse(AuthorJoinRequest.objects.filter(
@@ -113,7 +113,7 @@ class AdminPanelAPITest(APITestCase):
         response = self.client.post(url)
 
         # check the redirect
-        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         # check if the request was created
         self.assertTrue(AuthorJoinRequest.objects.get(
@@ -129,7 +129,7 @@ class AdminPanelAPITest(APITestCase):
         response = self.client.post(url)
 
         # check the redirect
-        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         # check if the request was created
         self.assertFalse(AuthorJoinRequest.objects.get(
@@ -150,7 +150,7 @@ class AdminPanelAPITest(APITestCase):
         response = self.client.post(url)
 
         # check the redirect
-        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         # check if the request was created
         self.assertFalse(AuthorJoinRequest.objects.filter(
