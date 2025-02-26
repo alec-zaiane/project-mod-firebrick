@@ -12,8 +12,8 @@ from . import models
 # General Views
 # This file is for views that show browser output (eg: render a template), use views_api.py for rest_framework API views
 
-UNAUTHENTICATED_RESPONSE = HttpResponseRedirect(
-    reverse("socialnetwork:not_logged_in"))
+def get_unauthenticated_response() -> HttpResponse:
+    return HttpResponseRedirect(reverse("socialnetwork:not_logged_in"))
 
 
 def not_logged_in_view(request: HttpRequest) -> HttpResponse:
@@ -27,7 +27,7 @@ def not_logged_in_view(request: HttpRequest) -> HttpResponse:
 def stream_view(request: HttpRequest, viewer: Optional[models.LocalAuthor]) -> HttpResponse:
     """An author's stream view"""
     if viewer is None:  # shouldn't be possible, needed for mypy
-        return UNAUTHENTICATED_RESPONSE
+        return get_unauthenticated_response()
 
     page = int(request.GET.get('page', '1'))
     size = int(request.GET.get('size', '10'))

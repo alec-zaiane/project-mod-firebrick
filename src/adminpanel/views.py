@@ -16,14 +16,14 @@ from .models import AuthorJoinRequest
 
 # Create your views here.
 # This file is for views that show browser output (eg: render a template), use views_api.py for rest_framework API views
-UNAUTHENTICATED_RESPONSE = HttpResponseRedirect(
-    reverse("socialnetwork:not_logged_in"))
+def get_unauthenticated_response() -> HttpResponse:
+    return HttpResponseRedirect(reverse("socialnetwork:not_logged_in"))
 
 
 @user_control(must_be_logged_in=True, must_be_superuser=True)
 def adminpanel_view(request: HttpRequest, viewer: Optional[socialmodels.LocalAuthor]) -> HttpResponse:
     if isinstance(request.user, AnonymousUser):  # can't happen, needed for mypy
-        return UNAUTHENTICATED_RESPONSE
+        return get_unauthenticated_response()
     requests_active = AuthorJoinRequest.objects.filter(date_denied=None)
     requests_denied = AuthorJoinRequest.objects.exclude(date_denied=None)
     viewer_has_an_author = viewer is not None

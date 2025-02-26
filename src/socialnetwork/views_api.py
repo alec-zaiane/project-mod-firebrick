@@ -12,7 +12,9 @@ from socialnetwork.utils.user_control_decorator import user_control
 from socialnetwork import serializers
 from socialnetwork import models
 
-UNAUTHENTICATED_RESPONSE_API = Response(status=401)
+
+def get_unauthenticated_response_api() -> Response:
+    return Response(status=401)
 
 
 @api_view(["POST"])
@@ -42,7 +44,7 @@ def api_create_text_post(request: Request, viewer: Optional[models.LocalAuthor])
         }
     """
     if viewer is None:  # shouldn't be possible, needed for mypy
-        return UNAUTHENTICATED_RESPONSE_API
+        return get_unauthenticated_response_api()
 
     data = request.data.copy()
     data["base_author"] = viewer.uuid
