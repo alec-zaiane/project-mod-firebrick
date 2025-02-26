@@ -24,8 +24,20 @@ def api_create_text_post(request: Request, author: models.LocalAuthor) -> Respon
             "visibility_type":<either 'PU' for public, 'FO' for Friends Only, 'UN' for unlisted>:str
             "post_type":<either 'PT' for plaintext, or 'MD' for markdown>:str
         }
-    returns JSON on success (code 201) mirrorring input
-    returns JSON on failure (code 400) mirroring expected keys, with values as errors
+    returns JSON on success (code 201)
+        {
+            "detail": "post created"
+            "post": {
+                <post details>
+            }
+        }
+    returns JSON on failure (code 400)
+        {
+            "error": "creation error"
+            "post": {
+                <errors for each field>
+            }
+        }
     """
     data = request.data.copy()
     data["base_author"] = author.uuid
@@ -36,9 +48,9 @@ def api_create_text_post(request: Request, author: models.LocalAuthor) -> Respon
     if serializer.is_valid():
         post = serializer.save()
         post.send_to_required_private_inboxes()
-        return Response(serializer.data, status=201)
+        return Response({"detail": "post created", "post": serializer.data}, status=201)
     else:
-        return Response(serializer.errors, status=400)
+        return Response({"error": "creation error", "post": serializer.errors}, status=400)
 
 
 @api_view(["PUT", "PATCH"])
@@ -73,10 +85,20 @@ def api_author_update(request: Request, target_author_uuid: str, author: Optiona
             "error": "You do not have permission to update this author"
         }
     returns JSON on failure (code 400)
-        Keys matching input fields, with values as errors
+        {
+            "error": "author update error"
+            "author": {
+                <errors for each field>
+            }
+        }
 
     returns JSON on success (code 200)
-        JSON matching input
+        {
+            "detail": "author updated"
+            "author": {
+                <updated author fields>
+            }
+        }
     """
     target_author = get_object_or_404(
         models.LocalAuthor, uuid=target_author_uuid)
@@ -86,8 +108,8 @@ def api_author_update(request: Request, target_author_uuid: str, author: Optiona
         target_author, data=request.data, partial=True)
     if serializer.is_valid():
         serializer.update(target_author, request.data.copy())
-        return Response(serializer.data, 200)
-    return Response(serializer.errors, status=400)
+        return Response({"detail": "author updated", "author": serializer.data}, 200)
+    return Response({"error": "author update error", "author": serializer.errors}, status=400)
 
 
 @api_view(["POST"])
@@ -118,4 +140,4 @@ def api_post_delete(request: Request, author: models.LocalAuthor, post_uuid: str
     # Perform the soft delete
     # this is ssetting is_deleted to = True which is added field to author_posts above
     post.delete()
-    return Response({"success": "Post deleted successfully"}, 200)
+    return Response({"detail": "Post deleted successfully"}, 200)
