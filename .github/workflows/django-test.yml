@@ -23,9 +23,7 @@ jobs:
     - name: Install dev dependencies
       run: |
         pip install -r src/requirements-dev.txt
-    - name: Run admin tests
+    - name: Run all tests
       run: |
-        python src/manage.py test adminpanel.tests
-    - name: Run socialnetwork tests
-      run: |
-        python src/manage.py test socialnetwork.tests
+        cd src
+        python src/manage.py test
