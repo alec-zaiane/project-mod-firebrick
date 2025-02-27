@@ -114,8 +114,139 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
         url = reverse("adminpanel:api_join_request_approve",
                       args=[join_request.pk])
         response = self.client.post(url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertFalse(User.objects.filter(
             username=join_request.username).exists())
         self.assertFalse(LocalAuthor.objects.filter(
             user__username=join_request.username).exists())
+
+    def test_deny_join_request(self) -> None:
+        """Test that an admin can deny a join request"""
+        join_request = AuthorJoinRequest.objects.create(
+            username="Mr-Deny", password="pass")
+
+        url = reverse("adminpanel:api_join_request_deny",
+                      args=[join_request.pk])
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertTrue(AuthorJoinRequest.objects.get(
+            id=join_request.pk).is_denied)
+
+        self.assertFalse(
+            User.objects.filter(username=join_request.username).exists())
+
+    def test_undeny_join_request(self) -> None:
+        """Test that an admin can undo a denied join request"""
+        # create a join request and deny it
+        join_request = AuthorJoinRequest.objects.create(
+            username="Mr-Undeny", password="pass")
+        join_request.deny()
+        self.assertTrue(
+            AuthorJoinRequest.objects.get(id=join_request.pk).is_denied)
+
+        # now try to undeny it
+        url = reverse("adminpanel:api_join_request_undeny",
+                      args=[join_request.pk])
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertFalse(
+            AuthorJoinRequest.objects.get(id=join_request.pk).is_denied)
+        self.assertFalse(User.objects.filter(
+            username=join_request.username).exists())
+
+    def test_user_cannot_deny_or_undeny_join_request(self) -> None:
+        """Test that a non-admin cannot deny a join request"""
+        self.client.force_authenticate(user=self.sample_authors[0].user)
+        # create a join request and try to deny it
+        join_request = AuthorJoinRequest.objects.create(
+            username="Mr-Deny", password="pass")
+        url = reverse("adminpanel:api_join_request_deny",
+                      args=[join_request.pk])
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(AuthorJoinRequest.objects.get(
+            id=join_request.pk).is_denied)
+
+        # now try undenying
+        join_request.deny()
+        self.assertTrue(
+            AuthorJoinRequest.objects.get(id=join_request.pk).is_denied)
+        url = reverse("adminpanel:api_join_request_undeny",
+                      args=[join_request.pk])
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertTrue(
+            AuthorJoinRequest.objects.get(id=join_request.pk).is_denied)
+
+    def test_logged_out_cannot_deny_or_undeny_join_request(self) -> None:
+        """Test that a logged-out user cannot deny a join request"""
+        self.client.logout()
+        # create a join request and try to deny it
+        join_request = AuthorJoinRequest.objects.create(
+            username="Mr-Deny", password="pass")
+        url = reverse("adminpanel:api_join_request_deny",
+                      args=[join_request.pk])
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertFalse(AuthorJoinRequest.objects.get(
+            id=join_request.pk).is_denied)
+
+        # now try undenying
+        join_request.deny()
+        self.assertTrue(
+            AuthorJoinRequest.objects.get(id=join_request.pk).is_denied)
+        url = reverse("adminpanel:api_join_request_undeny",
+                      args=[join_request.pk])
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertTrue(
+            AuthorJoinRequest.objects.get(id=join_request.pk).is_denied)
+
+    def test_cannot_delete_undenied_join_request(self) -> None:
+        """Test that a non-denied join request cannot be deleted"""
+        join_request = AuthorJoinRequest.objects.create(
+            username="Mr-Delete", password="pass")
+        url = reverse("adminpanel:api_join_request_delete",
+                      args=[join_request.pk])
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(AuthorJoinRequest.objects.filter(
+            id=join_request.pk).exists())
+
+    def test_delete_denied_join_request(self) -> None:
+        """Test that a denied join request can be deleted"""
+        join_request = AuthorJoinRequest.objects.create(
+            username="Mr-Delete", password="pass")
+        join_request.deny()
+        url = reverse("adminpanel:api_join_request_delete",
+                      args=[join_request.pk])
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(AuthorJoinRequest.objects.filter(
+            id=join_request.pk).exists())
+
+    def test_user_cannot_delete_join_request(self) -> None:
+        """Test that a non-admin cannot delete a join request"""
+        self.client.force_authenticate(user=self.sample_authors[0].user)
+        join_request = AuthorJoinRequest.objects.create(
+            username="Mr-Delete", password="pass")
+        url = reverse("adminpanel:api_join_request_delete",
+                      args=[join_request.pk])
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertTrue(AuthorJoinRequest.objects.filter(
+            id=join_request.pk).exists())
+
+    def test_logged_out_cannot_delete_join_request(self) -> None:
+        """Test that a logged-out user cannot delete a join request"""
+        self.client.logout()
+        join_request = AuthorJoinRequest.objects.create(
+            username="Mr-Delete", password="pass")
+        url = reverse("adminpanel:api_join_request_delete",
+                      args=[join_request.pk])
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertTrue(AuthorJoinRequest.objects.filter(
+            id=join_request.pk).exists())

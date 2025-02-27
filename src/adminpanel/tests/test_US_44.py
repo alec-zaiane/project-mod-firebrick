@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 
 from rest_framework import status
 
-from socialnetwork import models as socialmodels
+from socialnetwork.models import LocalAuthor
 from .utils_for_tests import NodeAdminUserStoryApiTest
 
 
@@ -23,7 +23,7 @@ class TestUserStory44(NodeAdminUserStoryApiTest):
         """Test adding an author through the API"""
         sample_username = "new_author"
         self.assertFalse(
-            socialmodels.LocalAuthor.objects.filter(
+            LocalAuthor.objects.filter(
                 user__username=sample_username).exists()
         )
         url = reverse("adminpanel:api_author_create")
@@ -33,7 +33,7 @@ class TestUserStory44(NodeAdminUserStoryApiTest):
         self.assertEqual(response.status_code,
                          status.HTTP_201_CREATED)
         self.assertTrue(
-            socialmodels.LocalAuthor.objects.filter(
+            LocalAuthor.objects.filter(
                 user__username=sample_username).exists()
         )
 
@@ -41,7 +41,7 @@ class TestUserStory44(NodeAdminUserStoryApiTest):
         """Test that you cannot add another author with the same username"""
         sample_username = "double_author"
         self.assertFalse(
-            socialmodels.LocalAuthor.objects.filter(
+            LocalAuthor.objects.filter(
                 user__username=sample_username).exists()
         )
         url = reverse("adminpanel:api_author_create")
@@ -100,7 +100,7 @@ class TestUserStory44(NodeAdminUserStoryApiTest):
                 url, data, format="json")
             self.assertEqual(response.status_code,
                              status.HTTP_200_OK, response.data)
-            author = socialmodels.LocalAuthor.objects.get(uuid=author.uuid)
+            author = LocalAuthor.objects.get(uuid=author.uuid)
             self.assertEqual(
                 getattr_nested(author, prop_name),
                 expected,
@@ -128,9 +128,9 @@ class TestUserStory44(NodeAdminUserStoryApiTest):
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertNotEqual(
-            socialmodels.LocalAuthor.objects.get(
+            LocalAuthor.objects.get(
                 uuid=self.sample_authors[0].uuid).username,
-            socialmodels.LocalAuthor.objects.get(
+            LocalAuthor.objects.get(
                 uuid=self.sample_authors[1].uuid).username
         )
 
@@ -138,7 +138,7 @@ class TestUserStory44(NodeAdminUserStoryApiTest):
         """Test that deleting users works"""
         for user in self.sample_authors:
             self.assertTrue(
-                socialmodels.LocalAuthor.objects.filter(
+                LocalAuthor.objects.filter(
                     uuid=user.uuid
                 ).exists()
             )
@@ -149,7 +149,7 @@ class TestUserStory44(NodeAdminUserStoryApiTest):
             self.assertEqual(response.status_code, status.HTTP_200_OK)
 
             self.assertFalse(
-                socialmodels.LocalAuthor.objects.filter(
+                LocalAuthor.objects.filter(
                     uuid=user.uuid
                 ).exists()
             )
@@ -173,6 +173,6 @@ class TestUserStory44(NodeAdminUserStoryApiTest):
         # now make sure none of the previously existing authors were deleted accidentally
         for existing_uuid in all_uuids:
             self.assertTrue(
-                socialmodels.LocalAuthor.objects.filter(
+                LocalAuthor.objects.filter(
                     uuid=existing_uuid).exists()
             )
