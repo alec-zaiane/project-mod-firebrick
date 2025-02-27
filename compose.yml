@@ -1,6 +1,6 @@
 ---
 services:
-  db:
+  postgres:
     image: postgres:latest
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -20,7 +20,7 @@ services:
       - .dockerenv/.django.env
       - .dockerenv/.postgres.env
     depends_on:
-      - db
+      - postgres
 
   caddy:
     image: caddy:latest
