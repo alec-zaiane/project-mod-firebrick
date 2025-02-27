@@ -46,5 +46,9 @@
             ]
         }
     },
-    "postCreateCommand": "./.devcontainer/post-create.fish"
+    "postCreateCommand": "./.devcontainer/post-create.fish",
+    "postStartCommand": "sudo chmod 666 /var/run/docker.sock",
+    "mounts": [
+        "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
+    ]
 }
