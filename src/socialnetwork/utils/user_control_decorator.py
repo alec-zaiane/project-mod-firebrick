@@ -58,7 +58,7 @@ def user_control(must_be_logged_in: bool = False, must_be_author: bool = False, 
 
             # 1: check `must_be_logged_in`
             if must_be_logged_in and not request.user.is_authenticated:
-                return FAILURE_RESPONSE
+                return HttpResponseRedirect(reverse("socialnetwork:not_logged_in")) if not IS_API else FAILURE_RESPONSE
 
             # fetch author information for future checks
 
