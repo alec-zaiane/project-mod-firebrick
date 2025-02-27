@@ -68,7 +68,7 @@ class AdminPanelAPITest(APITestCase):
     def test_create_join_request(self) -> None:
         """test submitting a join request"""
 
-        url = reverse("adminpanel:api_create_join_request")
+        url = reverse("adminpanel:api_join_request_create")
         data = {"username": "join_request", "password": "securepass"}
 
         response = self.client.post(url, data, format="json")

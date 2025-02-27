@@ -1,45 +1,21 @@
-from __future__ import annotations
-
 from typing import Any
 
-import itertools
-import os
 import uuid
 
-from django.contrib.auth.models import User
 from django.urls import reverse
-from django.test import TestCase
-from django.db import connection
-from django.apps import apps
+from django.contrib.auth.models import User
 
-from rest_framework.test import APITestCase
 from rest_framework import status
 
 from socialnetwork import models as socialmodels
-
-
-class NodeAdminUserStoryApiTest(APITestCase):
-    def setUp(self) -> None:
-        self.user = User.objects.create_superuser(
-            username="admin", password="pass")
-        self.user.save()
-        self.author = socialmodels.LocalAuthor.objects.create(user=self.user)
-        self.author.save()
-        self.client.force_authenticate(user=self.user)
-
-        self.sample_authors: list[socialmodels.LocalAuthor] = []
-        for i in range(5):
-            User.objects.create_user(
-                username=f"sample_author_{i}", password="pass")
-            sample_author = socialmodels.LocalAuthor.objects.create(
-                user=User.objects.get(username=f"sample_author_{i}"))
-            self.sample_authors.append(sample_author)
+from .utils_for_tests import NodeAdminUserStoryApiTest
 
 
 class TestUserStory44(NodeAdminUserStoryApiTest):
     """
     Tests for User Story 44
     https://github.com/uofa-cmput404/w25-project-mod-firebrick/issues/44
+    "As a node admin, I want to be able to add, modify, and delete authors"
     """
 
     # admin adding authors
@@ -131,6 +107,16 @@ class TestUserStory44(NodeAdminUserStoryApiTest):
                 f"Author {author.uuid} does not have {prop_name} == {expected} post-update"
             )
 
+    def test_modify_author_fail_on_unauthorized(self) -> None:
+        """Test that non-admins cannot modify authors that aren't themselves"""
+        self.client.force_authenticate(user=self.sample_authors[0].user)
+        url = reverse("socialnetwork:api_author_update",
+                      args=[self.sample_authors[1].uuid])
+        response = self.client.patch(
+            url, {"username": "new_username"}, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
     def test_modify_author_fail_on_double_username(self) -> None:
         """Test if updating a user to have the same username as another fails as expected"""
         url = reverse("socialnetwork:api_author_update",
@@ -190,57 +176,3 @@ class TestUserStory44(NodeAdminUserStoryApiTest):
                 socialmodels.LocalAuthor.objects.filter(
                     uuid=existing_uuid).exists()
             )
-
-
-class TestUserStory47(TestCase):
-    """
-    Tests for User story 47
-    https://github.com/uofa-cmput404/w25-project-mod-firebrick/issues/47
-    Written by Mosa, moved here
-    """
-
-    def test_use_postgresql_in_production(self) -> None:
-        """check if postgreSQL is being used on heroku (as the issue states)"""
-
-        if "DATABASE_URL" in os.environ:
-            self.assertEqual(connection.vendor, "postgresql",
-                             "PostgreSQL is required for production.")
-
-    def test_use_sqlite_for_testing(self) -> None:
-        """check if SQLite is being used for testing in local machines (as stated in the issue)"""
-
-        self.assertEqual(connection.vendor, "sqlite", "SQLite DB must be used")
-
-    def test_no_forbidden_databases_used(self) -> None:
-        """check if no other database is being used (they are forbidden)"""
-
-        forbidden_dbs = ["firebase", "mongodb"]
-        self.assertNotIn(connection.vendor, forbidden_dbs,
-                         "Forbidden database detected!")
-
-
-class TestUserStory48(TestCase):
-    """
-    Tests for User Story 48
-    https://github.com/uofa-cmput404/w25-project-mod-firebrick/issues/48
-    Written by Mosa, moved here
-    """
-
-    def test_no_array_or_json_fields_in_models(self) -> None:
-        """check if database uses ArrayField or JSONField"""
-        try:
-            from django.contrib.postgres.fields import ArrayField, JSONField
-            POSTGRES_AVAILABLE = True
-        except ImportError:
-            # skip otherwise
-            POSTGRES_AVAILABLE = False
-        # get all models
-
-        models = apps.get_app_config("socialnetwork").get_models()
-        models_adminpanel = apps.get_app_config("adminpanel").get_models()
-
-        for model in itertools.chain(models, models_adminpanel):
-            for field in model._meta.get_fields():
-                if POSTGRES_AVAILABLE and isinstance(field, (ArrayField, JSONField)):
-                    self.fail(
-                        f"Model {model.__name__} has either an ArrayField or JSONField ({field.name}).")

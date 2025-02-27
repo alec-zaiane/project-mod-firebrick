@@ -28,8 +28,8 @@ urlpatterns_api = [
          name="api_author_delete"),
 
     path("api/join_request/create",
-         views_api.api_create_join_request,
-         name="api_create_join_request"),
+         views_api.api_join_request_create,
+         name="api_join_request_create"),
 
     path("api/join_request/<int:join_request_id>/approve",
          views_api.api_join_request_approve,

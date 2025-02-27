@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional
 
 from socialnetwork.utils.user_control_decorator import user_control
 
@@ -116,10 +116,10 @@ def author_create(request: Request) -> Response:
 
 
 @api_view(["POST"])
-@user_control(must_be_logged_in=True, must_be_superuser=True)
-def api_create_join_request(request: Request) -> Response:
+@user_control()
+def api_join_request_create(request: Request, viewer: Optional[socialmodels.LocalAuthor]) -> Response:
     """Create a join request
-    Will serve a redirect if unauthorized
+    Will serve a 401/403 if unauthorized
 
     expects JSON
         {
@@ -143,6 +143,8 @@ def api_create_join_request(request: Request) -> Response:
             }
         }
     """
+    if viewer is not None and not viewer.user.is_superuser:
+        return Response(status=403)
     if not hasattr(request, "data"):
         return Response({"error": "Request must have a JSON body"}, status=400)
     data: dict[str, Any] = request.data

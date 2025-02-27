@@ -3,7 +3,7 @@
 {% load static %}
 
 {% block head %}
-    <script src="{% static 'join-request.min.js' %}"></script>
+<script src="{% static 'join-request.min.js' %}"></script>
 {% endblock %}
 
 {% block body %}
@@ -15,7 +15,7 @@
     </section>
     <section class="right-panel">
         <h2 class="join-request">Request to Join</h2>
-        <form name="join-request-form" action="{% url 'adminpanel:api_create_join_request' %}" method="post">
+        <form name="join-request-form" action="{% url 'adminpanel:api_join_request_create' %}" method="post">
             <div id="generic_response"></div>
             {% csrf_token %}
             <input type="hidden" name="_method" value="POST">
@@ -29,7 +29,7 @@
             <legend class="or-text">OR</legend>
             <a class="login" href="{% url 'login' %}">Log In</a>
         </fieldset>
-        
+
     </section>
 </main>
 
