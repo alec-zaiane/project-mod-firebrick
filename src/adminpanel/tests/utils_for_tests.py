@@ -16,7 +16,10 @@ class NodeAdminUserStoryApiTest(APITestCase):
         self.client.force_authenticate(user=self.user)
 
         self.sample_authors: list[socialmodels.LocalAuthor] = []
-        for i in range(5):
+            
+    def initialize_sample_authors(self, num_authors:int=5) -> None:
+        """Initialzie some sample authors for testing"""        
+        for i in range(num_authors):
             User.objects.create_user(
                 username=f"sample_author_{i}", password="pass")
             sample_author = socialmodels.LocalAuthor.objects.create(

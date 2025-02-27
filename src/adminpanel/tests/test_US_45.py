@@ -21,6 +21,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
     @tag("check-slow", "security")
     def test_fail_to_add_user(self) -> None:
         """Test that a non-admin cannot add an author"""
+        self.initialize_sample_authors()
         self.client.force_authenticate(user=self.sample_authors[0].user)
         url = reverse("adminpanel:api_author_create")
         response = self.client.post(
@@ -39,6 +40,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
     @tag("check-medium", "security")
     def test_create_join_request_logged_in(self) -> None:
         """Test that a logged-in user cannot create a join request"""
+        self.initialize_sample_authors()
         self.client.force_authenticate(user=self.sample_authors[0].user)
         url = reverse("adminpanel:api_join_request_create")
         response = self.client.post(
@@ -68,6 +70,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
     @tag("check-medium")
     def test_create_join_request_matching_username_fail(self) -> None:
         """Test that you cannot create a join request with a username that matches an existing user"""
+        self.initialize_sample_authors()
         self.client.logout()
         url = reverse("adminpanel:api_join_request_create")
         response = self.client.post(
@@ -104,6 +107,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
     @tag("check-slow", "security")
     def test_non_admin_cannot_approve_join_request(self) -> None:
         """Test that a non-admin cannot approve a join request"""
+        self.initialize_sample_authors()
         join_request = AuthorJoinRequest.objects.create(
             username="Mr-Approve", password="pass")
         self.client.force_authenticate(user=self.sample_authors[0].user)
@@ -172,6 +176,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
     @tag("check-slow", "security")
     def test_user_cannot_deny_or_undeny_join_request(self) -> None:
         """Test that a non-admin cannot deny a join request"""
+        self.initialize_sample_authors()
         self.client.force_authenticate(user=self.sample_authors[0].user)
         # create a join request and try to deny it
         join_request = AuthorJoinRequest.objects.create(
@@ -247,6 +252,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
     @tag("check-slow", "security")
     def test_user_cannot_delete_join_request(self) -> None:
         """Test that a non-admin cannot delete a join request"""
+        self.initialize_sample_authors()
         self.client.force_authenticate(user=self.sample_authors[0].user)
         join_request = AuthorJoinRequest.objects.create(
             username="Mr-Delete", password="pass")

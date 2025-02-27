@@ -82,15 +82,13 @@ class TestUserStory44(NodeAdminUserStoryApiTest):
             ({"email": "new@new.com"}, ("user.email", "new@new.com")),                  # noqa
             ({"bio": "new_bio"}, ("bio", "new_bio"))                                    # noqa
         ]
+        self.initialize_sample_authors(len(updates))
 
         def getattr_nested(obj: Any, attr: str) -> Any:
             for a in attr.split("."):
                 obj = getattr(obj, a)
             return obj
 
-        if len(self.sample_authors) != len(updates):
-            self.fail(
-                "Please update either the number of sample authors or the number of updates")
 
         for (data, (prop_name, expected)), author in zip(updates, self.sample_authors):
             url = reverse("socialnetwork:api_author_update",
@@ -114,6 +112,7 @@ class TestUserStory44(NodeAdminUserStoryApiTest):
     @tag("check-slow", "security")
     def test_modify_author_fail_on_unauthorized(self) -> None:
         """Test that non-admins cannot modify authors that aren't themselves"""
+        self.initialize_sample_authors()
         self.client.force_authenticate(user=self.sample_authors[0].user)
         url = reverse("socialnetwork:api_author_update",
                       args=[self.sample_authors[1].uuid])
@@ -125,6 +124,7 @@ class TestUserStory44(NodeAdminUserStoryApiTest):
     @tag("check-slow")
     def test_modify_author_fail_on_double_username(self) -> None:
         """Test if updating a user to have the same username as another fails as expected"""
+        self.initialize_sample_authors()
         url = reverse("socialnetwork:api_author_update",
                       args=[self.sample_authors[0].uuid])
         new_name = self.sample_authors[1].username
@@ -143,6 +143,7 @@ class TestUserStory44(NodeAdminUserStoryApiTest):
     @tag("check-fast")
     def test_delete_user(self) -> None:
         """Test that deleting users works"""
+        self.initialize_sample_authors()
         for user in self.sample_authors:
             self.assertTrue(
                 LocalAuthor.objects.filter(
@@ -167,6 +168,7 @@ class TestUserStory44(NodeAdminUserStoryApiTest):
     @tag("check-slow")
     def test_delete_user_404(self) -> None:
         """Test that failing to delete a nonexistant user doesn't delete any existing users"""
+        self.initialize_sample_authors()
         all_uuids: list[uuid.UUID] = [a.uuid for a in self.sample_authors]
 
         bad_uuid = uuid.uuid4()
