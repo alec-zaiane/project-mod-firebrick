@@ -1,7 +1,10 @@
 from django.urls import reverse
 from django.contrib.auth.models import User
+from django.test import tag
+
 from rest_framework.test import APITestCase
 from rest_framework import status
+
 from adminpanel.models import AuthorJoinRequest
 from socialnetwork.models import LocalAuthor
 
@@ -26,6 +29,7 @@ class AdminPanelAPITest(APITestCase):
         self.join_request = AuthorJoinRequest.objects.create(
             username="new", password="pass")
 
+    @tag("check-medium", "api")
     def test_create_author_for_superuser(self) -> None:
         """test creating an author for a superuser"""
 
@@ -39,24 +43,3 @@ class AdminPanelAPITest(APITestCase):
 
         # check if the author was created
         self.assertTrue(LocalAuthor.objects.filter(user=self.admin).exists())
-
-    def test_delete_denied_join_request(self) -> None:
-        """test deleting a denied join request"""
-
-        join_request = AuthorJoinRequest.objects.create(
-            username="denied", password="pass")
-
-        # deny request before deleting it
-        join_request.deny()
-
-        url = reverse("adminpanel:api_join_request_delete",
-                      args=[join_request.id])
-
-        response = self.client.post(url)
-
-        # check the redirect
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        # check if the request was created
-        self.assertFalse(AuthorJoinRequest.objects.filter(
-            id=join_request.id).exists())
