@@ -1,0 +1,37 @@
+---
+services:
+  db:
+    image: postgres:latest
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - .dockerenv/.postgres.env
+    environment:
+      - POSTGRES_DB=socialnetwork
+
+  socialnetwork:
+    image: socialnetwork:latest
+    build: ./src
+    command: gunicorn project_firebrick.wsgi:application --bind 0.0.0.0:8080
+    ports:
+      - "8080:8080"
+    env_file:
+      - .dockerenv/.django.env.nosecrets
+      - .dockerenv/.django.env
+      - .dockerenv/.postgres.env
+    depends_on:
+      - db
+
+  caddy:
+    image: caddy:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./src/caddyfile:/etc/caddy/Caddyfile
+    depends_on:
+      - socialnetwork
+
+
+volumes:
+  postgres_data:
