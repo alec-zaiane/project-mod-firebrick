@@ -69,21 +69,10 @@ def api_author_update(request: Request, target_author_uuid: str, viewer: Optiona
     Will serve a redirect if unauthorized
     expects JSON
         {
-            "following":<list of author uuids>:list[str] (optional)
             "username":<updated username>:str (optional)
             "first_name":<updated first name>:str (optional)
             "last_name":<updated last name>:str (optional)
             "email":<updated email>:str (optional)
-        }
-    Alternative JSON
-        {
-            "user" {
-                "username":<updated username>:str (optional)
-                "first_name":<updated first name>:str (optional)
-                "last_name":<updated last name>:str (optional)
-                "email":<updated email>:str (optional)
-            }
-            "following":<list of author uuids>:list[str] (optional)
         }
 
     will return a 404 on not found

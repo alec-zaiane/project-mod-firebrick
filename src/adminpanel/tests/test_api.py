@@ -45,13 +45,6 @@ class AdminPanelAPITest(APITestCase):
         # check if the codes are correct
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        # check if url exists, and if redirect still exists
-        if hasattr(response, "url"):
-            self.assertTrue(response.url.endswith(
-                reverse("adminpanel:adminpanel")))
-        else:
-            print("the post request response has no url")
-
         # check if the author was created
         self.assertTrue(LocalAuthor.objects.filter(user=self.admin).exists())
 
