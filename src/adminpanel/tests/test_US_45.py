@@ -1,8 +1,9 @@
 from django.urls import reverse
 
-from rest_framework import status
 from django.contrib.auth.models import User
+from django.test import tag
 
+from rest_framework import status
 
 from .utils_for_tests import NodeAdminUserStoryApiTest
 from adminpanel.models import AuthorJoinRequest
@@ -17,6 +18,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
     up but require my OK to finally be on my node"
     """
 
+    @tag("check-slow", "security")
     def test_fail_to_add_user(self) -> None:
         """Test that a non-admin cannot add an author"""
         self.client.force_authenticate(user=self.sample_authors[0].user)
@@ -25,6 +27,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
             url, {"username": "new_author", "password": "pass"})
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    @tag("check-fast")
     def test_create_join_request_logged_out(self) -> None:
         """Test that a logged-out user can create a join request"""
         self.client.logout()
@@ -33,6 +36,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
             url, {"username": "Mr-Logged-out", "password": "pass"})
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
+    @tag("check-medium", "security")
     def test_create_join_request_logged_in(self) -> None:
         """Test that a logged-in user cannot create a join request"""
         self.client.force_authenticate(user=self.sample_authors[0].user)
@@ -41,6 +45,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
             url, {"username": "Mr-Logged-in", "password": "pass"})
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    @tag("check-medium", "security")
     def test_create_join_request_superuser(self) -> None:
         """Test that a superuser can create a join request"""
         url = reverse("adminpanel:api_join_request_create")
@@ -48,6 +53,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
             url, {"username": "Mr-Superuser", "password": "pass"})
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
+    @tag("check-medium")
     def test_create_existing_join_request_fail(self) -> None:
         """Test that you cannot create a join request if another one exists for the same username"""
         self.client.logout()
@@ -59,6 +65,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
             url, {"username": "Mr-Double-entry", "password": "pass"})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @tag("check-medium")
     def test_create_join_request_matching_username_fail(self) -> None:
         """Test that you cannot create a join request with a username that matches an existing user"""
         self.client.logout()
@@ -67,6 +74,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
             url, {"username": self.sample_authors[0].user.username, "password": "pass"})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @tag("check-fast")
     def test_approve_join_request(self) -> None:
         """Test that an admin can approve a join request"""
         join_request = AuthorJoinRequest.objects.create(
@@ -86,12 +94,14 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
         self.assertTrue(
             LocalAuthor.objects.filter(user__username=join_request.username).exists())
 
+    @tag("check-slow")
     def test_approve_nonexistent_join_request_fail(self) -> None:
         """Test that an admin cannot approve a non-existent join request"""
         url = reverse("adminpanel:api_join_request_approve", args=[999])
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
+    @tag("check-slow", "security")
     def test_non_admin_cannot_approve_join_request(self) -> None:
         """Test that a non-admin cannot approve a join request"""
         join_request = AuthorJoinRequest.objects.create(
@@ -106,6 +116,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
         self.assertFalse(LocalAuthor.objects.filter(
             user__username=join_request.username).exists())
 
+    @tag("check-slow", "security")
     def test_logged_out_cannot_approve_join_request(self) -> None:
         """Test that a logged-out user cannot approve a join request"""
         join_request = AuthorJoinRequest.objects.create(
@@ -120,6 +131,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
         self.assertFalse(LocalAuthor.objects.filter(
             user__username=join_request.username).exists())
 
+    @tag("check-medium")
     def test_deny_join_request(self) -> None:
         """Test that an admin can deny a join request"""
         join_request = AuthorJoinRequest.objects.create(
@@ -136,6 +148,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
         self.assertFalse(
             User.objects.filter(username=join_request.username).exists())
 
+    @tag("check-medium")
     def test_undeny_join_request(self) -> None:
         """Test that an admin can undo a denied join request"""
         # create a join request and deny it
@@ -156,6 +169,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
         self.assertFalse(User.objects.filter(
             username=join_request.username).exists())
 
+    @tag("check-slow", "security")
     def test_user_cannot_deny_or_undeny_join_request(self) -> None:
         """Test that a non-admin cannot deny a join request"""
         self.client.force_authenticate(user=self.sample_authors[0].user)
@@ -180,6 +194,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
         self.assertTrue(
             AuthorJoinRequest.objects.get(id=join_request.pk).is_denied)
 
+    @tag("check-slow", "security")
     def test_logged_out_cannot_deny_or_undeny_join_request(self) -> None:
         """Test that a logged-out user cannot deny a join request"""
         self.client.logout()
@@ -204,6 +219,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
         self.assertTrue(
             AuthorJoinRequest.objects.get(id=join_request.pk).is_denied)
 
+    @tag("check-slow")
     def test_cannot_delete_undenied_join_request(self) -> None:
         """Test that a non-denied join request cannot be deleted"""
         join_request = AuthorJoinRequest.objects.create(
@@ -215,6 +231,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
         self.assertTrue(AuthorJoinRequest.objects.filter(
             id=join_request.pk).exists())
 
+    @tag("check-slow")
     def test_delete_denied_join_request(self) -> None:
         """Test that a denied join request can be deleted"""
         join_request = AuthorJoinRequest.objects.create(
@@ -227,6 +244,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
         self.assertFalse(AuthorJoinRequest.objects.filter(
             id=join_request.pk).exists())
 
+    @tag("check-slow", "security")
     def test_user_cannot_delete_join_request(self) -> None:
         """Test that a non-admin cannot delete a join request"""
         self.client.force_authenticate(user=self.sample_authors[0].user)
@@ -239,6 +257,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
         self.assertTrue(AuthorJoinRequest.objects.filter(
             id=join_request.pk).exists())
 
+    @tag("check-slow", "security")
     def test_logged_out_cannot_delete_join_request(self) -> None:
         """Test that a logged-out user cannot delete a join request"""
         self.client.logout()

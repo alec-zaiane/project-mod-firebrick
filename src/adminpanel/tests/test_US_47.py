@@ -1,9 +1,9 @@
 import os
 
 from django.db import connection
-from django.test import TestCase
+from django.test import TestCase, tag
 
-
+@tag("US-node-management", "check-slow")
 class TestUserStory47(TestCase):
     """
     Tests for User story 47

@@ -1,10 +1,11 @@
 from django.contrib.auth.models import User
+from django.test import tag
 
 from rest_framework.test import APITestCase
 
 from socialnetwork import models as socialmodels
 
-
+@tag("US-node-management", "api")
 class NodeAdminUserStoryApiTest(APITestCase):
     def setUp(self) -> None:
         self.user = User.objects.create_superuser(

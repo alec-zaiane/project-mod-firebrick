@@ -4,6 +4,7 @@ import uuid
 
 from django.urls import reverse
 from django.contrib.auth.models import User
+from django.test import tag
 
 from rest_framework import status
 
@@ -18,7 +19,7 @@ class TestUserStory44(NodeAdminUserStoryApiTest):
     "As a node admin, I want to be able to add, modify, and delete authors"
     """
 
-    # admin adding authors
+    @tag("check-fast")
     def test_add_author(self) -> None:
         """Test adding an author through the API"""
         sample_username = "new_author"
@@ -37,6 +38,7 @@ class TestUserStory44(NodeAdminUserStoryApiTest):
                 user__username=sample_username).exists()
         )
 
+    @tag("check-medium")
     def test_fail_on_add_existing_username(self) -> None:
         """Test that you cannot add another author with the same username"""
         sample_username = "double_author"
@@ -52,19 +54,21 @@ class TestUserStory44(NodeAdminUserStoryApiTest):
             url, {"username": sample_username, "password": "pass"})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @tag("check-slow")
     def test_fail_on_no_username(self) -> None:
         """Test that you cannot add an author without a username"""
         url = reverse("adminpanel:api_author_create")
         response = self.client.post(url, {"password": "pass"})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @tag("check-slow")
     def test_fail_on_no_password(self) -> None:
         """Test that you cannot add an author without a password"""
         url = reverse("adminpanel:api_author_create")
         response = self.client.post(url, {"username": "new_author"})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    # admin modifying authors
+    @tag("check-fast")
     def test_modify_author(self) -> None:
         """Test modifying the sample authors for success"""
 
@@ -107,6 +111,7 @@ class TestUserStory44(NodeAdminUserStoryApiTest):
                 f"Author {author.uuid} does not have {prop_name} == {expected} post-update"
             )
 
+    @tag("check-slow", "security")
     def test_modify_author_fail_on_unauthorized(self) -> None:
         """Test that non-admins cannot modify authors that aren't themselves"""
         self.client.force_authenticate(user=self.sample_authors[0].user)
@@ -117,6 +122,7 @@ class TestUserStory44(NodeAdminUserStoryApiTest):
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    @tag("check-slow")
     def test_modify_author_fail_on_double_username(self) -> None:
         """Test if updating a user to have the same username as another fails as expected"""
         url = reverse("socialnetwork:api_author_update",
@@ -134,6 +140,7 @@ class TestUserStory44(NodeAdminUserStoryApiTest):
                 uuid=self.sample_authors[1].uuid).username
         )
 
+    @tag("check-fast")
     def test_delete_user(self) -> None:
         """Test that deleting users works"""
         for user in self.sample_authors:
@@ -157,6 +164,7 @@ class TestUserStory44(NodeAdminUserStoryApiTest):
                 User.objects.filter(username=authors_user).exists()
             )
 
+    @tag("check-slow")
     def test_delete_user_404(self) -> None:
         """Test that failing to delete a nonexistant user doesn't delete any existing users"""
         all_uuids: list[uuid.UUID] = [a.uuid for a in self.sample_authors]

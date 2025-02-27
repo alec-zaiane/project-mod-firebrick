@@ -1,9 +1,10 @@
 import itertools
 
-from django.test import TestCase
 from django.apps import apps
+from django.test import TestCase, tag
 
 
+@tag("US-node-management", "check-slow")
 class TestUserStory48(TestCase):
     """
     Tests for User Story 48
