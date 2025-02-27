@@ -19,7 +19,7 @@ def get_unauthenticated_response_api() -> Response:
 
 @api_view(["POST"])
 @user_control(must_be_logged_in=True, must_be_author=True)
-def api_create_text_post(request: Request, viewer: Optional[models.LocalAuthor]) -> Response:
+def api_textpost_create(request: Request, viewer: Optional[models.LocalAuthor]) -> Response:
     """Create a text based post
     Will serve a redirect if unauthorized
     Expects JSON
@@ -112,7 +112,7 @@ def api_author_update(request: Request, target_author_uuid: str, viewer: Optiona
 @user_control(must_be_logged_in=True, must_be_author=True)
 def api_post_delete(request: Request, viewer: Optional[models.LocalAuthor], post_uuid: str) -> Response:
     """Delete a post
-    Will serve a redirect if unauthorized
+    Will serve an unauthorized response if unauthorized
 
     Expects no body
     Will serve a 404 on not found
@@ -137,3 +137,43 @@ def api_post_delete(request: Request, viewer: Optional[models.LocalAuthor], post
     # this is ssetting is_deleted to = True which is added field to author_posts above
     post.delete()
     return Response({"detail": "Post deleted successfully"}, 200)
+
+
+@api_view(["POST"])
+@user_control(must_be_logged_in=True, must_be_author=True)
+def api_textpost_update(request: Request, viewer: Optional[models.LocalAuthor], post_uuid:str) -> Response:
+    """Modify a post
+    Will serve an unauthorized response if unauthorized
+    
+    Expects JSON
+        {
+            "content":<post content>:str (optional)
+            "visibility_type":<either 'PU' for public, 'FO' for Friends Only, 'UN' for unlisted>:str (optional)
+            "post_type":<either 'PT' for plaintext, or 'MD' for markdown>:str (optional)
+        }
+    Will serve a 404 on not found
+    
+    returns JSON on error (code 403)
+        {
+            "error": <error>:str
+            "post": {
+                <errors for each field>
+            }
+        }
+    
+    returns JSON on success (code 200)
+        {
+            "detail": "post updated"
+            "post": {
+                <updated post details>
+            }
+        }
+    """
+    post = get_object_or_404(models.PostTextBased, uuid=post_uuid)
+    if post.author != viewer:
+        return Response({"error": "You must be the author of this post to modify it"}, 403)
+    serializer = serializers.PostTextBasedSerializer(post, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.update(post, request.data.copy())
+        return Response({"detail": "post updated", "post": serializer.data}, 200)
+    return Response({"error": "post update error", "post": serializer.errors}, 403)

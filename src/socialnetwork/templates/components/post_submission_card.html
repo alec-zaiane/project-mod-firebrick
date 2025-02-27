@@ -1,5 +1,5 @@
 <div class="post-submission-card">
-    <form action="{% url 'socialnetwork:api_create_text_post' %}" method="post">
+    <form action="{% url 'socialnetwork:api_textpost_create' %}" method="post">
         {% csrf_token %}
         <textarea name="content" rows="4" cols="50"></textarea>
         <input name="author" type="hidden" value="{{ author.uuid }}">

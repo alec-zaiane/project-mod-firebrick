@@ -16,6 +16,7 @@ class PostTextBasedSerializer(PostSerializer):
     class Meta:
         model = models.PostTextBased
         fields = ["content", "base_author", "visibility_type", "post_type"]
+        read_only_fields = ["base_author"]
 
 
 class UserSerializer(serializers.ModelSerializer[User]):

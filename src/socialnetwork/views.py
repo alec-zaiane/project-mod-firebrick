@@ -86,14 +86,4 @@ def edit_post_view(request: HttpRequest, post_uuid: str, viewer: models.LocalAut
     if post.author != viewer:
         return HttpResponse("You do not have permission to edit this post.", status=403)
 
-    if request.method == "POST":
-        new_content = request.POST.get("content")
-        new_post_type = request.POST.get("post_type")
-
-    if new_content and new_post_type in [models.PostTextBased.TextPostTypes.PLAINTEXT, models.PostTextBased.TextPostTypes.MARKDOWN]:
-        post.content = new_content
-        post.post_type = new_post_type
-        post._finalize_edit()
-        return redirect("socialnetwork:stream")
-
     return render(request, "edit_post.html", {"post": post, "author": viewer})

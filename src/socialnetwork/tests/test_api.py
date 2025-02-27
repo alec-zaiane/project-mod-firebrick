@@ -16,7 +16,7 @@ class APICreatePOstTest(APITestCase):
         self.client.force_authenticate(user=self.user)
 
         # the path name
-        self.post_url = reverse("socialnetwork:api_create_text_post")
+        self.post_url = reverse("socialnetwork:api_textpost_create")
 
     def test_create_post(self) -> None:
         """create a post test"""
