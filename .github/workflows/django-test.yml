@@ -26,4 +26,4 @@ jobs:
     - name: Run all tests
       run: |
         cd src
-        python src/manage.py test
+        python manage.py test
