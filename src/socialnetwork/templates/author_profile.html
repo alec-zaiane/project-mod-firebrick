@@ -31,9 +31,11 @@
 
             {# Show the Delete button only if the author is the viewer #}
             {% if author == viewer %}
-            <form method="post" action="{% url 'socialnetwork:api_post_delete' post.uuid %}"
-                onsubmit="return confirm('Are you sure you want to delete this post?');">
+            <form name="generic-form" action="{% url 'socialnetwork:api_post_delete' post.uuid %}">
                 {% csrf_token %}
+                <input type="hidden" name="_method" value="POST">
+                <input type="hidden" name="_after_action" value="reload confirm">
+                <input type="hidden" name="_confirm_text" value="Are you sure you want to delete this post?">
                 <button type="submit" class="delete-button">Delete</button>
             </form>
             {% endif %}

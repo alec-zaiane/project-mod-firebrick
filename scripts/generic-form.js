@@ -3,7 +3,8 @@
 /*
     <form name="generic-form" action="TARGET URL HERE">
         <input type="hidden" name="_method" value="METHOD HERE">
-        (optional) <input type="hiden" name="_after_action" value="SEE BELOW FOR THIS ONE">
+        (optional) <input type="hidden" name="_after_action" value="SEE BELOW FOR THIS ONE">
+        (optional) <input type="hidden" name="_confirm_text" value=CONFIRMATION TEXT">
 
         <input OTHER INPUTS>
         <button type="submit">Submit</button>
@@ -29,6 +30,7 @@
 // the _after input:
 /* is a space separated list of actions to take after the user clicks submit
     - confirm: will show a confirm dialog before submitting the form
+        - by default it will ask a generic message, you can override this with a `_confirm_text` input
     - reload: will reload the page after the form is submitted
 */
 
@@ -134,21 +136,30 @@ document.addEventListener("DOMContentLoaded", () => {
         form.addEventListener("submit", (event) => {
             event.preventDefault();
             let formData = new FormData(form);
+            // extract the control inputs
             let method = formData.get("_method");
+            formData.delete("_method");
             var afterActions = [];
             let afterActionsString = formData.get("_after_action");
             if (afterActionsString) {
                 afterActions = afterActionsString.split(" ");
             }
-            formData.delete("_method");
             formData.delete("_after_action");
+            var confirmationTextOverride = formData.get("_confirm_text");
+            formData.delete("_confirm_text");
+
+
             formData = nestify_formData(formData);
             if (!method) {
                 console.error("No method specified for generic form, no action taken");
                 return;
             }
             if (afterActions.includes("confirm")) {
-                if (!confirm("Are you sure you want to submit this?")) {
+                let confirmText = "Are you sure you want to submit this?";
+                if (confirmationTextOverride) {
+                    confirmText = confirmationTextOverride;
+                }
+                if (!confirm(confirmText)) {
                     return;
                 }
             }
