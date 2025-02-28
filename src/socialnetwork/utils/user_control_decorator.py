@@ -9,10 +9,13 @@ from django.contrib.auth.models import User
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from warnings import deprecated
 
 # https://www.artima.com/weblogs/viewpost.jsp?thread=240845#decorator-functions-with-decorator-arguments, accessed 2025-02-15
 
-def user_control(must_be_logged_in: bool = False, must_be_author: bool = False, must_be_superuser: bool = False, redirect_url: Optional[str] = None) -> Callable[[Callable[..., HttpResponse]], Callable[..., HttpResponse]]:
+
+@deprecated("use the `user_control` decorator instead")
+def user_control_deprecated(must_be_logged_in: bool = False, must_be_author: bool = False, must_be_superuser: bool = False, redirect_url: Optional[str] = None) -> Callable[[Callable[..., HttpResponse]], Callable[..., HttpResponse]]:
     """Control what kind of user can access a view\n
     **Important: the viewer's `Author` object will be passed into the wrapped functions with the `viewer=` kwarg. Make sure your view has this parameter if you want it**
         - i.e: `def foo(bar, viewer:Optional[LocalAuthor]=None, baz) -> ...
