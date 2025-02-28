@@ -119,7 +119,7 @@ def user_control(request: HttpRequest | Request, must_be_logged_in: bool = False
     if fail_response is None:
         if IS_DRF:
             fail_response = Response(status=401)
-            if hasattr(request, "user") and not request.user.is_authenticated:
+            if hasattr(request, "user") and request.user.is_authenticated:
                 fail_response = Response(status=403)
         else:
             fail_response = HttpResponseRedirect(
@@ -134,6 +134,23 @@ def user_control(request: HttpRequest | Request, must_be_logged_in: bool = False
     # 1: check `must_be_logged_in`
     if must_be_logged_in and not request.user.is_authenticated:
         raise UserControlException(fail_response)
+
+    # fetch author information for future checks
+    viewer_query = LocalAuthor.objects.filter(
+        user=request.user) if isinstance(request.user, User) else None
+    viewer = viewer_query.first() if viewer_query is not None and viewer_query.exists() else None
+    viewer_is_author = viewer is not None
+    viewer_is_superuser = request.user.is_superuser
+
+    # 2: check `must_be_author`
+    if must_be_author and not viewer_is_author:
+        raise UserControlException(fail_response)
+
+    # 3: check `must_be_superuser`
+    if must_be_superuser and not viewer_is_superuser:
+        raise UserControlException(fail_response)
+
+    # all done :) don't raise an exception
 
 
 def user_controller(must_be_logged_in: bool = False, must_be_author: bool = False, must_be_superuser: bool = False, fail_response: Optional[HttpResponse | Response] = None) -> Callable[[Callable[..., HttpResponse]], Callable[..., HttpResponse]]:
