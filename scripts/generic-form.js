@@ -135,7 +135,11 @@ document.addEventListener("DOMContentLoaded", () => {
             event.preventDefault();
             let formData = new FormData(form);
             let method = formData.get("_method");
-            let afterActions = formData.get("_after_action").split(" ");
+            var afterActions = [];
+            let afterActionsString = formData.get("_after_action");
+            if (afterActionsString) {
+                afterActions = afterActionsString.split(" ");
+            }
             formData.delete("_method");
             formData.delete("_after_action");
             formData = nestify_formData(formData);
@@ -158,7 +162,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }).then((response) => {
                 process_response(response, form);
             }).then(() => {
-                if ("reload" in afterActions) {
+                if (afterActions.includes("reload")) {
                     location.reload();
                 }
             });
