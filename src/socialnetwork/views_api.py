@@ -8,7 +8,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.request import Request
 
-from socialnetwork.utils.user_control_decorator import user_control_deprecated
+from socialnetwork.utils.user_control_decorator import user_controller
 from socialnetwork import serializers
 from socialnetwork import models
 
@@ -18,7 +18,7 @@ def get_unauthenticated_response_api() -> Response:
 
 
 @api_view(["POST"])
-@user_control_deprecated(must_be_logged_in=True, must_be_author=True)
+@user_controller(must_be_logged_in=True, must_be_author=True)
 def api_textpost_create(request: Request, viewer: Optional[models.LocalAuthor]) -> Response:
     """Create a text based post
     Will serve a redirect if unauthorized
@@ -61,7 +61,7 @@ def api_textpost_create(request: Request, viewer: Optional[models.LocalAuthor]) 
 
 
 @api_view(["PUT", "PATCH"])
-@user_control_deprecated(must_be_logged_in=True, must_be_author=True)
+@user_controller(must_be_logged_in=True, must_be_author=True)
 def api_author_update(request: Request, target_author_uuid: str, viewer: Optional[models.LocalAuthor] = None) -> Response:
     """Update an author's information, **author kwarg is not the target author, but the viewer author**
     Only an admin or the author themselves can update their information"
@@ -109,7 +109,7 @@ def api_author_update(request: Request, target_author_uuid: str, viewer: Optiona
 
 
 @api_view(["POST"])
-@user_control_deprecated(must_be_logged_in=True, must_be_author=True)
+@user_controller(must_be_logged_in=True, must_be_author=True)
 def api_post_delete(request: Request, viewer: Optional[models.LocalAuthor], post_uuid: str) -> Response:
     """Delete a post
     Will serve an unauthorized response if unauthorized
@@ -140,7 +140,7 @@ def api_post_delete(request: Request, viewer: Optional[models.LocalAuthor], post
 
 
 @api_view(["POST"])
-@user_control_deprecated(must_be_logged_in=True, must_be_author=True)
+@user_controller(must_be_logged_in=True, must_be_author=True)
 def api_textpost_update(request: Request, viewer: Optional[models.LocalAuthor], post_uuid: str) -> Response:
     """Modify a post
     Will serve an unauthorized response if unauthorized
