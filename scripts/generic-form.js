@@ -29,9 +29,10 @@
 
 // the _after input:
 /* is a space separated list of actions to take after the user clicks submit
-    - confirm: will show a confirm dialog before submitting the form
+    - `confirm`: will show a confirm dialog before submitting the form
         - by default it will ask a generic message, you can override this with a `_confirm_text` input
-    - reload: will reload the page after the form is submitted
+    - `reload`: will reload the page after the form is submitted, only if the response was `ok`
+    - `url:<url>` will redirect the browser to the value after the `:`
 */
 
 
@@ -148,6 +149,7 @@ document.addEventListener("DOMContentLoaded", () => {
             var confirmationTextOverride = formData.get("_confirm_text");
             formData.delete("_confirm_text");
 
+            var responseWasOK = null;
 
             formData = nestify_formData(formData);
             if (!method) {
@@ -171,10 +173,25 @@ document.addEventListener("DOMContentLoaded", () => {
                     'Accept': 'application/json',
                 }
             }).then((response) => {
+                responseWasOK = response.ok;
                 process_response(response, form);
             }).then(() => {
+                if (!responseWasOK) {
+                    return;
+                }
+                // see if we need to reload
                 if (afterActions.includes("reload")) {
                     location.reload();
+                }
+                // see if we need to redirect the user
+                let urlRedirect = null;
+                afterActions.forEach((action) => {
+                    if (action.startsWith("url:")) {
+                        urlRedirect = action.slice(4);
+                    }
+                })
+                if (urlRedirect) {
+                    window.location.href = urlRedirect;
                 }
             });
         });
