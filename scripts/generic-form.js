@@ -3,6 +3,8 @@
 /*
     <form name="generic-form" action="TARGET URL HERE">
         <input type="hidden" name="_method" value="METHOD HERE">
+        (optional) <input type="hiden" name="_after_action" value="SEE BELOW FOR THIS ONE">
+
         <input OTHER INPUTS>
         <button type="submit">Submit</button>
         <div name="response-detail"></div>
@@ -23,6 +25,12 @@
 /* stuff can be in any order, so long as the parent/child relationships are intact
    However, any `response` or `errorresponse` divs will be emptied during each form submission, so they should be empty normally
 */
+
+// the _after input:
+/* can be used to specify something to do after the form submission
+    - reload: will reload the page
+*/
+
 
 function nestify_formData(formData) {
     // Converts a FormData object into a nested object based on `__` delimiters
@@ -117,7 +125,7 @@ function process_response(response, formElement) {
 
 document.addEventListener("DOMContentLoaded", () => {
     var forms = document.querySelectorAll("form[name='generic-form']");
-    console.log(forms.length);
+    // console.log(forms.length);
     forms.forEach((form) => {
         let successResponse = form.querySelector("p[name='success-response']");
         let errorResponse = form.querySelector("p[name='error-response']");
@@ -126,6 +134,7 @@ document.addEventListener("DOMContentLoaded", () => {
             event.preventDefault();
             let formData = new FormData(form);
             let method = formData.get("_method");
+            let afterAction = formData.get("_after_action");
             formData = nestify_formData(formData);
             formData.delete("_method");
             if (!method) {
@@ -141,7 +150,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }).then((response) => {
                 process_response(response, form);
-            })
+            }).then(() => {
+                if (afterAction === "reload") {
+                    location.reload();
+                }
+            });
         });
     });
 });
