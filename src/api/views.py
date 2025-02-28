@@ -1,8 +1,9 @@
 from typing import Optional
 
-from rest_framework.decorators import api_view
+from rest_framework import views
 from rest_framework.response import Response
 from rest_framework.request import Request
+
 
 from socialnetwork.utils.user_control_decorator import user_controller, user_control
 from socialnetwork import serializers
