@@ -27,8 +27,9 @@
 */
 
 // the _after input:
-/* can be used to specify something to do after the form submission
-    - reload: will reload the page
+/* is a space separated list of actions to take after the user clicks submit
+    - confirm: will show a confirm dialog before submitting the form
+    - reload: will reload the page after the form is submitted
 */
 
 
@@ -134,12 +135,18 @@ document.addEventListener("DOMContentLoaded", () => {
             event.preventDefault();
             let formData = new FormData(form);
             let method = formData.get("_method");
-            let afterAction = formData.get("_after_action");
-            formData = nestify_formData(formData);
+            let afterActions = formData.get("_after_action").split(" ");
             formData.delete("_method");
+            formData.delete("_after_action");
+            formData = nestify_formData(formData);
             if (!method) {
                 console.error("No method specified for generic form, no action taken");
                 return;
+            }
+            if (afterActions.includes("confirm")) {
+                if (!confirm("Are you sure you want to submit this?")) {
+                    return;
+                }
             }
             fetch(form.action, {
                 method: method,
@@ -151,7 +158,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }).then((response) => {
                 process_response(response, form);
             }).then(() => {
-                if (afterAction === "reload") {
+                if ("reload" in afterActions) {
                     location.reload();
                 }
             });
