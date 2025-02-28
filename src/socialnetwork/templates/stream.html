@@ -5,18 +5,18 @@
 {% block content %}
 <div class="stream-container">
     <h1 class="stream-title">Your Stream</h1>
-    
+
     {% if posts %}
-        {% for post in posts %}
-        {% include 'components/post_card.html' %}
-        {% endfor %}
+    {% for post in posts %}
+    {% include 'components/post_card.html' %}
+    {% endfor %}
     {% else %}
-        <p>No posts available in your stream.</p>
+    <p>No posts available in your stream.</p>
     {% endif %}
 
 </div>
 
-<script src="{% static 'posts.min.js' %}"></script>
-<script src="{% static 'markdown-renderer.min.js' %}"></script>
+<script src="{% static 'scripts/posts.min.js' %}"></script>
+<script src="{% static 'scripts/markdown-renderer.min.js' %}"></script>
 
 {% endblock %}
