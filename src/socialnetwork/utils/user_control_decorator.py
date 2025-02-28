@@ -14,7 +14,7 @@ from warnings import deprecated
 # https://www.artima.com/weblogs/viewpost.jsp?thread=240845#decorator-functions-with-decorator-arguments, accessed 2025-02-15
 
 
-@deprecated("use the `user_control` decorator instead")
+@deprecated("use the `user_controller` decorator and `user_control` function instead")
 def user_control_deprecated(must_be_logged_in: bool = False, must_be_author: bool = False, must_be_superuser: bool = False, redirect_url: Optional[str] = None) -> Callable[[Callable[..., HttpResponse]], Callable[..., HttpResponse]]:
     """Control what kind of user can access a view\n
     **Important: the viewer's `Author` object will be passed into the wrapped functions with the `viewer=` kwarg. Make sure your view has this parameter if you want it**
@@ -87,6 +87,96 @@ def user_control_deprecated(must_be_logged_in: bool = False, must_be_author: boo
                 return func(request, viewer=viewer, *args, **kwargs)
             else:
                 return func(request, *args, **kwargs)
+
+        return wrapped_f
+
+    return wrap
+
+
+class UserControlException(Exception):
+    def __init__(self, response: HttpResponse | Response):
+        super().__init__("User control custom exception, if you see this, you probably want to use the @user_controller decorator on the containing view")
+        self.response = response
+
+
+def user_control(request: HttpRequest | Request, must_be_logged_in: bool = False, must_be_author: bool = False, must_be_superuser: bool = False, fail_response: Optional[HttpResponse | Response] = None) -> None:
+    """Control what kind of user can access a view
+    **Important: use only inside a function wrapped with `@user_controller`**
+
+    Args:
+        request (HttpRequest | Request): the request object from the view/api view
+        must_be_logged_in (bool, optional): Whether the user must be logged in to pass this check. Defaults to False.
+        must_be_author (bool, optional): Whether the user must be an author to pass this check. Defaults to False.
+        must_be_superuser (bool, optional): Whether the user must be a superuser to pass this check. Defaults to False.
+        fail_response: The response to return if the user fails the check. Default behaviour is outlined below. Defaults to None.
+    """
+    # figure out if this is a DRF call or not
+    IS_DRF = isinstance(request, Request)
+
+    # Get the default failure response
+    # If this is an API call, the default is 401 if not logged in, 403 if logged in
+    # If this is a website call, the default is a redirect to the login page, or a redirect to the unauthorized page if the user is logged in
+    if fail_response is None:
+        if IS_DRF:
+            fail_response = Response(status=401)
+            if hasattr(request, "user") and not request.user.is_authenticated:
+                fail_response = Response(status=403)
+        else:
+            fail_response = HttpResponseRedirect(
+                reverse("socialnetwork:not_logged_in"))
+            if hasattr(request, "user") and request.user.is_authenticated:
+                fail_response = HttpResponseRedirect(
+                    reverse("socialnetwork:unauthorized"))
+
+    if not hasattr(request, "user"):
+        raise UserControlException(fail_response)
+
+    # 1: check `must_be_logged_in`
+    if must_be_logged_in and not request.user.is_authenticated:
+        raise UserControlException(fail_response)
+
+
+def user_controller(must_be_logged_in: bool = False, must_be_author: bool = False, must_be_superuser: bool = False, fail_response: Optional[HttpResponse | Response] = None) -> Callable[[Callable[..., HttpResponse]], Callable[..., HttpResponse]]:
+    """Decorator for any views that require user control
+    **Important: see user_control for argument information, they are the same**
+    **Important: add a `viewer:Optional[LocalAuthor]=None` kwarg to your view if you want to access the viewer's `LocalAuthor` object if they have one**
+    All restrictions on the decorator are applied before the view is called, but more specific checks can be done inside the view
+
+    example:
+    ```python
+    @user_controller(must_be_logged_in=True)
+    def foo_view(request:HttpRequest) -> HttpResponse:
+        if some_condition:
+            user_control(request, must_be_author=True)
+            do_something()
+        else:
+            do_something_else()
+    ```
+    This works the same for DRF api views
+    """
+    def wrap(func: Callable[..., HttpResponse]) -> Callable[..., HttpResponse]:
+        def wrapped_f(request: HttpRequest | Request, *args: list[Any], **kwargs: dict[str, Any]) -> HttpResponse | Response:
+            found_viewer = None
+            if hasattr(request, "user") and request.user.is_authenticated:
+                viewer_query = LocalAuthor.objects.filter(
+                    user=request.user)
+                if viewer_query.exists():
+                    found_viewer = viewer_query.first()
+
+            signature = inspect.signature(func)
+            expects_viewer = "viewer" in signature.parameters
+
+            # run the control checks and the function
+            try:
+                user_control(request, must_be_logged_in=must_be_logged_in,
+                             must_be_author=must_be_author, must_be_superuser=must_be_superuser, fail_response=fail_response)
+                if expects_viewer:
+                    return func(request, viewer=found_viewer, *args, **kwargs)
+                else:
+                    return func(request, *args, **kwargs)
+
+            except UserControlException as e:
+                return e.response
 
         return wrapped_f
 

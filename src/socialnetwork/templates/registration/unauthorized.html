@@ -1,0 +1,5 @@
+You are not authorized to access this page. If you need to switch accounts, you can
+<form action="{% url 'logout' %}" method="post" style="display: inline;">
+    {% csrf_token %}
+    <button type="submit">Log Out</button>
+</form>
