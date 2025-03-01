@@ -78,6 +78,9 @@ class AuthorSerializer(serializers.Serializer[Any]):
             })
             self.is_valid()
 
+    def save(self) -> None:
+        pass  # TODO
+
 
 class AuthorsSerializer(serializers.Serializer[Any]):
     """Author list serializer for node2node

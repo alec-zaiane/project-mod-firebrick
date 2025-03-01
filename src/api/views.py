@@ -47,7 +47,7 @@ class AuthorView(views.APIView):
     @extend_schema(
         summary="Get author",
         description="Get an author by their UUID",
-        responses=serializers.AuthorSerializer
+        responses=serializers.AuthorSerializer,
     )
     @method_decorator(user_controller())
     def get(self, request: Request, author_uuid: Optional[str] = None) -> Response:
@@ -55,3 +55,24 @@ class AuthorView(views.APIView):
         author = get_object_or_404(models.Author, uuid=author_uuid)
         serializer = serializers.AuthorSerializer(author)
         return Response(serializer.data)
+
+    @extend_schema(
+        summary="Update author",
+        description="Update an author by their UUID",
+        responses=serializers.AuthorSerializer,
+    )
+    @method_decorator(user_controller())
+    def put(self, request: Request, author_uuid: Optional[str] = None, viewer: Optional[models.LocalAuthor] = None) -> Response:
+
+        viewer_is_superuser = request.user.is_superuser
+        viewer_is_author = getattr(viewer, "uuid", None) == author_uuid
+        user_control(request,
+                     verify_true=(viewer_is_superuser or viewer_is_author))
+        serializer = serializers.AuthorSerializer(request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"detail": "User updated successfully",
+                             "author": serializer.data})
+        else:
+            return Response({"error": "Error saving author",
+                             "author": serializer.errors})
