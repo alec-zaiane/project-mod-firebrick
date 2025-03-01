@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional
 
-from socialnetwork.utils.user_control_decorator import user_control
+from socialnetwork.utils.user_control_decorator import user_controller
 
 from django.shortcuts import get_object_or_404
 
@@ -22,7 +22,7 @@ from rest_framework.request import Request
 
 
 @api_view(["POST"])
-@user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
+@user_controller(must_be_logged_in=True, must_be_superuser=True)
 def author_create_for_superuser(request: Request) -> Response:
     """Create a LocalAuthor for a superuser, only used in the admin panel for a newly created superuser
     Will serve a redirect if unauthorized
@@ -55,7 +55,7 @@ def author_create_for_superuser(request: Request) -> Response:
 
 
 @api_view(["POST"])
-@user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
+@user_controller(must_be_logged_in=True, must_be_superuser=True)
 def api_delete_author(request: Request, author_uuid: str) -> Response:
     """Delete an author
     Will serve a redirect if unauthorized
@@ -73,7 +73,7 @@ def api_delete_author(request: Request, author_uuid: str) -> Response:
 
 
 @api_view(["POST"])
-@user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
+@user_controller(must_be_logged_in=True, must_be_superuser=True)
 def author_create(request: Request) -> Response:
     """Create an author directly
     Will serve a redirect if unauthorized
@@ -116,10 +116,10 @@ def author_create(request: Request) -> Response:
 
 
 @api_view(["POST"])
-@user_control(can_be_author=False, can_be_logged_out=True, can_be_superuser=True)
-def api_create_join_request(request: Request) -> Response:
+@user_controller()
+def api_join_request_create(request: Request, viewer: Optional[socialmodels.LocalAuthor]) -> Response:
     """Create a join request
-    Will serve a redirect if unauthorized
+    Will serve a 401/403 if unauthorized
 
     expects JSON
         {
@@ -143,6 +143,8 @@ def api_create_join_request(request: Request) -> Response:
             }
         }
     """
+    if viewer is not None and not viewer.user.is_superuser:
+        return Response(status=403)
     if not hasattr(request, "data"):
         return Response({"error": "Request must have a JSON body"}, status=400)
     data: dict[str, Any] = request.data
@@ -154,7 +156,7 @@ def api_create_join_request(request: Request) -> Response:
 
 
 @api_view(["POST"])
-@user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
+@user_controller(must_be_logged_in=True, must_be_superuser=True)
 def api_join_request_approve(request: Request, join_request_id: int) -> Response:
     """Approve a Join Request
     Will serve a redirect if unauthorized
@@ -181,7 +183,7 @@ def api_join_request_approve(request: Request, join_request_id: int) -> Response
 
 
 @api_view(["POST"])
-@user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
+@user_controller(must_be_logged_in=True, must_be_superuser=True)
 def api_join_request_deny(request: Request, join_request_id: int) -> Response:
     """Deny a Join Request
     Will serve a redirect if unauthorized
@@ -201,7 +203,7 @@ def api_join_request_deny(request: Request, join_request_id: int) -> Response:
 
 
 @api_view(["POST"])
-@user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
+@user_controller(must_be_logged_in=True, must_be_superuser=True)
 def api_join_request_undeny(request: Request, join_request_id: int) -> Response:
     """Undeny a Join Request (bring it back into pending state)
     nothing will happen if the request is not denied
@@ -222,7 +224,7 @@ def api_join_request_undeny(request: Request, join_request_id: int) -> Response:
 
 
 @api_view(["POST"])
-@user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
+@user_controller(must_be_logged_in=True, must_be_superuser=True)
 def api_join_request_delete(request: Request, join_request_id: int) -> Response:
     """Delete a denied Join Request
     Will serve a redirect if unauthorized
@@ -249,7 +251,7 @@ def api_join_request_delete(request: Request, join_request_id: int) -> Response:
 
 
 @api_view(["GET", "POST"])
-@user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
+@user_controller(must_be_logged_in=True, must_be_superuser=True)
 def api_hosted_images(request: Request) -> Response:
     """
     GET: Return a list of all hosted images.
@@ -311,7 +313,7 @@ def api_hosted_images(request: Request) -> Response:
 
 
 @api_view(["POST"])
-@user_control(can_be_author=False, can_be_logged_out=False, can_be_superuser=True)
+@user_controller(must_be_logged_in=True, must_be_superuser=True)
 def api_delete_hosted_image(request: Request, image_id: int) -> Response:
     """Delete the hosted image
     expects no Body

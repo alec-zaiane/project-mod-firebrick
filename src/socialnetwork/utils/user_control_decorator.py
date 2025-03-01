@@ -1,62 +1,120 @@
-from typing import Callable, Any
+from typing import Callable, Any, Optional
+import inspect
+
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
-from django.contrib.auth import decorators
 from socialnetwork.models import LocalAuthor
 from django.urls import reverse
 from django.contrib.auth.models import User
 
-
+from rest_framework.request import Request
+from rest_framework.response import Response
 
 
 # https://www.artima.com/weblogs/viewpost.jsp?thread=240845#decorator-functions-with-decorator-arguments, accessed 2025-02-15
 
-def user_control(can_be_author:bool=True, can_be_logged_out:bool=False, can_be_superuser:bool=False, superuser_requires_author:bool=False) -> Callable[[Callable[..., HttpResponse]], Callable[..., HttpResponse]]:
-    """Control what kind of user can access a view\n
-    **Important: If can_be_author is True, the view will be passed an author object with `author=` as a keyword, make sure your view has this parameter**
-    
-    
-    Raises: (none of these should ever happen)
-        ValueError: If none of can_be_author, can_be_logged_out, or can_be_superuser are True
-        ValueError: If the request object does not have a user attribute
-        ValueError: If an unhandled user type was found
-        AssertionError: If the user has an author attribute that is not an Author object
-    
+
+class UserControlException(Exception):
+    def __init__(self, response: HttpResponse | Response):
+        super().__init__("User control custom exception, if you see this, you probably want to use the @user_controller decorator on the containing view")
+        self.response = response
+
+
+def user_control(request: HttpRequest | Request, must_be_logged_in: bool = False, must_be_author: bool = False, must_be_superuser: bool = False, fail_response: Optional[HttpResponse | Response] = None) -> None:
+    """Control what kind of user can access a view
+    **Important: use only inside a function wrapped with `@user_controller`**
 
     Args:
-        can_be_author (bool, optional): Whether authors can view this (otherwise they will be redirected to their stream). Defaults to True.
-        can_be_logged_out (bool, optional): Whether logged out people can view this (otherwise they will be redirected to login page). Defaults to False.
-        can_be_superuser (bool, optional): Whether superusers can view this (otherwise they will be redirected to admin panel). Defaults to False.
-        superuser_requires_author (bool, optional): Whether superusers must also be authors to view this. Defaults to False.
-    """     
-    def wrap(func:Callable[..., HttpResponse]) -> Callable[..., HttpResponse]:
-        if (not can_be_author) and (not can_be_logged_out) and (not can_be_superuser):
-            raise ValueError("At least one of can_be_author, can_be_logged_out, or can_be_superuser must be True")
-        
-        def wrapped_f(request:HttpRequest, *args:list[Any], **kwargs:dict[str,Any]) -> HttpResponse:
-            if not hasattr(request, "user"):
-                raise ValueError("The request object does not have a user attribute")
-            if not request.user.is_authenticated:
-                if can_be_logged_out:
+        request (HttpRequest | Request): the request object from the view/api view
+        must_be_logged_in (bool, optional): Whether the user must be logged in to pass this check. Defaults to False.
+        must_be_author (bool, optional): Whether the user must be an author to pass this check. Defaults to False.
+        must_be_superuser (bool, optional): Whether the user must be a superuser to pass this check. Defaults to False.
+        fail_response: The response to return if the user fails the check. Default behaviour is outlined below. Defaults to None.
+    """
+    # figure out if this is a DRF call or not
+    IS_DRF = isinstance(request, Request)
+
+    # Get the default failure response
+    # If this is an API call, the default is 401 if not logged in, 403 if logged in
+    # If this is a website call, the default is a redirect to the login page, or a redirect to the unauthorized page if the user is logged in
+    if fail_response is None:
+        if IS_DRF:
+            fail_response = Response(status=401)
+            if hasattr(request, "user") and request.user.is_authenticated:
+                fail_response = Response(status=403)
+        else:
+            fail_response = HttpResponseRedirect(
+                reverse("socialnetwork:not_logged_in"))
+            if hasattr(request, "user") and request.user.is_authenticated:
+                fail_response = HttpResponseRedirect(
+                    reverse("socialnetwork:unauthorized"))
+
+    if not hasattr(request, "user"):
+        raise UserControlException(fail_response)
+
+    # 1: check `must_be_logged_in`
+    if must_be_logged_in and not request.user.is_authenticated:
+        raise UserControlException(fail_response)
+
+    # fetch author information for future checks
+    viewer_query = LocalAuthor.objects.filter(
+        user=request.user) if isinstance(request.user, User) else None
+    viewer = viewer_query.first() if viewer_query is not None and viewer_query.exists() else None
+    viewer_is_author = viewer is not None
+    viewer_is_superuser = request.user.is_superuser
+
+    # 2: check `must_be_author`
+    if must_be_author and not viewer_is_author:
+        raise UserControlException(fail_response)
+
+    # 3: check `must_be_superuser`
+    if must_be_superuser and not viewer_is_superuser:
+        raise UserControlException(fail_response)
+
+    # all done :) don't raise an exception
+
+
+def user_controller(must_be_logged_in: bool = False, must_be_author: bool = False, must_be_superuser: bool = False, fail_response: Optional[HttpResponse | Response] = None) -> Callable[[Callable[..., HttpResponse]], Callable[..., HttpResponse]]:
+    """Decorator for any views that require user control
+    **Important: see user_control for argument information, they are the same**
+    **Important: add a `viewer:Optional[LocalAuthor]=None` kwarg to your view if you want to access the viewer's `LocalAuthor` object if they have one**
+    All restrictions on the decorator are applied before the view is called, but more specific checks can be done inside the view
+
+    example:
+    ```python
+    @user_controller(must_be_logged_in=True)
+    def foo_view(request:HttpRequest) -> HttpResponse:
+        if some_condition:
+            user_control(request, must_be_author=True)
+            do_something()
+        else:
+            do_something_else()
+    ```
+    This works the same for DRF api views
+    """
+    def wrap(func: Callable[..., HttpResponse]) -> Callable[..., HttpResponse]:
+        def wrapped_f(request: HttpRequest | Request, *args: list[Any], **kwargs: dict[str, Any]) -> HttpResponse | Response:
+            found_viewer = None
+            if hasattr(request, "user") and request.user.is_authenticated:
+                viewer_query = LocalAuthor.objects.filter(
+                    user=request.user)
+                if viewer_query.exists():
+                    found_viewer = viewer_query.first()
+
+            signature = inspect.signature(func)
+            expects_viewer = "viewer" in signature.parameters
+
+            # run the control checks and the function
+            try:
+                user_control(request, must_be_logged_in=must_be_logged_in,
+                             must_be_author=must_be_author, must_be_superuser=must_be_superuser, fail_response=fail_response)
+                if expects_viewer:
+                    return func(request, viewer=found_viewer, *args, **kwargs)
+                else:
                     return func(request, *args, **kwargs)
-                return HttpResponseRedirect(reverse("socialnetwork:not_logged_in"))
-            
-            # try to get an author object for the next two checks
-            author_query = LocalAuthor.objects.filter(user=request.user)
-            author = author_query.first() if author_query.exists() else None
-            
-            if request.user.is_superuser:
-                if can_be_superuser and not superuser_requires_author:
-                    return func(request, *args, **kwargs)
-                if can_be_superuser and superuser_requires_author:
-                    if author is not None:
-                        return func(request, author=author, *args, **kwargs)
-                    return HttpResponseRedirect(reverse("socialnetwork:stream"))
-                return HttpResponseRedirect(reverse("adminpanel:adminpanel"))
-            if author is not None:
-                if can_be_author:
-                    return func(request, author=author, *args, **kwargs)
-                return HttpResponseRedirect(reverse("socialnetwork:stream"))
-            raise ValueError("An unhandled user type was found: "+str(type(request.user)))
+
+            except UserControlException as e:
+                return e.response
+
         return wrapped_f
 
     return wrap

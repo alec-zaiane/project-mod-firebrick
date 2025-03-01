@@ -4,7 +4,7 @@
 
 {% block content %}
 <h2>Edit Post</h2>
-<form method="POST">
+<form method="POST", action="{% url 'socialnetwork:api_post_update' post.uuid %}">
     {% csrf_token %}
 
     <label for="content">Edit Content:</label><br>

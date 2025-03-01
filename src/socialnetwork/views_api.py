@@ -8,14 +8,18 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.request import Request
 
-from socialnetwork.utils.user_control_decorator import user_control
+from socialnetwork.utils.user_control_decorator import user_controller
 from socialnetwork import serializers
 from socialnetwork import models
 
 
+def get_unauthenticated_response_api() -> Response:
+    return Response(status=401)
+
+
 @api_view(["POST"])
-@user_control(can_be_author=True, can_be_logged_out=False, can_be_superuser=False)
-def api_create_text_post(request: Request, author: models.LocalAuthor) -> Response:
+@user_controller(must_be_logged_in=True, must_be_author=True)
+def api_textpost_create(request: Request, viewer: Optional[models.LocalAuthor]) -> Response:
     """Create a text based post
     Will serve a redirect if unauthorized
     Expects JSON
@@ -39,8 +43,11 @@ def api_create_text_post(request: Request, author: models.LocalAuthor) -> Respon
             }
         }
     """
+    if viewer is None:  # shouldn't be possible, needed for mypy
+        return get_unauthenticated_response_api()
+
     data = request.data.copy()
-    data["base_author"] = author.uuid
+    data["base_author"] = viewer.uuid
 
     serializer = serializers.PostTextBasedSerializer(data=data)
 
@@ -54,29 +61,18 @@ def api_create_text_post(request: Request, author: models.LocalAuthor) -> Respon
 
 
 @api_view(["PUT", "PATCH"])
-@user_control(can_be_author=True, can_be_logged_out=False, can_be_superuser=True)
-def api_author_update(request: Request, target_author_uuid: str, author: Optional[models.LocalAuthor] = None) -> Response:
+@user_controller(must_be_logged_in=True, must_be_author=True)
+def api_author_update(request: Request, target_author_uuid: str, viewer: Optional[models.LocalAuthor] = None) -> Response:
     """Update an author's information, **author kwarg is not the target author, but the viewer author**
     Only an admin or the author themselves can update their information"
 
     Will serve a redirect if unauthorized
     expects JSON
         {
-            "following":<list of author uuids>:list[str] (optional)
             "username":<updated username>:str (optional)
             "first_name":<updated first name>:str (optional)
             "last_name":<updated last name>:str (optional)
             "email":<updated email>:str (optional)
-        }
-    Alternative JSON
-        {
-            "user" {
-                "username":<updated username>:str (optional)
-                "first_name":<updated first name>:str (optional)
-                "last_name":<updated last name>:str (optional)
-                "email":<updated email>:str (optional)
-            }
-            "following":<list of author uuids>:list[str] (optional)
         }
 
     will return a 404 on not found
@@ -102,7 +98,7 @@ def api_author_update(request: Request, target_author_uuid: str, author: Optiona
     """
     target_author = get_object_or_404(
         models.LocalAuthor, uuid=target_author_uuid)
-    if author != target_author and not request.user.is_superuser:
+    if viewer != target_author and not request.user.is_superuser:
         return Response({"error": "You do not have permission to update this author"}, status=403)
     serializer = serializers.LocalAuthorSerializer(
         target_author, data=request.data, partial=True)
@@ -113,10 +109,10 @@ def api_author_update(request: Request, target_author_uuid: str, author: Optiona
 
 
 @api_view(["POST"])
-@user_control(can_be_author=True, can_be_logged_out=False, can_be_superuser=False)
-def api_post_delete(request: Request, author: models.LocalAuthor, post_uuid: str) -> Response:
+@user_controller(must_be_logged_in=True, must_be_author=True)
+def api_post_delete(request: Request, viewer: Optional[models.LocalAuthor], post_uuid: str) -> Response:
     """Delete a post
-    Will serve a redirect if unauthorized
+    Will serve an unauthorized response if unauthorized
 
     Expects no body
     Will serve a 404 on not found
@@ -134,10 +130,51 @@ def api_post_delete(request: Request, author: models.LocalAuthor, post_uuid: str
     post = get_object_or_404(models.PostTextBased, uuid=post_uuid)
 
     # Only the post's owner can delete
-    if post.author != author:
+    if post.author != viewer:
         return Response({"error": "You must be the author of this post to delete it"}, 403)
 
     # Perform the soft delete
     # this is ssetting is_deleted to = True which is added field to author_posts above
     post.delete()
     return Response({"detail": "Post deleted successfully"}, 200)
+
+
+@api_view(["POST"])
+@user_controller(must_be_logged_in=True, must_be_author=True)
+def api_textpost_update(request: Request, viewer: Optional[models.LocalAuthor], post_uuid: str) -> Response:
+    """Modify a post
+    Will serve an unauthorized response if unauthorized
+
+    Expects JSON
+        {
+            "content":<post content>:str (optional)
+            "visibility_type":<either 'PU' for public, 'FO' for Friends Only, 'UN' for unlisted>:str (optional)
+            "post_type":<either 'PT' for plaintext, or 'MD' for markdown>:str (optional)
+        }
+    Will serve a 404 on not found
+
+    returns JSON on error (code 403)
+        {
+            "error": <error>:str
+            "post": {
+                <errors for each field>
+            }
+        }
+
+    returns JSON on success (code 200)
+        {
+            "detail": "post updated"
+            "post": {
+                <updated post details>
+            }
+        }
+    """
+    post = get_object_or_404(models.PostTextBased, uuid=post_uuid)
+    if post.author != viewer:
+        return Response({"error": "You must be the author of this post to modify it"}, 403)
+    serializer = serializers.PostTextBasedSerializer(
+        post, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.update(post, request.data.copy())
+        return Response({"detail": "post updated", "post": serializer.data}, 200)
+    return Response({"error": "post update error", "post": serializer.errors}, 403)

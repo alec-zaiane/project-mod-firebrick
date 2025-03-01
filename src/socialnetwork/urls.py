@@ -1,5 +1,5 @@
 from django.urls import path
-from django.views.generic import RedirectView
+from django.views.generic import RedirectView, TemplateView
 from . import views
 from . import views_api
 
@@ -31,6 +31,9 @@ urlpatterns = [
          views.edit_post_view,
          name="edit_post"),
 
+    path("unauthorized",
+         TemplateView.as_view(template_name="registration/unauthorized.html"),
+         name="unauthorized")
 
 ]
 
@@ -39,13 +42,18 @@ urlpatterns_api = [
          views_api.api_post_delete,
          name="api_post_delete"),
 
+    path("api/post/edit/<uuid:post_uuid>",
+         views_api.api_textpost_update,
+         name="api_textpost_update"),
+
     path("api/create_text_post",
-         views_api.api_create_text_post,
-         name="api_create_text_post"),
+         views_api.api_textpost_create,
+         name="api_textpost_create"),
 
     path("api/author/update/<uuid:target_author_uuid>",
          views_api.api_author_update,
          name="api_author_update"),
+
 
 ]
 
