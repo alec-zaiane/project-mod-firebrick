@@ -19,7 +19,7 @@ def get_unauthenticated_response() -> HttpResponse:
 def not_logged_in_view(request: HttpRequest) -> HttpResponse:
     """A view for users who are not logged in."""
     if request.user.is_authenticated:
-        return HttpResponseRedirect(reverse("socialnetwork:home"))
+        return HttpResponseRedirect(reverse("socialnetwork:stream"))
     return render(request, "registration/not_logged_in.html")
 
 
