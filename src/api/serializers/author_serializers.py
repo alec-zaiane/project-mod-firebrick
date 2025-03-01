@@ -78,7 +78,7 @@ class AuthorSerializer(serializers.Serializer[Any]):
             })
             self.is_valid()
 
-    def save(self) -> None:
+    def save(self, **kwargs: Any) -> Any:
         pass  # TODO
 
 

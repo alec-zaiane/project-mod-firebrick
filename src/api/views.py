@@ -59,6 +59,7 @@ class AuthorView(views.APIView):
     @extend_schema(
         summary="Update author",
         description="Update an author by their UUID",
+        request=serializers.AuthorSerializer,
         responses=serializers.AuthorSerializer,
     )
     @method_decorator(user_controller())
