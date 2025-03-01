@@ -1,5 +1,7 @@
 from typing import Optional
 
+from itertools import chain
+
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 
@@ -17,6 +19,28 @@ from api import serializers
 # This file is for only API views, standardized to our API spec
 # see https://uofa-cmput404.github.io/general/project.html#api-endpoints
 
+
+# Author related views
+
+class AuthorsView(views.APIView):
+    """Author list API view"""
+
+    @extend_schema(
+        summary="Get authors",
+        description="Get a list of authors",
+        responses=serializers.AuthorsSerializer
+    )
+    @method_decorator(user_controller())
+    def get(self, request: Request) -> Response:
+        """Get authors API view"""
+        local_authors = models.LocalAuthor.objects.all()
+        remote_authors = models.RemoteAuthor.objects.all()
+        authors = sorted(chain(local_authors, remote_authors),
+                         key=lambda x: x.username)
+        serializer = serializers.AuthorsSerializer(authors)
+        return Response(serializer.data)
+
+
 class AuthorView(views.APIView):
     """Author API view"""
 
@@ -25,7 +49,7 @@ class AuthorView(views.APIView):
         description="Get an author by their UUID",
         responses=serializers.AuthorSerializer
     )
-    @method_decorator(user_controller(must_be_logged_in=True))
+    @method_decorator(user_controller())
     def get(self, request: Request, author_uuid: Optional[str] = None) -> Response:
         """Get author API view"""
         author = get_object_or_404(models.Author, uuid=author_uuid)

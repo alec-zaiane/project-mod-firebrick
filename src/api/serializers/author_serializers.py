@@ -1,8 +1,12 @@
 from typing import Any
+from collections.abc import Iterable
+
 
 from django.urls import reverse
 
 from rest_framework import serializers
+
+from drf_spectacular.utils import extend_schema_field
 
 import api.serializers.custom_validators as custom_validators
 
@@ -71,5 +75,56 @@ class AuthorSerializer(serializers.Serializer[Any]):
                 "github": github,
                 "profileImage": profileImage,
                 "page": page
+            })
+            self.is_valid()
+
+
+class AuthorsSerializer(serializers.Serializer[Any]):
+    """Author list serializer for node2node
+    Example Authors API object from the class docs:
+    ```
+    {
+        "type": "authors",
+        "authors":[
+            {
+                "type":"author",
+                "id":"http://nodeaaaa/api/authors/111",
+                "host":"http://nodeaaaa/api/",
+                "displayName":"Greg Johnson",
+                "github": "http://github.com/gjohnson",
+                "profileImage": "https://i.imgur.com/k7XVwpB.jpeg",
+                "page": "http://nodeaaaa/authors/greg"
+            },
+            {
+                // A second author object...
+            },
+            {
+                // A third author object...
+            }
+        ]
+    }
+    ```
+    """
+    type = serializers.CharField(default="authors", validators=[
+                                 custom_validators.ExactlyEqualTo("authors")])
+
+    authors = serializers.ListField(child=AuthorSerializer())
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initialize an AuthorsSerializer from an iterable of Authors"""
+        authors = []
+        authors_found = False
+        if args and isinstance(args[0], Iterable):
+            authors_found = True
+            for author in args[0]:
+                print("author:", author)
+                authors.append(AuthorSerializer(author).data)
+
+        if not authors_found:
+            super().__init__(*args, **kwargs)
+        else:
+            super().__init__(data={
+                "type": "authors",
+                "authors": authors
             })
             self.is_valid()

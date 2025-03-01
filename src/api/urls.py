@@ -20,5 +20,6 @@ urlpatterns = [
          name="redoc"),
 
     # Author views
+    path("authors/", AuthorsView.as_view(), name="authors"),
     path("authors/<str:author_uuid>/", AuthorView.as_view(), name="author"),
 ]
