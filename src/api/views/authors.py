@@ -13,33 +13,26 @@ from drf_spectacular.utils import extend_schema
 from drf_spectacular.utils import OpenApiParameter
 
 from socialnetwork.utils.user_control_decorator import user_controller, user_control
+from socialnetwork.utils.uuid_validator import check_uuid_valid
 from socialnetwork import models
 from api import serializers
 
 
-# This file is for only API views, standardized to our API spec
-# see https://uofa-cmput404.github.io/general/project.html#api-endpoints
-
-
-# Author related views
-
 class AuthorsView(views.APIView):
     """Author list API view
-    Example from class docs:
-    URL: ://service/api/authors/
-        GET [local, remote]: retrieve all profiles on the node (paginated)
-            page: how many pages
-            size: how big is a page
-    Example query: GET ://service/api/authors?page=10&size=5
 
-    Gets the 5 authors, authors 45 to 49.
-    Example: GET http://nodeaaaa/api/authors/
-
+    Example from class page:
+    - URL: `://service/api/authors/`
+        - GET [local, remote]: retrieve all profiles on the node (paginated)
+            - page: how many pages
+            - size: how big is a page
+    - Example query: `GET ://service/api/authors?page=10&size=5`
+        - Gets the 5 authors, authors 45 to 49.
     """
 
     @extend_schema(
         summary="Get authors",
-        description="Get a list of authors",
+        description="Get a list of authors (paginated, default 50 authors per page)",
         responses=serializers.AuthorsSerializer,
         parameters=[
             OpenApiParameter("page", type=int,
@@ -67,7 +60,16 @@ class AuthorsView(views.APIView):
 
 
 class AuthorView(views.APIView):
-    """Author API view"""
+    """Author API view
+
+    Details from class page:
+    - URL: `://service/api/authors/{AUTHOR_SERIAL}/`
+        - GET [local, remote]: retrieve AUTHOR_SERIAL's profile
+        - PUT [local]: update AUTHOR_SERIAL's profile
+    - URL: `://service/api/authors/{AUTHOR_FQID}/`
+        - GET [local]: retrieve AUTHOR_FQID's profile
+    TODO get GET working with FQIDs as well
+    """
 
     @extend_schema(
         summary="Get author",
@@ -75,9 +77,13 @@ class AuthorView(views.APIView):
         responses=serializers.AuthorSerializer,
     )
     @method_decorator(user_controller())
-    def get(self, request: Request, author_uuid: Optional[str] = None) -> Response:
+    def get(self, request: Request, author_uuid_or_fqid: str) -> Response:
         """Get author API view"""
-        author = get_object_or_404(models.Author, uuid=author_uuid)
+        author = None
+        if check_uuid_valid(author_uuid_or_fqid):
+            author = get_object_or_404(models.Author, uuid=author_uuid_or_fqid)
+        else:
+            author = models.Author.get_author_by_FQID(author_uuid_or_fqid)
         serializer = serializers.AuthorSerializer(author)
         return Response(serializer.data)
 
@@ -88,10 +94,9 @@ class AuthorView(views.APIView):
         responses=serializers.AuthorSerializer,
     )
     @method_decorator(user_controller())
-    def put(self, request: Request, author_uuid: Optional[str] = None, viewer: Optional[models.LocalAuthor] = None) -> Response:
-
+    def put(self, request: Request, author_uuid_or_fqid: Optional[str] = None, viewer: Optional[models.LocalAuthor] = None) -> Response:
         viewer_is_superuser = request.user.is_superuser
-        viewer_is_author = getattr(viewer, "uuid", None) == author_uuid
+        viewer_is_author = getattr(viewer, "uuid", None) == author_uuid_or_fqid
         user_control(request,
                      verify_true=(viewer_is_superuser or viewer_is_author))
         serializer = serializers.AuthorSerializer(request.data)

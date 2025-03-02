@@ -87,6 +87,11 @@ class Author(models.Model):
             self.user.delete()
         return super().delete(*args, **kwargs)
 
+    @classmethod
+    def get_author_by_FQID(cls, fqid: str) -> Author:
+        # not sure if this is the best place to put this, but we need a centralized place for it to go
+        raise NotImplementedError("TODO")
+
 
 class LocalAuthor(Author):
     """An author that is on this node"""
