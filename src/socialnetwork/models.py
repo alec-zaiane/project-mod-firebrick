@@ -140,19 +140,11 @@ class LocalAuthor(Author):
 
         return all_posts
 
-    @property
-    def is_remote(self) -> bool:
-        return False
-
 
 class RemoteAuthor(Author):
     """An author that is on another node"""
 
     date_joined = models.DateTimeField(auto_now_add=True, editable=False)
-
-    @property
-    def is_remote(self) -> bool:
-        return True
     # Eventually will contain extra fields and methods/overrides for authors on other nodes
 
 
@@ -214,13 +206,13 @@ class Post(models.Model):
         # implementation is a little janky due to Django's inheritance  , but it should work
         if self.base_author is None:
             return None
-        if not hasattr(self.base_author, "is_remote"):
-            raise ValueError(
-                "Unknown post author type, this should never happen")
-        if self.base_author.is_remote():  # type: ignore
+
+        if LocalAuthor.objects.filter(uuid=self.base_author.uuid).exists():
             return LocalAuthor.objects.get(uuid=self.base_author.uuid)
-        else:
+        elif RemoteAuthor.objects.filter(uuid=self.base_author.uuid).exists():
             return RemoteAuthor.objects.get(uuid=self.base_author.uuid)
+        else:
+            raise ValueError("Unknown author type, this should never happen")
 
     @property
     def css_class(self) -> str:
