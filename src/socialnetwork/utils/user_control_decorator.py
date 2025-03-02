@@ -19,9 +19,34 @@ class UserControlException(Exception):
         self.response = response
 
 
-def user_control(request: HttpRequest | Request, must_be_logged_in: bool = False, must_be_author: bool = False, must_be_superuser: bool = False, fail_response: Optional[HttpResponse | Response] = None) -> None:
+def user_control(request: HttpRequest | Request, must_be_logged_in: bool = False, must_be_author: bool = False, must_be_superuser: bool = False, fail_response: Optional[HttpResponse | Response] = None, verify_true: bool = True) -> None:
     """Control what kind of user can access a view
     **Important: use only inside a function wrapped with `@user_controller`**
+
+
+    Example usage:
+    ```python
+    @user_controller(must_be_logged_in=True)
+    def my_view(request: HttpRequest):
+        if some_condition:
+            user_control(request, must_be_author=True)
+            do_something()
+        else:
+            do_something_else()
+    ```
+
+    Example usage with verify_true:
+    ```python
+    @user_controller(must_be_logged_in=True, must_be_author=True)
+    def my_view(request: HttpRequest, viewer: Optional[LocalAuthor] = None):
+        post_in_question = get_post_in_question_somehow()
+        viewer_is_author = viewer is not None and viewer == post_in_question.author
+        # make sure the viewer is the author of the post
+        user_control(request, verify_true=viewer_is_author)
+        # rest of code here ...
+        return xyz
+    ```
+
 
     Args:
         request (HttpRequest | Request): the request object from the view/api view
@@ -29,6 +54,7 @@ def user_control(request: HttpRequest | Request, must_be_logged_in: bool = False
         must_be_author (bool, optional): Whether the user must be an author to pass this check. Defaults to False.
         must_be_superuser (bool, optional): Whether the user must be a superuser to pass this check. Defaults to False.
         fail_response: The response to return if the user fails the check. Default behaviour is outlined below. Defaults to None.
+        verify_true (bool, optional): Automatically fail if this is false. Defaults to True.
     """
     # figure out if this is a DRF call or not
     IS_DRF = isinstance(request, Request)
