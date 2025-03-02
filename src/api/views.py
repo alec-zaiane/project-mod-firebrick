@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 
 from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiParameter
 
 from socialnetwork.utils.user_control_decorator import user_controller, user_control
 from socialnetwork import models
@@ -23,20 +24,44 @@ from api import serializers
 # Author related views
 
 class AuthorsView(views.APIView):
-    """Author list API view"""
+    """Author list API view
+    Example from class docs:
+    URL: ://service/api/authors/
+        GET [local, remote]: retrieve all profiles on the node (paginated)
+            page: how many pages
+            size: how big is a page
+    Example query: GET ://service/api/authors?page=10&size=5
+
+    Gets the 5 authors, authors 45 to 49.
+    Example: GET http://nodeaaaa/api/authors/
+
+    """
 
     @extend_schema(
         summary="Get authors",
         description="Get a list of authors",
-        responses=serializers.AuthorsSerializer
+        responses=serializers.AuthorsSerializer,
+        parameters=[
+            OpenApiParameter("page", type=int,
+                             description="Page number to fetch (1-indexed)", default=1),
+            OpenApiParameter("size", type=int,
+                             description="How many authors per page", default=50)
+        ]
     )
     @method_decorator(user_controller())
     def get(self, request: Request) -> Response:
         """Get authors API view"""
+        try:
+            paginate_page = int(request.query_params.get("page", 1))
+            paginate_size = int(request.query_params.get("size", 50))
+        except ValueError:
+            return Response("Incorrectly formatted `page` or `size` parameter", 400)
+
+        index_start = (paginate_page-1)*paginate_size
         local_authors = models.LocalAuthor.objects.all()
         remote_authors = models.RemoteAuthor.objects.all()
         authors = sorted(chain(local_authors, remote_authors),
-                         key=lambda x: x.username)
+                         key=lambda x: x.username)[index_start:index_start+paginate_size]
         serializer = serializers.AuthorsSerializer(authors)
         return Response(serializer.data)
 
