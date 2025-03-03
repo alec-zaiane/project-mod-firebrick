@@ -76,7 +76,7 @@ class CommentsSerialView(views.APIView):
                 "page", type=int, description="Page number to fetch (1-indexed)", default=1),
             OpenApiParameter(
                 "size", type=int, description="How many comments per page", default=50),
-        ]
+        ],
     )
     @method_decorator(user_controller())
     def get(self, request: Request, author_uuid: str, post_uuid: str, viewer: Optional[models.LocalAuthor]) -> Response:

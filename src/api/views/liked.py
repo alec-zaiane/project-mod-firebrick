@@ -47,10 +47,24 @@ class LikedByAuthorView(views.APIView):
     """
 
     @extend_schema(
-
+        description="Get a list of likes by AUTHOR_SERIAL or AUTHOR_FQID (paginated)",
+        responses=serializers.LikesSerializer,
+        parameters=[
+            OpenApiParameter("author_uuid_or_fqid", str, OpenApiParameter.PATH,
+                             description="The author's UUID or FQID"),
+            OpenApiParameter(
+                "page", type=int, description="Page number to fetch (1-indexed)", default=1),
+            OpenApiParameter(
+                "size", type=int, description="How many comments per page", default=50),
+        ],
     )
     @method_decorator(user_controller())
     def get(self, request: Request, author_uuid_or_fqid: str) -> Response:
+        try:
+            paginate_page = int(request.query_params.get("page", 1))
+            paginate_size = int(request.query_params.get("size", 50))
+        except ValueError:
+            return Response("Incorrectly formatted `page` or `size` parameter", 400)
         # Remember to handle both AUTHOR_SERIAL and AUTHOR_FQID
         raise NotImplementedError("TODO")
 
@@ -62,7 +76,14 @@ class LikedByAuthorSpecificLikeView(views.APIView):
     - Body is [like object]
     """
     @extend_schema(
-
+        description="Get a single like by AUTHOR_UUID",
+        responses=serializers.LikeSerializer,
+        parameters=[
+            OpenApiParameter("author_uuid", str, OpenApiParameter.PATH,
+                             description="UUID of the author in question"),
+            OpenApiParameter("like_uuid", str, OpenApiParameter.PATH,
+                             description="UUID of the like in question"),
+        ],
     )
     @method_decorator(user_controller())
     def get(self, request: Request, author_uuid: str, like_uuid: str) -> Response:
@@ -76,7 +97,12 @@ class LikedSpecificLikeView(views.APIView):
         - Body is [like object]
     """
     @extend_schema(
-
+        description="Get a single like by FQID",
+        responses=serializers.LikeSerializer,
+        parameters=[
+            OpenApiParameter("like_fqid", str, OpenApiParameter.PATH,
+                             description="FQID of the like in question"),
+        ]
     )
     @method_decorator(user_controller())
     def get(self, request: Request, like_fqid: str) -> Response:

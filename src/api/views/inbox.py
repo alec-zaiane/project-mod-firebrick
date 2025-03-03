@@ -24,7 +24,6 @@ _INBOX_REQUEST_DICT: dict[str, type[Serializer[Any]]] = {}
 
 
 def register_inbox_handler(handler: InboxHandler) -> None:
-    print("adding to handler")
     _INBOX_HANDLERS.append(handler)
     _INBOX_REQUEST_DICT.update(handler.to_response_dict())
 
