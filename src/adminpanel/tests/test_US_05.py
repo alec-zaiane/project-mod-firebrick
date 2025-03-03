@@ -1,12 +1,4 @@
-from typing import Any
-
-import uuid
-
-from django.urls import reverse
-from django.contrib.auth.models import User
 from django.test import tag
-
-from rest_framework import status
 
 from socialnetwork.models import LocalAuthor
 from .utils_for_tests import NodeAdminUserStoryApiTest
