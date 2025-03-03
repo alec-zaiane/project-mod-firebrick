@@ -4,7 +4,7 @@ from django.shortcuts import render
 from django.urls import reverse
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 
-from socialnetwork.utils.user_control_decorator import user_control
+from socialnetwork.utils.user_control_decorator import user_controller
 # from rest_framework.decorators import api_view
 # from rest_framework.request import Request
 # from rest_framework.response import Response
@@ -20,7 +20,7 @@ def get_unauthenticated_response() -> HttpResponse:
     return HttpResponseRedirect(reverse("socialnetwork:not_logged_in"))
 
 
-@user_control(must_be_logged_in=True, must_be_superuser=True)
+@user_controller(must_be_logged_in=True, must_be_superuser=True)
 def adminpanel_view(request: HttpRequest, viewer: Optional[socialmodels.LocalAuthor]) -> HttpResponse:
     if isinstance(request.user, AnonymousUser):  # can't happen, needed for mypy
         return get_unauthenticated_response()
@@ -38,7 +38,7 @@ def adminpanel_view(request: HttpRequest, viewer: Optional[socialmodels.LocalAut
     })
 
 
-@user_control(must_be_logged_in=True, must_be_superuser=True)
+@user_controller(must_be_logged_in=True, must_be_superuser=True)
 def hosted_image_view(request: HttpRequest) -> HttpResponse:
     all_hosted_images = socialmodels.HostedImage.objects.all()
     return render(request, "hosted_images.html", {
@@ -46,7 +46,7 @@ def hosted_image_view(request: HttpRequest) -> HttpResponse:
     })
 
 
-@user_control(must_be_logged_in=True)
+@user_controller(must_be_logged_in=True)
 def public_hosted_images(request: HttpRequest) -> HttpResponse:
     """
     A public view listing all hosted images, so regular users can copy their URLs.

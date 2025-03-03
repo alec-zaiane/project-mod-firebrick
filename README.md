@@ -6,7 +6,7 @@
 - ravyn Hardcastle
 - Imaad Khan
 
-> [!NOTE] 
+> [!NOTE]
 > Commit/Branch Types
 > - `feat`: A new feature
 > - `fix`: A bug fix

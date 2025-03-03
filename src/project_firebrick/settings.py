@@ -29,12 +29,17 @@ DEBUG = os.getenv("DJANGO_DEBUG", str(True)) == "True"
 
 ALLOWED_HOSTS: list[str] = os.getenv("DJANGO_ALLOWED_HOSTS", "*").split(" ")
 
+# set the node URL for building node2node request objects
+# make sure to include the `http://` but *no* trailing `/`!
+THIS_NODE_URL = "http://127.0.0.1"
+
 
 # Application definition
 
 INSTALLED_APPS = [
     'adminpanel',
     'socialnetwork',
+    'api',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -43,6 +48,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework.authtoken',
+    'drf_spectacular',
 ]
 
 MIDDLEWARE = [
@@ -139,3 +145,15 @@ LOGOUT_REDIRECT_URL = "/"
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Rest Framework settings
+REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Socialnetwork API',
+    # 'DESCRIPTION': 'Your project description',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+}

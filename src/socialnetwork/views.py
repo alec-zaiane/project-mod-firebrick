@@ -5,7 +5,7 @@ from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 
 from django.urls import reverse
 
-from socialnetwork.utils.user_control_decorator import user_control
+from socialnetwork.utils.user_control_decorator import user_controller
 from . import models
 
 
@@ -23,7 +23,7 @@ def not_logged_in_view(request: HttpRequest) -> HttpResponse:
     return render(request, "registration/not_logged_in.html")
 
 
-@user_control(must_be_logged_in=True, must_be_author=True)
+@user_controller(must_be_logged_in=True, must_be_author=True)
 def stream_view(request: HttpRequest, viewer: Optional[models.LocalAuthor]) -> HttpResponse:
     """An author's stream view"""
     if viewer is None:  # shouldn't be possible, needed for mypy
@@ -43,7 +43,7 @@ def stream_view(request: HttpRequest, viewer: Optional[models.LocalAuthor]) -> H
     })
 
 
-@user_control(must_be_logged_in=True, must_be_author=True)
+@user_controller(must_be_logged_in=True, must_be_author=True)
 def author_profile_view(request: HttpRequest, target_author_uuid: str, viewer: Optional[models.LocalAuthor] = None) -> HttpResponse:
     """View `target_author_uuid`'s profile"""
 
@@ -58,7 +58,7 @@ def author_profile_view(request: HttpRequest, target_author_uuid: str, viewer: O
     return render(request, "author_profile.html", {"author": target_author, "viewer": viewer, "posts": author_posts_sorted})
 
 
-@user_control(must_be_logged_in=True, must_be_author=True)
+@user_controller(must_be_logged_in=True, must_be_author=True)
 def local_author_modify_view(request: HttpRequest, target_author_uuid: str, viewer: Optional[models.LocalAuthor] = None) -> HttpResponse:
     """Modify `target_author_uuid`'s profile"""
     target_author = get_object_or_404(
@@ -70,13 +70,13 @@ def local_author_modify_view(request: HttpRequest, target_author_uuid: str, view
 # Views for Posts
 
 
-@user_control(must_be_logged_in=True, must_be_author=True)
+@user_controller(must_be_logged_in=True, must_be_author=True)
 def create_post_view(request: HttpRequest, viewer: models.LocalAuthor) -> HttpResponse:
     """Render a form for authors to create a post."""
     return render(request, "create_post.html", {"author": viewer})
 
 
-@user_control(must_be_logged_in=True, must_be_author=True)
+@user_controller(must_be_logged_in=True, must_be_author=True)
 def edit_post_view(request: HttpRequest, post_uuid: str, viewer: models.LocalAuthor) -> HttpResponse:
     """Render a form for authors to edit their post and toggle between Plain Text and Markdown."""
 

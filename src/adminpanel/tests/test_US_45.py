@@ -25,7 +25,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
         self.client.force_authenticate(user=self.sample_authors[0].user)
         url = reverse("adminpanel:api_author_create")
         response = self.client.post(
-            url, {"username": "new_author", "password": "pass"})
+            url, {"username": "new_author", "password": "passwordlong"})
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     @tag("check-fast")
@@ -34,7 +34,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
         self.client.logout()
         url = reverse("adminpanel:api_join_request_create")
         response = self.client.post(
-            url, {"username": "Mr-Logged-out", "password": "pass"})
+            url, {"username": "Mr-Logged-out", "password": "passwordlong"})
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     @tag("check-medium", "security")
@@ -44,7 +44,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
         self.client.force_authenticate(user=self.sample_authors[0].user)
         url = reverse("adminpanel:api_join_request_create")
         response = self.client.post(
-            url, {"username": "Mr-Logged-in", "password": "pass"})
+            url, {"username": "Mr-Logged-in", "password": "passwordlong"})
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     @tag("check-medium", "security")
@@ -52,8 +52,20 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
         """Test that a superuser can create a join request"""
         url = reverse("adminpanel:api_join_request_create")
         response = self.client.post(
-            url, {"username": "Mr-Superuser", "password": "pass"})
+            url, {"username": "Mr-Superuser", "password": "passwordlong"})
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    @tag("check-medium", "security")
+    def test_join_request_fails_on_bad_password(self) -> None:
+        """Test that a join request fails if the password is too short"""
+        self.client.logout()
+        url = reverse("adminpanel:api_join_request_create")
+        response = self.client.post(
+            url, {"username": "Mr-Short-password", "password": "pass"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(AuthorJoinRequest.objects.filter(
+            username="Mr-Short-password").exists()
+        )
 
     @tag("check-medium")
     def test_create_existing_join_request_fail(self) -> None:
@@ -61,10 +73,10 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
         self.client.logout()
         url = reverse("adminpanel:api_join_request_create")
         response = self.client.post(
-            url, {"username": "Mr-Double-entry", "password": "pass"})
+            url, {"username": "Mr-Double-entry", "password": "passwordlong"})
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         response = self.client.post(
-            url, {"username": "Mr-Double-entry", "password": "pass"})
+            url, {"username": "Mr-Double-entry", "password": "passwordlong"})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     @tag("check-medium")
@@ -74,14 +86,14 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
         self.client.logout()
         url = reverse("adminpanel:api_join_request_create")
         response = self.client.post(
-            url, {"username": self.sample_authors[0].user.username, "password": "pass"})
+            url, {"username": self.sample_authors[0].user.username, "password": "passwordlong"})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     @tag("check-fast")
     def test_approve_join_request(self) -> None:
         """Test that an admin can approve a join request"""
         join_request = AuthorJoinRequest.objects.create(
-            username="Mr-Approve", password="pass")
+            username="Mr-Approve", password="passwordlong")
         self.assertFalse(
             User.objects.filter(username=join_request.username).exists())
         self.assertFalse(
@@ -109,7 +121,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
         """Test that a non-admin cannot approve a join request"""
         self.initialize_sample_authors()
         join_request = AuthorJoinRequest.objects.create(
-            username="Mr-Approve", password="pass")
+            username="Mr-Approve", password="passwordlong")
         self.client.force_authenticate(user=self.sample_authors[0].user)
         url = reverse("adminpanel:api_join_request_approve",
                       args=[join_request.pk])
@@ -124,7 +136,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
     def test_logged_out_cannot_approve_join_request(self) -> None:
         """Test that a logged-out user cannot approve a join request"""
         join_request = AuthorJoinRequest.objects.create(
-            username="Mr-Approve", password="pass")
+            username="Mr-Approve", password="passwordlong")
         self.client.logout()
         url = reverse("adminpanel:api_join_request_approve",
                       args=[join_request.pk])
@@ -139,7 +151,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
     def test_deny_join_request(self) -> None:
         """Test that an admin can deny a join request"""
         join_request = AuthorJoinRequest.objects.create(
-            username="Mr-Deny", password="pass")
+            username="Mr-Deny", password="passwordlong")
 
         url = reverse("adminpanel:api_join_request_deny",
                       args=[join_request.pk])
@@ -157,7 +169,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
         """Test that an admin can undo a denied join request"""
         # create a join request and deny it
         join_request = AuthorJoinRequest.objects.create(
-            username="Mr-Undeny", password="pass")
+            username="Mr-Undeny", password="passwordlong")
         join_request.deny()
         self.assertTrue(
             AuthorJoinRequest.objects.get(id=join_request.pk).is_denied)
@@ -180,7 +192,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
         self.client.force_authenticate(user=self.sample_authors[0].user)
         # create a join request and try to deny it
         join_request = AuthorJoinRequest.objects.create(
-            username="Mr-Deny", password="pass")
+            username="Mr-Deny", password="passwordlong")
         url = reverse("adminpanel:api_join_request_deny",
                       args=[join_request.pk])
         response = self.client.post(url)
@@ -205,7 +217,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
         self.client.logout()
         # create a join request and try to deny it
         join_request = AuthorJoinRequest.objects.create(
-            username="Mr-Deny", password="pass")
+            username="Mr-Deny", password="passwordlong")
         url = reverse("adminpanel:api_join_request_deny",
                       args=[join_request.pk])
         response = self.client.post(url)
@@ -228,7 +240,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
     def test_cannot_delete_undenied_join_request(self) -> None:
         """Test that a non-denied join request cannot be deleted"""
         join_request = AuthorJoinRequest.objects.create(
-            username="Mr-Delete", password="pass")
+            username="Mr-Delete", password="passwordlong")
         url = reverse("adminpanel:api_join_request_delete",
                       args=[join_request.pk])
         response = self.client.post(url)
@@ -240,7 +252,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
     def test_delete_denied_join_request(self) -> None:
         """Test that a denied join request can be deleted"""
         join_request = AuthorJoinRequest.objects.create(
-            username="Mr-Delete", password="pass")
+            username="Mr-Delete", password="passwordlong")
         join_request.deny()
         url = reverse("adminpanel:api_join_request_delete",
                       args=[join_request.pk])
@@ -255,7 +267,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
         self.initialize_sample_authors()
         self.client.force_authenticate(user=self.sample_authors[0].user)
         join_request = AuthorJoinRequest.objects.create(
-            username="Mr-Delete", password="pass")
+            username="Mr-Delete", password="passwordlong")
         url = reverse("adminpanel:api_join_request_delete",
                       args=[join_request.pk])
         response = self.client.post(url)
@@ -268,7 +280,7 @@ class TestUserStory45(NodeAdminUserStoryApiTest):
         """Test that a logged-out user cannot delete a join request"""
         self.client.logout()
         join_request = AuthorJoinRequest.objects.create(
-            username="Mr-Delete", password="pass")
+            username="Mr-Delete", password="passwordlong")
         url = reverse("adminpanel:api_join_request_delete",
                       args=[join_request.pk])
         response = self.client.post(url)
