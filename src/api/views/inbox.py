@@ -19,8 +19,10 @@ from socialnetwork.utils.user_control_decorator import user_controller
 
 # A combined view for all calls to `://service/api/authors/{AUTHOR_SERIAL}/inbox`
 
-_INBOX_HANDLERS: list[InboxHandler] = []
-_INBOX_REQUEST_DICT: dict[str, type[Serializer[Any]]] = {}
+# list of InboxHandlers that the InboxView will go through, call register_inbox_handler to register to it
+_INBOX_HANDLERS: list[InboxHandler] = [] 
+# dict of {type_string: serializer} used for API docs generation
+_INBOX_REQUEST_DICT: dict[str, type[Serializer[Any]]] = {} 
 
 
 def register_inbox_handler(handler: InboxHandler) -> None:
