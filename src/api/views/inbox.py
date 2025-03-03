@@ -10,19 +10,23 @@ from django.utils.decorators import method_decorator
 from rest_framework import views
 from rest_framework.response import Response
 from rest_framework.request import Request
+from rest_framework.serializers import Serializer
 
 from drf_spectacular.utils import extend_schema
-from drf_spectacular.utils import OpenApiParameter
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, OpenApiExample
 
 from socialnetwork.utils.user_control_decorator import user_controller
 
 # A combined view for all calls to `://service/api/authors/{AUTHOR_SERIAL}/inbox`
 
 _INBOX_HANDLERS: list[InboxHandler] = []
+_INBOX_REQUEST_DICT: dict[str, type[Serializer[Any]]] = {}
 
 
 def register_inbox_handler(handler: InboxHandler) -> None:
+    print("adding to handler")
     _INBOX_HANDLERS.append(handler)
+    _INBOX_REQUEST_DICT.update(handler.to_response_dict())
 
 
 class InboxHandler(abc.ABC):
@@ -34,8 +38,17 @@ class InboxHandler(abc.ABC):
     def __init__(self, handlable_types: list[str]):
         self.handlable_types: list[str] = handlable_types
 
+    @property
+    @abc.abstractmethod
+    def serializer(self) -> type[Serializer[Any]]:
+        """Returns the *type* of serializer that should be used for this handler"""
+        ...
+
     def can_handle(self, type: str) -> bool:
         return type in self.handlable_types
+
+    def to_response_dict(self) -> dict[str, type[Serializer[Any]]]:
+        return {t: self.serializer for t in self.handlable_types}
 
     @abc.abstractmethod
     def post(self, request: Request) -> Response:
@@ -62,6 +75,12 @@ class InboxView(views.APIView):
                 return handler
         return None
 
+    @extend_schema(
+        description="Send an inbox item to this author's inbox",
+        request=_INBOX_REQUEST_DICT,
+        responses={200: OpenApiResponse(description="Success, inbox item sent"),
+                   400: OpenApiResponse(description="Bad request")},
+    )
     @method_decorator(user_controller())
     def post(self, request: Request, author_uuid: str) -> Response:
         """Send an inbox item to this author's inbox"""

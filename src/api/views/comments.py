@@ -47,6 +47,10 @@ class CommentInboxHandler(InboxHandler):
     def __init__(self) -> None:
         super().__init__(["comment"])
 
+    @property
+    def serializer(self) -> type[serializers.CommentSerializer]:
+        return serializers.CommentSerializer
+
     def post(self, request: Request) -> Response:
         raise NotImplementedError("TODO")
 

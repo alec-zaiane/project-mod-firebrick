@@ -54,6 +54,7 @@ class PostSerializer(serializers.Serializer[Any]):
     ```
     """
     type = serializers.CharField(
+        default="post",
         validators=[custom_validators.ExactlyEqualTo("post")])
     title = serializers.CharField()
     id = serializers.URLField()
@@ -102,6 +103,7 @@ class PostsSerializer(serializers.Serializer[Any]):
     """
 
     type = serializers.CharField(
+        default="posts",
         validators=[custom_validators.ExactlyEqualTo("posts")])
     page_number = serializers.IntegerField(min_value=1)
     size = serializers.IntegerField(min_value=1)

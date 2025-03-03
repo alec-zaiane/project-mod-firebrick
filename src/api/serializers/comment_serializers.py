@@ -31,6 +31,7 @@ class CommentSerializer(serializers.Serializer[Any]):
     ```
     """
     type = serializers.CharField(
+        default="comment",
         validators=[custom_validators.ExactlyEqualTo("comment")])
     author = AuthorSerializer()
     comment = serializers.CharField()
@@ -79,6 +80,7 @@ class CommentsSerializer(serializers.Serializer[Any]):
     ```
     """
     type = serializers.CharField(
+        default="comments",
         validators=[custom_validators.ExactlyEqualTo("comments")])
     page = serializers.URLField()
     id = serializers.URLField()

@@ -25,6 +25,7 @@ class LikeSerializer(serializers.Serializer[Any]):
     ? how does the like for posts look?
     """
     type = serializers.CharField(
+        default="like",
         validators=[custom_validators.ExactlyEqualTo("like")])
     author = AuthorSerializer()
     published = serializers.DateTimeField(format='iso-8601')
@@ -63,6 +64,7 @@ class LikesSerializer(serializers.Serializer[Any]):
     '''
     """
     type = serializers.CharField(
+        default="likes",
         validators=[custom_validators.ExactlyEqualTo("likes")]
     )
     page = serializers.URLField()
