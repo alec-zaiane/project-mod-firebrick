@@ -39,6 +39,8 @@ class Author(models.Model):
     following = models.ManyToManyField(
         'self', symmetrical=False, related_name='followers', blank=True)
     bio = models.TextField(blank=True)
+    display_name = models.CharField(max_length=128)
+    github_url = models.URLField()
 
     # Computed Properties
     @property
@@ -47,8 +49,12 @@ class Author(models.Model):
 
     @property
     def username(self) -> str:
-        raise NotImplementedError(
-            "This method must be implemented by a subclass")
+        if isinstance(self, LocalAuthor):
+            return self.user.username
+        elif isinstance(self, RemoteAuthor):
+            return self.username
+        raise SyntaxError(
+            "Author objects should never be instantiated directly")
 
     @property
     def posts(self) -> list[Post]:
@@ -81,6 +87,11 @@ class Author(models.Model):
             self.user.delete()
         return super().delete(*args, **kwargs)
 
+    @classmethod
+    def get_author_by_FQID(cls, fqid: str) -> Author:
+        # not sure if this is the best place to put this, but we need a centralized place for it to go
+        raise NotImplementedError("TODO")
+
 
 class LocalAuthor(Author):
     """An author that is on this node"""
@@ -88,10 +99,6 @@ class LocalAuthor(Author):
     user: models.OneToOneField[User] = models.OneToOneField(
         User, on_delete=models.CASCADE, related_name="author"
     )  # https://docs.djangoproject.com/en/dev/topics/auth/customizing/#extending-the-existing-user-model
-
-    @property
-    def username(self) -> str:
-        return self.user.username
 
     def get_stream(
         self, paginate_start: int = 0, paginate_count: Optional[int] = None
@@ -138,12 +145,17 @@ class RemoteAuthor(Author):
     """An author that is on another node"""
 
     date_joined = models.DateTimeField(auto_now_add=True, editable=False)
-    remote_username = models.CharField(max_length=50)
-
-    @property
-    def username(self) -> str:
-        return self.remote_username
     # Eventually will contain extra fields and methods/overrides for authors on other nodes
+
+
+class FollowRequest(models.Model):
+    """A follow request, `actor` wants to follow `target`"""
+    uuid = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False)
+    actor = models.ForeignKey(
+        Author, on_delete=models.CASCADE, related_name="follow_requests_requested")
+    target = models.ForeignKey(
+        Author, on_delete=models.CASCADE, related_name="follow_requests_pending")
 
 
 class Post(models.Model):
@@ -191,17 +203,16 @@ class Post(models.Model):
     @property
     def author(self) -> Author | None:
         """The author of this post"""
-        fetched_author: Author | None = self.base_author
-        if fetched_author is None:
+        # implementation is a little janky due to Django's inheritance  , but it should work
+        if self.base_author is None:
             return None
-        fetched_uuid = fetched_author.uuid
 
-        if LocalAuthor.objects.filter(uuid=fetched_uuid).exists():
-            return LocalAuthor.objects.get(uuid=fetched_uuid)
-        elif RemoteAuthor.objects.filter(uuid=fetched_uuid).exists():
-            return RemoteAuthor.objects.get(uuid=fetched_uuid)
+        if LocalAuthor.objects.filter(uuid=self.base_author.uuid).exists():
+            return LocalAuthor.objects.get(uuid=self.base_author.uuid)
+        elif RemoteAuthor.objects.filter(uuid=self.base_author.uuid).exists():
+            return RemoteAuthor.objects.get(uuid=self.base_author.uuid)
         else:
-            raise ValueError(f"Unknown author type: {fetched_author}")
+            raise ValueError("Unknown author type, this should never happen")
 
     @property
     def css_class(self) -> str:
