@@ -60,21 +60,46 @@ class PostAuthorSpecificView(views.APIView):
     """
 
     @extend_schema(
-
+        summary="Get a post by an author",
+        description="Get post `POST_UUID` by author `AUTHOR_UUID`",
+        responses=serializers.PostSerializer,
+        parameters=[
+            OpenApiParameter("author_uuid", str, OpenApiParameter.PATH,
+                             description="The UUID of the author"),
+            OpenApiParameter("post_uuid", str, OpenApiParameter.PATH,
+                             description="The UUID of their post"),
+        ]
     )
     @method_decorator(user_controller())
     def get(self, request: Request, author_uuid: str, post_uuid: str, viewer: Optional[models.LocalAuthor] = None) -> Response:
         raise NotImplementedError("TODO")
 
     @extend_schema(
-
+        summary="Delete a post",
+        description="Delete post `POST_UUID` by author `AUTHOR_UUID`",
+        responses={204: None, 404: None},
+        parameters=[
+            OpenApiParameter("author_uuid", str, OpenApiParameter.PATH,
+                             description="The UUID of the author"),
+            OpenApiParameter("post_uuid", str, OpenApiParameter.PATH,
+                             description="The UUID of their post"),
+        ]
     )
     @method_decorator(user_controller())
     def delete(self, request: Request, author_uuid: str, post_uuid: str, viewer: Optional[models.LocalAuthor] = None) -> Response:
         raise NotImplementedError("TODO")
 
     @extend_schema(
-
+        summary="Update a post",
+        description="Update post `POST_UUID` by author `AUTHOR_UUID`",
+        responses=serializers.PostSerializer,
+        parameters=[
+            OpenApiParameter("author_uuid", str, OpenApiParameter.PATH,
+                             description="The UUID of the author"),
+            OpenApiParameter("post_uuid", str, OpenApiParameter.PATH,
+                             description="The UUID of their post"),
+        ],
+        request=serializers.PostSerializer
     )
     @method_decorator(user_controller())
     def put(self, request: Request, author_uuid: str, post_uuid: str, viewer: Optional[models.LocalAuthor] = None) -> Response:
@@ -88,7 +113,13 @@ class PostByFqidView(views.APIView):
         - friends-only posts: must be authenticated
     """
     @extend_schema(
-
+        summary="Get a post by FQID",
+        description="Get the public post whose URL is POST_FQID",
+        responses=serializers.PostSerializer,
+        parameters=[
+            OpenApiParameter("post_fqid", str, OpenApiParameter.PATH,
+                             description="The FQID of the post"),
+        ],
     )
     @method_decorator(user_controller())
     def get(self, request: Request, post_fqid: str, viewer: Optional[models.LocalAuthor] = None) -> Response:

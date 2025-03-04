@@ -12,11 +12,16 @@ from socialnetwork.utils.user_control_decorator import user_controller
 from socialnetwork import serializers
 from socialnetwork import models
 
+from drf_spectacular.utils import extend_schema
+
 
 def get_unauthenticated_response_api() -> Response:
     return Response(status=401)
 
 
+@extend_schema(
+    deprecated=True,
+)
 @api_view(["POST"])
 @user_controller(must_be_logged_in=True, must_be_author=True)
 def api_textpost_create(request: Request, viewer: Optional[models.LocalAuthor]) -> Response:
@@ -60,6 +65,9 @@ def api_textpost_create(request: Request, viewer: Optional[models.LocalAuthor]) 
         return Response({"error": "creation error", "post": serializer.errors}, status=400)
 
 
+@extend_schema(
+    deprecated=True,
+)
 @api_view(["PUT", "PATCH"])
 @user_controller(must_be_logged_in=True, must_be_author=True)
 def api_author_update(request: Request, target_author_uuid: str, viewer: Optional[models.LocalAuthor] = None) -> Response:
@@ -108,6 +116,9 @@ def api_author_update(request: Request, target_author_uuid: str, viewer: Optiona
     return Response({"error": "author update error", "author": serializer.errors}, status=400)
 
 
+@extend_schema(
+    deprecated=True,
+)
 @api_view(["POST"])
 @user_controller(must_be_logged_in=True, must_be_author=True)
 def api_post_delete(request: Request, viewer: Optional[models.LocalAuthor], post_uuid: str) -> Response:
@@ -139,6 +150,9 @@ def api_post_delete(request: Request, viewer: Optional[models.LocalAuthor], post
     return Response({"detail": "Post deleted successfully"}, 200)
 
 
+@extend_schema(
+    deprecated=True,
+)
 @api_view(["POST"])
 @user_controller(must_be_logged_in=True, must_be_author=True)
 def api_textpost_update(request: Request, viewer: Optional[models.LocalAuthor], post_uuid: str) -> Response:

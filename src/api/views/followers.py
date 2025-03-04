@@ -40,10 +40,24 @@ class FollowersView(views.APIView):
     """
 
     @extend_schema(
-
+        description="Get a list of authors who are following a specific author",
+        responses=serializers.AuthorsSerializer,
+        parameters=[
+            OpenApiParameter("author_uuid", type=str, location=OpenApiParameter.PATH,
+                             description="The UUID of the author"),
+            OpenApiParameter("page", type=int,
+                             description="Page number to fetch (1-indexed)", default=1),
+            OpenApiParameter("size", type=int,
+                             description="How many authors per page", default=50),
+        ]
     )
     @method_decorator(user_controller())
     def get(self, request: Request, author_uuid: str) -> Response:
+        try:
+            paginate_page = int(request.query_params.get("page", 1))
+            paginate_size = int(request.query_params.get("size", 50))
+        except ValueError:
+            return Response("Incorrectly formatted `page` or `size` parameter", 400)
         raise NotImplementedError("TODO")
 
 
@@ -58,21 +72,42 @@ class FollowersSpecificView(views.APIView):
             - This is how you can check if follow request is accepted
     """
     @extend_schema(
-
+        description="Remove a follower from an author",
+        parameters=[
+            OpenApiParameter("author_uuid", type=str, location=OpenApiParameter.PATH,
+                             description="The UUID of the author to remove the follower from"),
+            OpenApiParameter("foreign_author_fqid", type=str, location=OpenApiParameter.PATH,
+                             description="The FQID of the author to remove as a follower"),
+        ],
+        # responses= TODO
     )
     @method_decorator(user_controller())
     def delete(self, request: Request, author_uuid: str, foreign_author_fqid: str) -> Response:
         raise NotImplementedError("TODO")
 
     @extend_schema(
-
+        description="Add a follower to an author (must be authenticated)",
+        parameters=[
+            OpenApiParameter("author_uuid", type=str, location=OpenApiParameter.PATH,
+                             description="The UUID of the author to add the follower to"),
+            OpenApiParameter("foreign_author_fqid", type=str, location=OpenApiParameter.PATH,
+                             description="The FQID of the author to add as a follower"),
+        ],
+        # responses= TODO
     )
     @method_decorator(user_controller())
     def put(self, request: Request, author_uuid: str, foreign_author_fqid: str) -> Response:
         raise NotImplementedError("TODO")
 
     @extend_schema(
-
+        description="Check if a follower is following an author",
+        parameters=[
+            OpenApiParameter("author_uuid", type=str, location=OpenApiParameter.PATH,
+                             description="The UUID of the author to check the follower status of"),
+            OpenApiParameter("foreign_author_fqid", type=str, location=OpenApiParameter.PATH,
+                             description="The FQID of the author to check if they are a follower"),
+        ],
+        # responses= TODO 404 if not a follower
     )
     @method_decorator(user_controller())
     def get(self, request: Request, author_uuid: str, foreign_author_fqid: str) -> Response:

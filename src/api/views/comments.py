@@ -47,6 +47,10 @@ class CommentInboxHandler(InboxHandler):
     def __init__(self) -> None:
         super().__init__(["comment"])
 
+    @property
+    def serializer(self) -> type[serializers.CommentSerializer]:
+        return serializers.CommentSerializer
+
     def post(self, request: Request) -> Response:
         raise NotImplementedError("TODO")
 
@@ -60,8 +64,27 @@ class CommentsSerialView(views.APIView):
         - GET [local, remote]: the comments on the post
         - Body is a "comments" object
     """
-
-    def get(self, request: Request, author_uuid: str, post_uuid: str) -> Response:
+    @extend_schema(
+        description="Get the comments on a post",
+        responses=serializers.CommentsSerializer,
+        parameters=[
+            OpenApiParameter("author_uuid", str, OpenApiParameter.PATH,
+                             description="The UUID of the author"),
+            OpenApiParameter("post_uuid", str, OpenApiParameter.PATH,
+                             description="The UUID of their post"),
+            OpenApiParameter(
+                "page", type=int, description="Page number to fetch (1-indexed)", default=1),
+            OpenApiParameter(
+                "size", type=int, description="How many comments per page", default=50),
+        ],
+    )
+    @method_decorator(user_controller())
+    def get(self, request: Request, author_uuid: str, post_uuid: str, viewer: Optional[models.LocalAuthor]) -> Response:
+        try:
+            paginate_page = int(request.query_params.get("page", 1))
+            paginate_size = int(request.query_params.get("size", 50))
+        except ValueError:
+            return Response("Incorrectly formatted `page` or `size` parameter", 400)
         raise NotImplementedError("TODO")
 
 
@@ -72,10 +95,24 @@ class CommentsFqidView(views.APIView):
         - Body is a "comments" object
     """
     @extend_schema(
-
+        description="Get the comments on a post by FQID",
+        responses=serializers.CommentsSerializer,
+        parameters=[
+            OpenApiParameter("post_fqid", str, OpenApiParameter.PATH,
+                             description="The FQID of the post (percent encoded)"),
+            OpenApiParameter(
+                "page", type=int, description="Page number to fetch (1-indexed)", default=1),
+            OpenApiParameter(
+                "size", type=int, description="How many comments per page", default=50),
+        ]
     )
     @method_decorator(user_controller())
-    def get(self, request: Request, post_fqid: str) -> Response:
+    def get(self, request: Request, post_fqid: str, viewer: Optional[models.LocalAuthor]) -> Response:
+        try:
+            paginate_page = int(request.query_params.get("page", 1))
+            paginate_size = int(request.query_params.get("size", 50))
+        except ValueError:
+            return Response("Incorrectly formatted `page` or `size` parameter", 400)
         raise NotImplementedError("TODO")
 
 
@@ -86,7 +123,16 @@ class CommentsRemoteFqidView(views.APIView):
         - Example: GET http://nodebbbb/api/authors/222/posts/249/comments/http%3A%2F%2Fnodeaaaa%2Fapi%2Fauthors%2F111%2Fcommented%2F130:
     """
     @extend_schema(
-
+        description="Get a remote comment on a local post by FQID",
+        responses=serializers.CommentSerializer,
+        parameters=[
+            OpenApiParameter("author_uuid", str, OpenApiParameter.PATH,
+                             description="The UUID of the author"),
+            OpenApiParameter("post_uuid", str, OpenApiParameter.PATH,
+                             description="The UUID of their post"),
+            OpenApiParameter("comment_fqid", str, OpenApiParameter.PATH,
+                             description="The FQID of the comment (percent encoded)")
+        ]
     )
     @method_decorator(user_controller())
     def get(self, request: Request, author_uuid: str, post_uuid: str, comment_fqid: str) -> Response:

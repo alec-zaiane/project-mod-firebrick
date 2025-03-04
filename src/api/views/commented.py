@@ -50,18 +50,40 @@ class CommentedAuthorView(views.APIView):
     """
 
     @extend_schema(
-
+        summary="Get the list of comments by an author (paginated)",
+        responses=serializers.CommentsSerializer,
+        parameters=[
+            OpenApiParameter("author_uuid_or_fqid", type=str,
+                             location=OpenApiParameter.PATH, description="Either the UUID or FQID of the author"),
+            OpenApiParameter(
+                "page", type=int, description="Page number to fetch (1-indexed)", default=1),
+            OpenApiParameter(
+                "size", type=int, description="How many comments per page", default=50),
+        ]
     )
     @method_decorator(user_controller())
     def get(self, request: Request, author_uuid_or_fqid: str) -> Response:
+        try:
+            paginate_page = int(request.query_params.get("page", 1))
+            paginate_size = int(request.query_params.get("size", 50))
+        except ValueError:
+            return Response("Incorrectly formatted `page` or `size` parameter", 400)
         # TODO Must be able to handle both AUTHOR_SERIAL and AUTHOR_FQID
         raise NotImplementedError("TODO")
 
     @extend_schema(
-
+        summary="Post a comment by this author",
+        description="Post a Comment object, must be authenticated as this author",
+        request=serializers.CommentSerializer,
+        parameters=[
+            OpenApiParameter("author_uuid", type=str, location=OpenApiParameter.PATH,
+                             description="The UUID of the author posting the comment")
+        ]
     )
     @method_decorator(user_controller())
-    def post(self, request: Request, author_uuid: str) -> Response:
+    def post(self, request: Request, author_uuid: str, viewer: Optional[models.LocalAuthor] = None) -> Response:
+        viewer_is_author = getattr(viewer, "uuid", None) == author_uuid
+        user_control(request, verify_true=viewer_is_author)
         raise NotImplementedError("TODO")
 
 
@@ -72,7 +94,14 @@ class CommentedBySerialView(views.APIView):
     """
 
     @extend_schema(
-
+        summary="Get a comment by an author",
+        responses=serializers.CommentSerializer,
+        parameters=[
+            OpenApiParameter("author_uuid", type=str, location=OpenApiParameter.PATH,
+                             description="The UUID of the author who made the comment"),
+            OpenApiParameter("comment_uuid", type=str, location=OpenApiParameter.PATH,
+                             description="The UUID of the comment")
+        ]
     )
     @method_decorator(user_controller())
     def get(self, request: Request, author_uuid: str, comment_uuid: str) -> Response:
@@ -86,7 +115,12 @@ class CommentedFqidView(views.APIView):
     """
 
     @extend_schema(
-
+        summary="Get a comment by FQID",
+        responses=serializers.CommentSerializer,
+        parameters=[
+            OpenApiParameter("comment_fqid", type=str, location=OpenApiParameter.PATH,
+                             description="The FQID of the comment (percent encoded)")
+        ]
     )
     @method_decorator(user_controller())
     def get(self, request: Request, comment_fqid: str) -> Response:

@@ -48,6 +48,10 @@ class LikesInboxHandler(InboxHandler):
     def __init__(self) -> None:
         super().__init__(["like"])
 
+    @property
+    def serializer(self) -> type[serializers.LikeSerializer]:
+        return serializers.LikeSerializer
+
     def post(self, request: Request) -> Response:
         raise NotImplementedError("TODO")
 
@@ -64,10 +68,27 @@ class LikesOnPostBySerialView(views.APIView):
     """
 
     @extend_schema(
-
+        summary="Get a list of likes on a post",
+        description="Get a list of likes on a post by AUTHOR_UUID and POST_UUID (Paginated)",
+        responses=serializers.LikesSerializer,
+        parameters=[
+            OpenApiParameter("author_uuid", str, OpenApiParameter.PATH,
+                             description="The UUID of the author"),
+            OpenApiParameter("post_uuid", str, OpenApiParameter.PATH,
+                             description="The UUID of their post"),
+            OpenApiParameter(
+                "page", type=int, description="Page number to fetch (1-indexed)", default=1),
+            OpenApiParameter(
+                "size", type=int, description="How many comments per page", default=50),
+        ]
     )
     @method_decorator(user_controller())
     def get(self, request: Request, author_uuid: str, post_uuid: str) -> Response:
+        try:
+            paginate_page = int(request.query_params.get("page", 1))
+            paginate_size = int(request.query_params.get("size", 50))
+        except ValueError:
+            return Response("Incorrectly formatted `page` or `size` parameter", 400)
         raise NotImplementedError("TODO")
 
 
@@ -80,10 +101,25 @@ class LikesOnPostByFqidView(views.APIView):
     """
 
     @extend_schema(
-
+        summary="Get a list of likes on a post",
+        description="Get a list of likes on a post by FQID (Paginated)",
+        responses=serializers.LikesSerializer,
+        parameters=[
+            OpenApiParameter("post_fqid", str, OpenApiParameter.PATH,
+                             description="The FQID of the post"),
+            OpenApiParameter(
+                "page", type=int, description="Page number to fetch (1-indexed)", default=1),
+            OpenApiParameter(
+                "size", type=int, description="How many comments per page", default=50),
+        ],
     )
     @method_decorator(user_controller())
     def get(self, request: Request, post_fqid: str) -> Response:
+        try:
+            paginate_page = int(request.query_params.get("page", 1))
+            paginate_size = int(request.query_params.get("size", 50))
+        except ValueError:
+            return Response("Incorrectly formatted `page` or `size` parameter", 400)
         raise NotImplementedError("TODO")
 
 
@@ -96,8 +132,28 @@ class LikesOnCommentView(views.APIView):
     """
 
     @extend_schema(
+        summary="Get a list of likes on a comment",
+        description="Get  a list of likes from other authors on`AUTHOR_SERIAL`'s post`POST_SERIAL`comment`COMMENT_FQID`",
+        responses=serializers.LikesSerializer,
+        parameters=[
+            OpenApiParameter("author_uuid", str, OpenApiParameter.PATH,
+                             description="The UUID of the author"),
+            OpenApiParameter("post_uuid", str, OpenApiParameter.PATH,
+                             description="The UUID of their post"),
+            OpenApiParameter("comment_fqid", str, OpenApiParameter.PATH,
+                             description="The FQID of the comment"),
+            OpenApiParameter(
+                "page", type=int, description="Page number to fetch (1-indexed)", default=1),
+            OpenApiParameter(
+                "size", type=int, description="How many comments per page", default=50),
+        ]
 
     )
     @method_decorator(user_controller())
     def get(self, request: Request, author_uuid: str, post_uuid: str, comment_fqid: str) -> Response:
+        try:
+            paginate_page = int(request.query_params.get("page", 1))
+            paginate_size = int(request.query_params.get("size", 50))
+        except ValueError:
+            return Response("Incorrectly formatted `page` or `size` parameter", 400)
         raise NotImplementedError("TODO")
