@@ -16,6 +16,11 @@ from socialnetwork.utils.user_control_decorator import user_controller, user_con
 from socialnetwork import models
 from api import serializers
 
+from socialnetwork.models import PostTextBased, Post
+from socialnetwork.serializers import PostTextBasedSerializer
+from rest_framework import generics
+from rest_framework.permissions import AllowAny
+
 # ============= Posts =============
 """
 Posts API:
@@ -151,6 +156,40 @@ class PostCreationView(views.APIView):
     @method_decorator(user_controller())
     def post(self, request: Request, author_uuid: str, viewer: Optional[models.LocalAuthor]) -> Response:
         raise NotImplementedError("TODO")
+    
+class PostRetrieveView(generics.RetrieveAPIView):
+    """
+    API endpoint to retrieve a post by UUID.
+    """
+
+    queryset = PostTextBased.objects.all()
+    serializer_class = PostTextBasedSerializer
+    permission_classes = [AllowAny]
+
+    @extend_schema(
+        summary="Retrieve a specific post by UUID",
+        description="""Retrieve a post if the user has the correct permissions.
+
+        responses:
+        - 200: Post retrieved successfully
+        - 403: User does not have permission to view the post
+        - 404: Post not found
+        """,
+    )
+    def get(self, request: Request, *args, **kwargs) -> Response:
+        post_uuid = kwargs.get("post_uuid")
+        post = get_object_or_404(PostTextBased, uuid=post_uuid)
+
+        user = request.user if request.user.is_authenticated else None
+        author = (
+            post.base_author if isinstance(post.base_author, Post) else None
+        )  # Ensure correct author lookup
+
+        if not post._check_can_be_seen_by(author):
+            return Response({"error": "You do not have permission to view this post."}, status=403)
+
+        serializer = self.get_serializer(post)
+        return Response({"detail": "Post retrieved", "post": serializer.data}, status=200)
 
 
 # ============= Image Posts =============

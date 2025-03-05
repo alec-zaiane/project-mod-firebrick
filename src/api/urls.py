@@ -3,6 +3,7 @@ from api.views import *
 
 from django.views import View
 
+from api.views.posts import PostRetrieveView
 from drf_spectacular import views as spectacular_views
 
 app_name = "api"
@@ -53,6 +54,10 @@ urlpatterns = [
      path("authors/<str:author_uuid>/posts",
           PostCreationView.as_view(),
           name="post_creation"),
+     path("posts/<uuid:post_uuid>/",
+          PostRetrieveView.as_view(),
+          name="post_retrieve"),
+     
 
      # Image Posts API
      path("authors/<str:author_uuid>/posts/<str:post_uuid>/image",

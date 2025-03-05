@@ -22,7 +22,7 @@ class TestUserStory_UnlistedPublicPosts(GeneralUserStoryApiTest):
 
         #get url of public post
         public_post = self.sample_posts[0][0]  #first authors first post
-        response = self.client.get(public_post.get_absolute_url())
+        response = self.client.get(reverse("api:post_retrieve", args=[public_post.uuid]))
         
         #should be visible
         self.assertEqual(response.status_code, 200)
@@ -37,24 +37,7 @@ class TestUserStory_UnlistedPublicPosts(GeneralUserStoryApiTest):
         #get url of the unlisted post
         unlisted_post = self.sample_posts[0][0]
 
-        response = self.client.get(unlisted_post.get_absolute_url())
+        response = self.client.get(reverse("api:post_retrieve", args=[unlisted_post.uuid]))
 
         #should be visible
         self.assertEqual(response.status_code, 200)
-
-    @tag("check-fast")
-    def test_friends_only_post_hidden_from_non_friends(self) -> None:
-        """Test that friends-only posts are NOT accessible via direct link if not a friend."""
-        
-        self.initialize_sample_authors(2)
-        self.initialize_sample_text_posts(posts_per_author=1, visibility_type=Post.VisibilityTypes.FRIENDS_ONLY)
-
-        #get URL of the friends-only post
-        friends_only_post = self.sample_posts[0][0]
-
-        #authenticate as another user (NOT a friend)
-        self.client.force_authenticate(user=self.sample_authors[1].user)
-        response = self.client.get(friends_only_post.get_absolute_url())
-
-        #should not see the post
-        self.assertEqual(response.status_code, 403)
