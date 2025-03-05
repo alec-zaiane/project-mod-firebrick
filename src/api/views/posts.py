@@ -181,12 +181,12 @@ class PostRetrieveView(views.APIView):
         post = get_object_or_404(PostTextBased, uuid=post_uuid)
 
         user = request.user if request.user.is_authenticated else None
-        author: Optional[LocalAuthor] = LocalAuthor.objects.filter(user=user).first()
+        author: Optional[Author] = LocalAuthor.objects.filter(user=user).first()
 
         if author is None:
             author = Author()
 
-        if not post._check_can_be_seen_by(author):
+        if not post.check_can_be_seen_by(author):
             return Response({"error": "You do not have permissions to view this post."}, status=403)
 
         serializer = PostTextBasedSerializer(post)
