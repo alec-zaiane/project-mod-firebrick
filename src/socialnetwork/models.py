@@ -5,6 +5,7 @@ from typing import Any
 from datetime import datetime
 
 from django.db import models
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from typing import Optional
@@ -116,12 +117,16 @@ class LocalAuthor(Author):
 
         base_query = Q(is_deleted=False)
         public_posts = Q(visibility_type=Post.VisibilityTypes.PUBLIC)
+        friends_post = Q(
+        visibility_type=Post.VisibilityTypes.FRIENDS_ONLY,
+        base_author__in=self.following.all()
+        )
 
         private_inbox = Q(
             is_in_private_inbox_of=self
         )
 
-        query = base_query & (public_posts | private_inbox)
+        query = base_query & (public_posts | friends_post)
 
         text_posts = PostTextBased.objects.filter(query)
 
@@ -237,7 +242,7 @@ class Post(models.Model):
         if self.visibility_type == self.VisibilityTypes.PUBLIC:
             return True
         elif self.visibility_type == self.VisibilityTypes.UNLISTED:
-            return False
+            return True
         elif self.visibility_type == self.VisibilityTypes.FRIENDS_ONLY:
             return self.author.get_is_friends_with(other)
         else:
@@ -293,6 +298,10 @@ class PostTextBased(Post):
         """Convert this post to a different type"""
         self.post_type = new_type
         self._finalize_edit()
+
+    def get_url(self) -> str:
+        """Returns the url for this post"""
+        return reverse("socialnetwork:api_get_post", args=[self.uuid])
 
 
 class PostMediaBased(Post):

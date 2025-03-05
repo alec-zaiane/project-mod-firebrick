@@ -192,3 +192,44 @@ def api_textpost_update(request: Request, viewer: Optional[models.LocalAuthor], 
         serializer.update(post, request.data.copy())
         return Response({"detail": "post updated", "post": serializer.data}, 200)
     return Response({"error": "post update error", "post": serializer.errors}, 403)
+
+
+@extend_schema(
+    deprecated = True
+)
+@api_view(["GET"])
+def api_get_post(request: Request, post_uuid: str) -> Response:
+    """get a post
+    Will return an unauthorized response if the user is not allowed to see the post.
+
+    Expected Request Format:  (No body required)
+
+    Will return:
+    
+    - 404: If the post does not exist.
+    - 403: If the user does not have permission to view the post.
+    - 200: If the post is successfully retrieved.
+
+    Formats:
+
+    - 403 Error Response:
+      JSON
+        {
+          "error": "You do not have permission to view this post."
+        }
+      - 200 Success Response:
+      JSON
+        {
+          "detail": post retrieved,
+          "post": <updated post details>
+        }
+    """
+    post = get_object_or_404(models.PostTextBased, uuid=post_uuid)
+
+    user = request.user if request.user.is_authenticated else None
+    author = models.LocalAuthor.objects.filter(user=user).first() if user else None
+    if not post._check_can_be_seen_by(author):
+        return Response({"error": "You do not have permission to view this post."}, 403)
+    serializer = serializers.PostTextBasedSerializer(post)
+    
+    return Response({"detail": "post retrieved", "post": serializer.data}, 200)

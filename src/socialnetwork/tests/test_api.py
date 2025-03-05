@@ -6,7 +6,7 @@ from django.urls import reverse
 from socialnetwork.models import LocalAuthor, PostTextBased
 
 
-class APICreatePOstTest(APITestCase):
+class APICreatePostTest(APITestCase):
     def setUp(self) -> None:
         """this wil set up a user and the author for testing"""
         self.user = User.objects.create_user(username="user", password="pass")

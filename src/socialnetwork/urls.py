@@ -53,6 +53,10 @@ urlpatterns_api = [
     path("api/v1/author/update/<uuid:target_author_uuid>",
          views_api.api_author_update,
          name="api_author_update"),
+     
+     path("api/v1/posts/<uuid:post_uuid>/",
+          views_api.api_get_post,
+          name="api_get_post"),
 
 
 ]
