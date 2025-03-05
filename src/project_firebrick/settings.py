@@ -30,7 +30,7 @@ ALLOWED_HOSTS: list[str] = []
 
 # set the node URL for building node2node request objects
 # make sure to include the `http://` but *no* trailing `/`!
-THIS_NODE_URL = "http://127.0.0.1"
+THIS_NODE_URL = "http://127.0.0.1:8001"
 
 
 # Application definition

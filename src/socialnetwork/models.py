@@ -1,18 +1,24 @@
 from __future__ import annotations
 import uuid
-from typing import Any
+from typing import Any, Collection
 
 from datetime import datetime
 
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
+from django.urls import reverse
+from django.db.models import QuerySet
+
 from typing import Optional
 from django.contrib.auth.models import User
 
 from django.db.models import Q
 from itertools import chain
+
+from project_firebrick.settings import THIS_NODE_URL
 
 
 class RemoteNode(models.Model):
@@ -226,7 +232,7 @@ class Post(models.Model):
         self.date_edited = timezone.now()
         self.save()
 
-    def _check_can_be_seen_by(self, other: Author) -> bool:
+    def check_can_be_seen_by(self, other: Author) -> bool:
         """Returns true if the other author can see this post"""
 
         if isinstance(other, LocalAuthor) and other.user.is_superuser:
@@ -250,7 +256,7 @@ class Post(models.Model):
         if self.author is None:
             return None
         for author in self.author.followers.all():
-            if self._check_can_be_seen_by(author):
+            if self.check_can_be_seen_by(author):
                 self.is_in_private_inbox_of.add(author)
 
     def delete(self, using: Any | None = None, keep_parents: bool = False) -> tuple[int, dict[str, int]]:
@@ -263,6 +269,18 @@ class Post(models.Model):
     def get_absolute_url(self) -> str:
         """Returns the url for this post"""
         return reverse("socialnetwork:api_get_post", args=[self.uuid])
+
+    def get_likes(self) -> QuerySet[Like]:
+        """Get all likes on this post"""
+        if isinstance(self, PostTextBased):
+            found_differentiators = PostDifferentiator.objects.filter(
+                _post_text=self)
+        elif isinstance(self, PostMediaBased):
+            found_differentiators = PostDifferentiator.objects.filter(
+                _post_media=self)
+        else:
+            raise ValueError("Unknown post type")
+        return Like.objects.filter(target_post_differentiator__in=found_differentiators)
 
 
 class PostTextBased(Post):
@@ -309,6 +327,43 @@ class PostMediaBased(Post):
     pass  # TODO
 
 
+class PostDifferentiator(models.Model):
+    """A model that links to exactly one post subclass, used as a ForeignKey"""
+    _post_text = models.ForeignKey(
+        PostTextBased, on_delete=models.CASCADE, blank=True, null=True)
+    _post_media = models.ForeignKey(
+        PostMediaBased, on_delete=models.CASCADE, blank=True, null=True)
+
+    # if you add a post type, add it to the `fields` list too :)
+    FIELDS = ["_post_text", "_post_media"]
+
+    @classmethod
+    def get_post_by_uuid(cls, uuid: uuid.UUID) -> Post:
+        """Get a post by its UUID"""
+        if PostTextBased.objects.filter(uuid=uuid).exists():
+            return PostTextBased.objects.get(uuid=uuid)
+        elif PostMediaBased.objects.filter(uuid=uuid).exists():
+            return PostMediaBased.objects.get(uuid=uuid)
+        else:
+            raise Post.DoesNotExist("Post not found")
+
+    @property
+    def post(self) -> Post:
+        if self._post_text:
+            return self._post_text
+        elif self._post_media:
+            return self._post_media
+        else:
+            raise ValueError("This post differentiator has no post")
+
+    def clean(self) -> None:
+        num_set = sum(
+            [getattr(self, field) is not None for field in self.FIELDS])
+        if num_set != 1:
+            raise ValidationError("Exactly one post field must be set")
+        return super().clean()
+
+
 class HostedImage(models.Model):
     """
     Stores an uploaded image along with an optional title.
@@ -328,3 +383,94 @@ class HostedImage(models.Model):
 
     def __str__(self) -> str:
         return self.title or str(self.image.name)
+
+
+class Comment(models.Model):
+    """A comment on a post"""
+    # Serializer: api.serializers.comment_serializers.CommentSerializer
+    class CommentTypes(models.TextChoices):
+        PLAINTEXT = "PT", _("Plain Text")
+        MARKDOWN = "MD", _("Markdown")
+
+    uuid = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False)
+    author = models.ForeignKey(Author, on_delete=models.CASCADE)
+    comment = models.TextField()
+    comment_type = models.CharField(
+        max_length=2, choices=CommentTypes.choices, default=CommentTypes.PLAINTEXT
+    )
+    _post_differentiator: models.ForeignKey[PostDifferentiator, PostDifferentiator] = models.ForeignKey(
+        PostDifferentiator, on_delete=models.CASCADE)
+    date_created = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def post(self) -> Post:
+        return self._post_differentiator.post
+
+    def __str__(self) -> str:
+        return f"Comment by {self.author} on {self._post_differentiator}"
+
+    def check_can_be_seen_by(self, other: Author) -> bool:
+        """Returns true if the other author can see this comment"""
+        raise NotImplementedError("TODO")
+
+
+class Like(models.Model):
+
+    uuid = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False)
+    author = models.ForeignKey(
+        Author, on_delete=models.CASCADE)
+    date_created = models.DateTimeField(auto_now_add=True)
+    target_post_differentiator: models.ForeignKey[PostDifferentiator, Optional[PostDifferentiator]] = models.ForeignKey(
+        PostDifferentiator, on_delete=models.CASCADE, blank=True, null=True)
+    target_comment = models.ForeignKey(
+        Comment, on_delete=models.CASCADE, blank=True, null=True)
+    # target_comment and target_post should not both be null
+    # target_comment and target_post should not both be set
+
+    def clean(self) -> None:
+        if self.target_comment is None and self.target_post_differentiator is None:
+            raise ValidationError(
+                _("Like must target a comment or post"))
+        if self.target_comment is not None and self.target_post_differentiator is not None:
+            raise ValidationError(
+                _("Like must target a comment or post, not both"))
+        return super().clean()
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    @property
+    def target(self) -> Post | Comment:
+        if self.target_comment:
+            return self.target_comment
+        elif self.target_post_differentiator:
+            return self.target_post_differentiator.post
+        else:
+            raise ValueError(
+                "This like has no target, this should never happen")
+
+    def get_id_url(self, prepend_host: bool = True) -> str:
+        url = reverse("api:liked_author_specific_like",
+                      args=[self.author.uuid, self.uuid])
+        if prepend_host:
+            return f"{THIS_NODE_URL}{url}"
+        return url
+
+    def get_target_url(self, prepend_host: bool = True) -> str:
+        if isinstance(self.target, Post):
+            url = reverse("api:post_author_specific", args=[
+                getattr(self.target.author, "uuid", None), self.target.uuid])
+        elif isinstance(self.target, Comment):
+            url = reverse("api:comments_serial", args=[
+                self.target.post.uuid, self.target.uuid])
+        else:
+            raise ValueError("Unknown target type")
+        if prepend_host:
+            return f"{THIS_NODE_URL}{url}"
+        return url
+
+    def __str__(self) -> str:
+        return f"Like by {self.author} on {self.target}"
