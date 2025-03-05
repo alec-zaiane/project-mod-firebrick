@@ -1,9 +1,12 @@
 from typing import Any
 
+from django.urls import reverse
 from rest_framework import serializers
 
 import api.serializers.custom_validators as custom_validators
 from api.serializers.author_serializers import AuthorSerializer
+
+from socialnetwork.models import Like
 
 
 class LikeSerializer(serializers.Serializer[Any]):
@@ -18,7 +21,7 @@ class LikeSerializer(serializers.Serializer[Any]):
         // ISO 8601 TIMESTAMP
         "published":"2015-03-09T13:07:04+00:00",
         "id":"http://nodeaaaa/api/authors/111/liked/166",
-        // ID of the Comment (UUID)
+        // ID of either the post or the comment that this like is for
         "object": "http://nodebbbb/api/authors/222/posts/249"
     }
     ```
@@ -31,6 +34,25 @@ class LikeSerializer(serializers.Serializer[Any]):
     published = serializers.DateTimeField(format='iso-8601')
     id = serializers.URLField()
     object = serializers.URLField()
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initialize a LikeSerializer
+        Either pass in a socialnetwork.models.Like object as the first argument
+        to make a serializer from a Like object, or initialize normally"""
+
+        if args and isinstance(args[0], Like):
+            like = args[0]
+            author = AuthorSerializer(like.author)
+            data = {
+                "type": "like",
+                "author": author.data,
+                "published": like.date_created,
+                "id": like.get_id_url(),
+                "object": like.get_target_url()
+            }
+            super().__init__(data, **kwargs)
+        else:
+            super().__init__(*args, **kwargs)
 
 
 class LikesSerializer(serializers.Serializer[Any]):

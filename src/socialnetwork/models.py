@@ -6,12 +6,17 @@ from datetime import datetime
 
 from django.db import models
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
+from django.urls import reverse
+
 from typing import Optional
 from django.contrib.auth.models import User
 
 from django.db.models import Q
 from itertools import chain
+
+from project_firebrick.settings import THIS_NODE_URL
 
 
 class RemoteNode(models.Model):
@@ -323,3 +328,84 @@ class HostedImage(models.Model):
 
     def __str__(self) -> str:
         return self.title or str(self.image.name)
+
+
+class Comment(models.Model):
+    """A comment on a post"""
+    # Serializer: api.serializers.comment_serializers.CommentSerializer
+    class CommentTypes(models.TextChoices):
+        PLAINTEXT = "PT", _("Plain Text")
+        MARKDOWN = "MD", _("Markdown")
+
+    uuid = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False)
+    author = models.ForeignKey(Author, on_delete=models.CASCADE)
+    comment = models.TextField()
+    comment_type = models.CharField(
+        max_length=2, choices=CommentTypes.choices, default=CommentTypes.PLAINTEXT
+    )
+    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+    date_created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self) -> str:
+        return f"Comment by {self.author} on {self.post}"
+
+
+class Like(models.Model):
+
+    uuid = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False)
+    author = models.ForeignKey(
+        Author, on_delete=models.CASCADE)
+    date_created = models.DateTimeField(auto_now_add=True)
+    target_post = models.ForeignKey(
+        Post, on_delete=models.CASCADE, blank=True, null=True)
+    target_comment = models.ForeignKey(
+        Comment, on_delete=models.CASCADE, blank=True, null=True)
+    # target_comment and target_post should not both be null
+    # target_comment and target_post should not both be set
+
+    def clean(self) -> None:
+        if self.target_comment is None and self.target_post is None:
+            raise ValidationError(
+                _("Like must target a comment or post"))
+        if self.target_comment is not None and self.target_post is not None:
+            raise ValidationError(
+                _("Like must target a comment or post, not both"))
+        return super().clean()
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    @property
+    def target(self) -> Post | Comment:
+        if self.target_comment:
+            return self.target_comment
+        elif self.target_post:
+            return self.target_post
+        else:
+            raise ValueError(
+                "This like has no target, this should never happen")
+
+    def get_id_url(self, prepend_host: bool = True) -> str:
+        url = reverse("api:liked_author_specific_like",
+                      args=[self.author.uuid, self.uuid])
+        if prepend_host:
+            return f"{THIS_NODE_URL}{url}"
+        return url
+
+    def get_target_url(self, prepend_host: bool = True) -> str:
+        if isinstance(self.target, Post):
+            url = reverse("api:post_author_specific", args=[self.target.uuid])
+        elif isinstance(self.target, Comment):
+            url = reverse("api:comments_serial", args=[
+                          self.target.post.uuid, self.target.uuid])
+        else:
+            raise ValueError("Unknown target type")
+        if prepend_host:
+            return f"{THIS_NODE_URL}{url}"
+        return url
+
+    def __str__(self) -> str:
+        return f"Like by {self.author} on {self.target}"
