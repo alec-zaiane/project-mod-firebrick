@@ -16,6 +16,8 @@ from drf_spectacular.utils import extend_schema
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, OpenApiExample, PolymorphicProxySerializer
 
 from socialnetwork.utils.user_control_decorator import user_controller
+from socialnetwork import models
+
 
 # A combined view for all calls to `://service/api/authors/{AUTHOR_SERIAL}/inbox`
 
@@ -50,7 +52,7 @@ class InboxHandler(abc.ABC):
         return type == self.handlable_type
 
     @abc.abstractmethod
-    def post(self, request: Request) -> Response:
+    def post(self, request: Request, viewer: Optional[models.LocalAuthor] = None) -> Response:
         ...
 
 
@@ -85,13 +87,13 @@ class InboxView(views.APIView):
                    400: OpenApiResponse(description="Bad request")},
     )
     @method_decorator(user_controller())
-    def post(self, request: Request, author_uuid: str) -> Response:
+    def post(self, request: Request, author_uuid: str, viewer: Optional[models.LocalAuthor] = None) -> Response:
         """Send an inbox item to this author's inbox"""
         type = request.data.get("type")
         if type is None:
             return Response({"error": "missing 'type' field under inbox item"}, 400)
         handler = self._find_handler_for_type(type)
         if handler is not None:
-            return handler.post(request)
+            return handler.post(request, viewer=viewer)
         return Response({"error": "invalid 'type' field under inbox item",
                          "type": type}, 400)

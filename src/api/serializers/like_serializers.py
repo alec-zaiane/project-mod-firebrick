@@ -32,7 +32,7 @@ class LikeSerializer(serializers.Serializer[Any]):
         validators=[custom_validators.ExactlyEqualTo("like")])
     author = AuthorSerializer()
     published = serializers.DateTimeField(format='iso-8601')
-    id = serializers.URLField()
+    id = serializers.URLField(required=False)
     object = serializers.URLField()
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -59,14 +59,13 @@ class LikeSerializer(serializers.Serializer[Any]):
         If the author or target object does not exist, raise a ValidationError"""
         author_data = validated_data.pop("author")
         author_serializer = AuthorSerializer(data=author_data)
-        print("here")
         if not author_serializer.is_valid():
             raise serializers.ValidationError(author_serializer.errors)
         if not author_serializer.check_author_exists():
             raise serializers.ValidationError("Author does not exist")
         author = author_serializer.get_mentioned_author()
         try:
-            target = get_object_by_fqid(validated_data["object"])
+            target = self.get_target()
         except SyntaxError:
             raise serializers.ValidationError("Invalid object FQID")
         except NotImplementedError:
@@ -87,6 +86,16 @@ class LikeSerializer(serializers.Serializer[Any]):
             return Like.objects.create(author=author, target_comment=target)
         else:
             raise serializers.ValidationError("Unsupported object type")
+
+    def get_target(self) -> Post | Comment:
+        """Get the target object of the like
+
+        **must be called after is_valid()**
+        """
+        target = get_object_by_fqid(self.validated_data["object"])
+        assert isinstance(target, Post) or isinstance(
+            target, Comment), f"This should never happen, target is {target}, not Post or Comment"
+        return target
 
 
 class LikesSerializer(serializers.Serializer[Any]):

@@ -74,6 +74,9 @@ def user_control(request: HttpRequest | Request, must_be_logged_in: bool = False
                 fail_response = HttpResponseRedirect(
                     reverse("socialnetwork:unauthorized"))
 
+    # 0: check verify_true
+    if not verify_true:
+        raise UserControlException(fail_response)
     if not hasattr(request, "user"):
         raise UserControlException(fail_response)
 

@@ -9,9 +9,7 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
-
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.models import ContentType
+from django.db.models import QuerySet
 
 from typing import Optional
 from django.contrib.auth.models import User
@@ -233,7 +231,7 @@ class Post(models.Model):
         self.date_edited = timezone.now()
         self.save()
 
-    def _check_can_be_seen_by(self, other: Author) -> bool:
+    def check_can_be_seen_by(self, other: Author) -> bool:
         """Returns true if the other author can see this post"""
 
         if isinstance(other, LocalAuthor) and other.user.is_superuser:
@@ -257,7 +255,7 @@ class Post(models.Model):
         if self.author is None:
             return None
         for author in self.author.followers.all():
-            if self._check_can_be_seen_by(author):
+            if self.check_can_be_seen_by(author):
                 self.is_in_private_inbox_of.add(author)
 
     def delete(self, using: Any | None = None, keep_parents: bool = False) -> tuple[int, dict[str, int]]:
@@ -266,6 +264,18 @@ class Post(models.Model):
         self.is_deleted = True
         self.save()
         return (0, {})
+
+    def get_likes(self) -> QuerySet[Like]:
+        """Get all likes on this post"""
+        if isinstance(self, PostTextBased):
+            found_differentiators = PostDifferentiator.objects.filter(
+                _post_text=self)
+        elif isinstance(self, PostMediaBased):
+            found_differentiators = PostDifferentiator.objects.filter(
+                _post_media=self)
+        else:
+            raise ValueError("Unknown post type")
+        return Like.objects.filter(target_post_differentiator__in=found_differentiators)
 
 
 class PostTextBased(Post):
@@ -394,6 +404,10 @@ class Comment(models.Model):
 
     def __str__(self) -> str:
         return f"Comment by {self.author} on {self._post_differentiator}"
+
+    def check_can_be_seen_by(self, other: Author) -> bool:
+        """Returns true if the other author can see this comment"""
+        raise NotImplementedError("TODO")
 
 
 class Like(models.Model):

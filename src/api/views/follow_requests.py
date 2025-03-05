@@ -38,7 +38,7 @@ class FollowRequestInboxHandler(InboxHandler):
     def serializer(self) -> type[serializers.FollowRequestSerializer]:
         return serializers.FollowRequestSerializer
 
-    def post(self, request: Request) -> Response:
+    def post(self, request: Request, viewer: Optional[models.LocalAuthor] = None) -> Response:
         raise NotImplementedError("TODO")
 
 

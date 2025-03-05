@@ -53,9 +53,20 @@ class LikesInboxHandler(InboxHandler):
     def serializer(self) -> type[serializers.LikeSerializer]:
         return serializers.LikeSerializer
 
-    def post(self, request: Request) -> Response:
+    def post(self, request: Request, viewer: Optional[models.LocalAuthor] = None) -> Response:
         serializer = serializers.LikeSerializer(data=request.data)
+        if viewer is None:
+            return Response("User must be authenticated", status.HTTP_401_UNAUTHORIZED)
         if serializer.is_valid():
+            # double check that the author has access to the target object
+            like_target = serializer.get_target()
+            if isinstance(like_target, models.Post):
+                user_control(
+                    request, verify_true=like_target.check_can_be_seen_by(viewer))
+            elif isinstance(like_target, models.Comment):
+                user_control(
+                    request, verify_true=like_target.check_can_be_seen_by(viewer))
+
             like = serializer.create(serializer.validated_data)
             return Response({
                 "detail": "Like Created",

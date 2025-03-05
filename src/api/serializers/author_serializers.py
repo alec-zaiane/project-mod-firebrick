@@ -44,7 +44,7 @@ class AuthorSerializer(serializers.Serializer[Author]):
                                  custom_validators.ExactlyEqualTo("author")])
     id = serializers.URLField()
     host = serializers.URLField()
-    displayName = serializers.CharField()
+    displayName = serializers.CharField(required=False)
     github = serializers.URLField(
         validators=[custom_validators.ContainsValidator("github.com")])
     profileImage = serializers.URLField()
