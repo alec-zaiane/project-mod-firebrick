@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, Union
 
 from django.shortcuts import get_object_or_404
 
@@ -227,7 +227,11 @@ def api_get_post(request: Request, post_uuid: str) -> Response:
     post = get_object_or_404(models.PostTextBased, uuid=post_uuid)
 
     user = request.user if request.user.is_authenticated else None
-    author = models.LocalAuthor.objects.filter(user=user).first() if user else None
+    author: Union[models.Author, None] = models.LocalAuthor.objects.filter(user=user).first() if user else None
+
+    if author is None:
+        author = models.Author()
+
     if not post._check_can_be_seen_by(author):
         return Response({"error": "You do not have permission to view this post."}, 403)
     serializer = serializers.PostTextBasedSerializer(post)
