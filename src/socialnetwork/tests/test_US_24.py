@@ -22,7 +22,7 @@ class TestUserStory_UnlistedPublicPosts(GeneralUserStoryApiTest):
 
         #get url of public post
         public_post = self.sample_posts[0][0]  #first authors first post
-        response = self.client.get(public_post.get_url())
+        response = self.client.get(public_post.get_absolute_url())
         
         #should be visible
         self.assertEqual(response.status_code, 200)
@@ -37,7 +37,7 @@ class TestUserStory_UnlistedPublicPosts(GeneralUserStoryApiTest):
         #get url of the unlisted post
         unlisted_post = self.sample_posts[0][0]
 
-        response = self.client.get(unlisted_post.get_url())
+        response = self.client.get(unlisted_post.get_absolute_url())
 
         #should be visible
         self.assertEqual(response.status_code, 200)
@@ -54,7 +54,7 @@ class TestUserStory_UnlistedPublicPosts(GeneralUserStoryApiTest):
 
         #authenticate as another user (NOT a friend)
         self.client.force_authenticate(user=self.sample_authors[1].user)
-        response = self.client.get(friends_only_post.get_url())
+        response = self.client.get(friends_only_post.get_absolute_url())
 
         #should not see the post
         self.assertEqual(response.status_code, 403)

@@ -259,6 +259,10 @@ class Post(models.Model):
         self.is_deleted = True
         self.save()
         return (0, {})
+    
+    def get_absolute_url(self) -> str:
+        """Returns the url for this post"""
+        return reverse("socialnetwork:api_get_post", args=[self.uuid])
 
 
 class PostTextBased(Post):
@@ -294,10 +298,6 @@ class PostTextBased(Post):
         """Convert this post to a different type"""
         self.post_type = new_type
         self._finalize_edit()
-
-    def get_url(self) -> str:
-        """Returns the url for this post"""
-        return reverse("socialnetwork:api_get_post", args=[self.uuid])
 
 
 class PostMediaBased(Post):
