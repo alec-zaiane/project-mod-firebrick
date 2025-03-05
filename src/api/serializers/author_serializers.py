@@ -2,7 +2,7 @@ from typing import Any
 from collections.abc import Iterable
 
 
-from django.urls import reverse
+from django.urls import reverse, resolve
 
 from rest_framework import serializers
 
@@ -14,8 +14,10 @@ from socialnetwork.models import Author
 
 from project_firebrick.settings import THIS_NODE_URL
 
+from socialnetwork.models import Author
 
-class AuthorSerializer(serializers.Serializer[Any]):
+
+class AuthorSerializer(serializers.Serializer[Author]):
     """Author Serializer for node2node
     Example Author API object from the class docs:
     ```
@@ -42,7 +44,7 @@ class AuthorSerializer(serializers.Serializer[Any]):
                                  custom_validators.ExactlyEqualTo("author")])
     id = serializers.URLField()
     host = serializers.URLField()
-    displayName = serializers.CharField()
+    displayName = serializers.CharField(required=False)
     github = serializers.URLField(
         validators=[custom_validators.ContainsValidator("github.com")])
     profileImage = serializers.URLField()
@@ -59,12 +61,11 @@ class AuthorSerializer(serializers.Serializer[Any]):
             super().__init__(*args, **kwargs)
         else:
             type = "author"
-            # TODO make this a reverse() call
-            id = f"{THIS_NODE_URL}/api/authors/{author.uuid}"
+            id = f"{THIS_NODE_URL}{reverse("api:author", args=[author.uuid])}"
             host = f"{THIS_NODE_URL}{reverse("api:root")}"
-            # TODO make a display name model field for all authors
-            displayName = f"Author's Display Name"
-            github = f"https://github.com/uofa-cmput404"
+            displayName = author.display_name
+            github = author.github_url
+            # TODO give authors a profile image field
             profileImage = f"https://fastly.picsum.photos/id/391/200/200.jpg"
             page = f"{THIS_NODE_URL}{reverse("socialnetwork:author_profile", args=[author.uuid])}"
             super().__init__(data={
@@ -80,6 +81,31 @@ class AuthorSerializer(serializers.Serializer[Any]):
 
     def save(self, **kwargs: Any) -> Any:
         pass  # TODO
+
+    def get_mentioned_author(self) -> Author:
+        """Check if the author exists
+        **Must be called after is_valid()**
+        raises Author.DoesNotExist if the author does not exist
+        """
+        full_url = self.validated_data["id"]
+        assert isinstance(full_url, str)  # for type checking
+        if not full_url.startswith(THIS_NODE_URL):
+            # This is a remote author
+            raise NotImplementedError("Remote author checking not implemented")
+        else:
+            # This is a local author
+            full_url = full_url[len(THIS_NODE_URL):]
+            _, __, kwargs = resolve(full_url)
+            if not kwargs["author_uuid_or_fqid"]:
+                raise ValueError("No author UUID in URL")
+            return Author.objects.filter(uuid=kwargs["author_uuid_or_fqid"]).get()
+
+    def check_author_exists(self) -> bool:
+        try:
+            self.get_mentioned_author()
+            return True
+        except Author.DoesNotExist:
+            return False
 
 
 class AuthorsSerializer(serializers.Serializer[Any]):

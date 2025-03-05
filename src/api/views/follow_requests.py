@@ -32,13 +32,13 @@ Details from class page:
 # This is done with the InboxHandler class because the /inbox endpoint must handle multiple types of requests
 class FollowRequestInboxHandler(InboxHandler):
     def __init__(self) -> None:
-        super().__init__(["follow_request"])
+        super().__init__("follow_request")
 
     @property
     def serializer(self) -> type[serializers.FollowRequestSerializer]:
         return serializers.FollowRequestSerializer
 
-    def post(self, request: Request) -> Response:
+    def post(self, request: Request, viewer: Optional[models.LocalAuthor] = None) -> Response:
         raise NotImplementedError("TODO")
 
 
