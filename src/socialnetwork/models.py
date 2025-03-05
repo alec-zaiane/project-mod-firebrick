@@ -117,16 +117,12 @@ class LocalAuthor(Author):
 
         base_query = Q(is_deleted=False)
         public_posts = Q(visibility_type=Post.VisibilityTypes.PUBLIC)
-        friends_post = Q(
-        visibility_type=Post.VisibilityTypes.FRIENDS_ONLY,
-        base_author__in=self.following.all()
-        )
 
         private_inbox = Q(
             is_in_private_inbox_of=self
         )
 
-        query = base_query & (public_posts | friends_post)
+        query = base_query & (public_posts | private_inbox)
 
         text_posts = PostTextBased.objects.filter(query)
 
