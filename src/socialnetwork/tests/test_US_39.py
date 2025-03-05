@@ -1,5 +1,6 @@
 from django.test import tag
 from django.urls import reverse
+from unittest import skip
 
 from rest_framework import status
 
@@ -57,3 +58,27 @@ class TestUserStory39(GeneralUserStoryApiTest):
         self.assertEqual(models.Like.objects.count(), 0)
         self.assertEqual(models.PostTextBased.objects.get(
             uuid=self.sample_posts[1][0].uuid).get_likes().count(), 0)
+
+    @tag("check-slow", "security")
+    @skip("Waiting for implmentation of following")
+    def test_can_like_friends_only_post_if_friends(self) -> None:
+        """Test that an author can like a friends-only post if they are friends"""
+        ...
+
+    @tag("check-fast")
+    @skip("Waiting for implmentation of comments")
+    def test_can_like_comment(self) -> None:
+        """Test that an author can like a comment"""
+        ...
+
+    @tag("check-slow", "security")
+    @skip("Waiting for implmentation of comments")
+    def test_cannot_like_inaccessible_comment(self) -> None:
+        """Test that an author cannot like a comment they cannot access"""
+        ...
+
+    @tag("check-slow", "security")
+    @skip("Waiting for implmentation of comments")
+    def test_can_like_friends_only_comment_if_allowed(self) -> None:
+        """Test that an author can like a friends-only comment if they are allowed to"""
+        ...
