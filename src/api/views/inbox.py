@@ -13,21 +13,22 @@ from rest_framework.request import Request
 from rest_framework.serializers import Serializer
 
 from drf_spectacular.utils import extend_schema
-from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, OpenApiExample
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, OpenApiExample, PolymorphicProxySerializer
 
 from socialnetwork.utils.user_control_decorator import user_controller
 
 # A combined view for all calls to `://service/api/authors/{AUTHOR_SERIAL}/inbox`
 
 # list of InboxHandlers that the InboxView will go through, call register_inbox_handler to register to it
-_INBOX_HANDLERS: list[InboxHandler] = [] 
-# dict of {type_string: serializer} used for API docs generation
-_INBOX_REQUEST_DICT: dict[str, type[Serializer[Any]]] = {} 
+_INBOX_HANDLERS: set[InboxHandler] = set()
 
 
 def register_inbox_handler(handler: InboxHandler) -> None:
-    _INBOX_HANDLERS.append(handler)
-    _INBOX_REQUEST_DICT.update(handler.to_response_dict())
+    _INBOX_HANDLERS.add(handler)
+
+
+def _get_serializer_map() -> dict[str, Serializer[Any] | type[Serializer[Any]]]:
+    return {handler.handlable_type: handler.serializer for handler in _INBOX_HANDLERS}
 
 
 class InboxHandler(abc.ABC):
@@ -36,8 +37,8 @@ class InboxHandler(abc.ABC):
     Then, implement the post method to handle the POST request (it is already wrapped with user_controller, so feel free to call `user_control()` if needed)
     """
 
-    def __init__(self, handlable_types: list[str]):
-        self.handlable_types: list[str] = handlable_types
+    def __init__(self, handlable_types: str):
+        self.handlable_type: str = handlable_types
 
     @property
     @abc.abstractmethod
@@ -46,10 +47,7 @@ class InboxHandler(abc.ABC):
         ...
 
     def can_handle(self, type: str) -> bool:
-        return type in self.handlable_types
-
-    def to_response_dict(self) -> dict[str, type[Serializer[Any]]]:
-        return {t: self.serializer for t in self.handlable_types}
+        return type == self.handlable_type
 
     @abc.abstractmethod
     def post(self, request: Request) -> Response:
@@ -78,7 +76,11 @@ class InboxView(views.APIView):
 
     @extend_schema(
         description="Send an inbox item to this author's inbox",
-        request=_INBOX_REQUEST_DICT,
+        request=PolymorphicProxySerializer(
+            component_name="InboxItem",
+            serializers=_get_serializer_map,
+            resource_type_field_name="type"
+        ),
         responses={200: OpenApiResponse(description="Success, inbox item sent"),
                    400: OpenApiResponse(description="Bad request")},
     )

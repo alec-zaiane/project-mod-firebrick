@@ -46,14 +46,17 @@ class LikesInboxHandler(InboxHandler):
     """
 
     def __init__(self) -> None:
-        super().__init__(["like"])
+        super().__init__("like")
 
     @property
     def serializer(self) -> type[serializers.LikeSerializer]:
         return serializers.LikeSerializer
 
     def post(self, request: Request) -> Response:
-        raise NotImplementedError("TODO")
+        s = serializers.LikeSerializer(data=request.data)
+        s.is_valid()
+        like = s.create(s.validated_data)
+        return Response(serializers.LikeSerializer(like).data)
 
 
 register_inbox_handler(LikesInboxHandler())

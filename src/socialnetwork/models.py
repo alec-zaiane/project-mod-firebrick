@@ -1,6 +1,6 @@
 from __future__ import annotations
 import uuid
-from typing import Any
+from typing import Any, Collection
 
 from datetime import datetime
 
@@ -9,6 +9,9 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
+
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 
 from typing import Optional
 from django.contrib.auth.models import User
@@ -309,6 +312,43 @@ class PostMediaBased(Post):
     pass  # TODO
 
 
+class PostDifferentiator(models.Model):
+    """A model that links to exactly one post subclass, used as a ForeignKey"""
+    _post_text = models.ForeignKey(
+        PostTextBased, on_delete=models.CASCADE, blank=True, null=True)
+    _post_media = models.ForeignKey(
+        PostMediaBased, on_delete=models.CASCADE, blank=True, null=True)
+
+    # if you add a post type, add it to the `fields` list too :)
+    FIELDS = ["_post_text", "_post_media"]
+
+    @classmethod
+    def get_post_by_uuid(cls, uuid: uuid.UUID) -> Post:
+        """Get a post by its UUID"""
+        if PostTextBased.objects.filter(uuid=uuid).exists():
+            return PostTextBased.objects.get(uuid=uuid)
+        elif PostMediaBased.objects.filter(uuid=uuid).exists():
+            return PostMediaBased.objects.get(uuid=uuid)
+        else:
+            raise Post.DoesNotExist("Post not found")
+
+    @property
+    def post(self) -> Post:
+        if self._post_text:
+            return self._post_text
+        elif self._post_media:
+            return self._post_media
+        else:
+            raise ValueError("This post differentiator has no post")
+
+    def clean(self) -> None:
+        num_set = sum(
+            [getattr(self, field) is not None for field in self.FIELDS])
+        if num_set != 1:
+            raise ValidationError("Exactly one post field must be set")
+        return super().clean()
+
+
 class HostedImage(models.Model):
     """
     Stores an uploaded image along with an optional title.
@@ -344,11 +384,16 @@ class Comment(models.Model):
     comment_type = models.CharField(
         max_length=2, choices=CommentTypes.choices, default=CommentTypes.PLAINTEXT
     )
-    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+    _post_differentiator: models.ForeignKey[PostDifferentiator, PostDifferentiator] = models.ForeignKey(
+        PostDifferentiator, on_delete=models.CASCADE)
     date_created = models.DateTimeField(auto_now_add=True)
 
+    @property
+    def post(self) -> Post:
+        return self._post_differentiator.post
+
     def __str__(self) -> str:
-        return f"Comment by {self.author} on {self.post}"
+        return f"Comment by {self.author} on {self._post_differentiator}"
 
 
 class Like(models.Model):
@@ -358,18 +403,18 @@ class Like(models.Model):
     author = models.ForeignKey(
         Author, on_delete=models.CASCADE)
     date_created = models.DateTimeField(auto_now_add=True)
-    target_post = models.ForeignKey(
-        Post, on_delete=models.CASCADE, blank=True, null=True)
+    target_post_differentiator: models.ForeignKey[PostDifferentiator, Optional[PostDifferentiator]] = models.ForeignKey(
+        PostDifferentiator, on_delete=models.CASCADE, blank=True, null=True)
     target_comment = models.ForeignKey(
         Comment, on_delete=models.CASCADE, blank=True, null=True)
     # target_comment and target_post should not both be null
     # target_comment and target_post should not both be set
 
     def clean(self) -> None:
-        if self.target_comment is None and self.target_post is None:
+        if self.target_comment is None and self.target_post_differentiator is None:
             raise ValidationError(
                 _("Like must target a comment or post"))
-        if self.target_comment is not None and self.target_post is not None:
+        if self.target_comment is not None and self.target_post_differentiator is not None:
             raise ValidationError(
                 _("Like must target a comment or post, not both"))
         return super().clean()
@@ -382,8 +427,8 @@ class Like(models.Model):
     def target(self) -> Post | Comment:
         if self.target_comment:
             return self.target_comment
-        elif self.target_post:
-            return self.target_post
+        elif self.target_post_differentiator:
+            return self.target_post_differentiator.post
         else:
             raise ValueError(
                 "This like has no target, this should never happen")
@@ -397,10 +442,11 @@ class Like(models.Model):
 
     def get_target_url(self, prepend_host: bool = True) -> str:
         if isinstance(self.target, Post):
-            url = reverse("api:post_author_specific", args=[self.target.uuid])
+            url = reverse("api:post_author_specific", args=[
+                getattr(self.target.author, "uuid", None), self.target.uuid])
         elif isinstance(self.target, Comment):
             url = reverse("api:comments_serial", args=[
-                          self.target.post.uuid, self.target.uuid])
+                self.target.post.uuid, self.target.uuid])
         else:
             raise ValueError("Unknown target type")
         if prepend_host:

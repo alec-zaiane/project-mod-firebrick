@@ -45,7 +45,7 @@ class CommentInboxHandler(InboxHandler):
     """
 
     def __init__(self) -> None:
-        super().__init__(["comment"])
+        super().__init__("comment")
 
     @property
     def serializer(self) -> type[serializers.CommentSerializer]:

@@ -6,7 +6,8 @@ from rest_framework import serializers
 import api.serializers.custom_validators as custom_validators
 from api.serializers.author_serializers import AuthorSerializer
 
-from socialnetwork.models import Like
+from socialnetwork.models import Like, Author, Post, Comment, PostDifferentiator, PostTextBased, PostMediaBased
+from socialnetwork.utils.get_object_by_fqid import get_object_by_fqid
 
 
 class LikeSerializer(serializers.Serializer[Any]):
@@ -25,7 +26,6 @@ class LikeSerializer(serializers.Serializer[Any]):
         "object": "http://nodebbbb/api/authors/222/posts/249"
     }
     ```
-    ? how does the like for posts look?
     """
     type = serializers.CharField(
         default="like",
@@ -53,6 +53,40 @@ class LikeSerializer(serializers.Serializer[Any]):
             super().__init__(data, **kwargs)
         else:
             super().__init__(*args, **kwargs)
+
+    def create(self, validated_data: dict[str, Any]) -> Like:
+        """Create a Like object from the validated data
+        If the author or target object does not exist, raise a ValidationError"""
+        author_data = validated_data.pop("author")
+        author_serializer = AuthorSerializer(data=author_data)
+        print("here")
+        if not author_serializer.is_valid():
+            raise serializers.ValidationError(author_serializer.errors)
+        if not author_serializer.check_author_exists():
+            raise serializers.ValidationError("Author does not exist")
+        author = author_serializer.get_mentioned_author()
+        try:
+            target = get_object_by_fqid(validated_data["object"])
+        except SyntaxError:
+            raise serializers.ValidationError("Invalid object FQID")
+        except NotImplementedError:
+            raise serializers.ValidationError("Unsupported object type")
+        except ValueError:
+            raise serializers.ValidationError("Object does not exist")
+        if isinstance(target, Post):
+            if isinstance(target, PostTextBased):
+                post_diff = PostDifferentiator.objects.create(
+                    _post_text=target)
+            elif isinstance(target, PostMediaBased):
+                post_diff = PostDifferentiator.objects.create(
+                    _post_media=target)
+            else:
+                raise ValueError("Unsupported post type")
+            return Like.objects.create(author=author, target_post_differentiator=post_diff)
+        elif isinstance(target, Comment):
+            return Like.objects.create(author=author, target_comment=target)
+        else:
+            raise serializers.ValidationError("Unsupported object type")
 
 
 class LikesSerializer(serializers.Serializer[Any]):
