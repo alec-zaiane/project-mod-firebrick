@@ -17,4 +17,4 @@ class TestUserStory05(NodeAdminUserStoryApiTest):
         self.initialize_sample_authors(5)
 
         fetched_authors = LocalAuthor.objects.all()
-        self.assertEqual(len(fetched_authors), 6)
+        self.assertEqual(len(fetched_authors), 6) # 5 + the auto-created self.author
