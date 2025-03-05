@@ -16,7 +16,7 @@ from socialnetwork.utils.user_control_decorator import user_controller, user_con
 from socialnetwork import models
 from api import serializers
 
-from socialnetwork.models import Author, PostTextBased, Post
+from socialnetwork.models import Author, LocalAuthor, PostTextBased, Post
 from socialnetwork.serializers import PostTextBasedSerializer
 from rest_framework.permissions import AllowAny
 
@@ -175,16 +175,19 @@ class PostRetrieveView(views.APIView):
         - 404: Post not found
         """,
     )
-    def get(self, request: Request, *args, **kwargs) -> Response:
-        post_uuid = kwargs.get("post_uuid")
+    def get(self, request: Request, post_uuid: str) -> Response:
+
+
         post = get_object_or_404(PostTextBased, uuid=post_uuid)
 
         user = request.user if request.user.is_authenticated else None
-        author: Optional[Author] = models.LocalAuthor.objects.filter(user=user).first()
+        author: Optional[LocalAuthor] = LocalAuthor.objects.filter(user=user).first()
+
+        if author is None:
+            author = Author()
 
         if not post._check_can_be_seen_by(author):
             return Response({"error": "You do not have permissions to view this post."}, status=403)
-
 
         serializer = PostTextBasedSerializer(post)
         return Response({"detail": "Post retrieved", "post": serializer.data}, status=200)
