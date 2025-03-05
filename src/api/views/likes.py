@@ -8,6 +8,7 @@ from django.utils.decorators import method_decorator
 from rest_framework import views
 from rest_framework.response import Response
 from rest_framework.request import Request
+from rest_framework import status
 
 from drf_spectacular.utils import extend_schema
 from drf_spectacular.utils import OpenApiParameter
@@ -53,10 +54,18 @@ class LikesInboxHandler(InboxHandler):
         return serializers.LikeSerializer
 
     def post(self, request: Request) -> Response:
-        s = serializers.LikeSerializer(data=request.data)
-        s.is_valid()
-        like = s.create(s.validated_data)
-        return Response(serializers.LikeSerializer(like).data)
+        serializer = serializers.LikeSerializer(data=request.data)
+        if serializer.is_valid():
+            like = serializer.create(serializer.validated_data)
+            return Response({
+                "detail": "Like Created",
+                "like": serializers.LikeSerializer(like).data
+            }, status.HTTP_201_CREATED)
+        else:
+            return Response({
+                "error": "Invalid Like",
+                "like": serializer.errors
+            }, status.HTTP_400_BAD_REQUEST)
 
 
 register_inbox_handler(LikesInboxHandler())
