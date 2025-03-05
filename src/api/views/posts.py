@@ -16,9 +16,8 @@ from socialnetwork.utils.user_control_decorator import user_controller, user_con
 from socialnetwork import models
 from api import serializers
 
-from socialnetwork.models import PostTextBased, Post
+from socialnetwork.models import Author, PostTextBased, Post
 from socialnetwork.serializers import PostTextBasedSerializer
-from rest_framework import generics
 from rest_framework.permissions import AllowAny
 
 # ============= Posts =============
@@ -157,7 +156,7 @@ class PostCreationView(views.APIView):
     def post(self, request: Request, author_uuid: str, viewer: Optional[models.LocalAuthor]) -> Response:
         raise NotImplementedError("TODO")
     
-class PostRetrieveView(generics.RetrieveAPIView):
+class PostRetrieveView(views.APIView):
     """
     API endpoint to retrieve a post by UUID.
     """
@@ -181,14 +180,13 @@ class PostRetrieveView(generics.RetrieveAPIView):
         post = get_object_or_404(PostTextBased, uuid=post_uuid)
 
         user = request.user if request.user.is_authenticated else None
-        author = (
-            post.base_author if isinstance(post.base_author, Post) else None
-        )  # Ensure correct author lookup
+        author: Optional[Author] = models.LocalAuthor.objects.filter(user=user).first()
 
         if not post._check_can_be_seen_by(author):
-            return Response({"error": "You do not have permission to view this post."}, status=403)
+            return Response({"error": "You do not have permissions to view this post."}, status=403)
 
-        serializer = self.get_serializer(post)
+
+        serializer = PostTextBasedSerializer(post)
         return Response({"detail": "Post retrieved", "post": serializer.data}, status=200)
 
 
