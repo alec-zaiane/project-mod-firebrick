@@ -38,10 +38,10 @@ class CommentSerializer(serializers.Serializer[Any]):
     contentType = serializers.CharField(validators=[custom_validators.IsInSet({
         "text/markdown", "text/plain"
     })])
-    published = serializers.DateTimeField(format='iso-8601')
-    id = serializers.URLField()
+    published = serializers.DateTimeField(format='iso-8601', required=False)
+    id = serializers.URLField(required=False)
     post = serializers.URLField()
-    likes = LikesSerializer()
+    likes = LikesSerializer(required=False)
 
 
 class CommentsSerializer(serializers.Serializer[Any]):

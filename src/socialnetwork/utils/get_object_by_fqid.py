@@ -1,9 +1,26 @@
+from typing import Literal, Optional
+import uuid
+
 from django.urls import resolve, Resolver404
 
 from socialnetwork.models import Author, Post, Comment, Like, PostDifferentiator
-from django.http import Http404
+from django.core.exceptions import ObjectDoesNotExist
 
 from project_firebrick.settings import THIS_NODE_URL
+
+
+def differentiate_id(possible_fqid: str) -> Optional[Literal["FQID", "UUID"]]:
+    """
+    Differentiate between UUID and FQID, returns None if neither
+    """
+    try:
+        uuid.UUID(possible_fqid)
+        return "UUID"
+    except ValueError:
+        pass
+    if possible_fqid.startswith("http://") or possible_fqid.startswith("https://"):
+        return "FQID"
+    return None
 
 
 def get_object_by_fqid(fqid: str) -> Author | Post | Comment | Like:
@@ -14,7 +31,7 @@ def get_object_by_fqid(fqid: str) -> Author | Post | Comment | Like:
 
     Raises NotImplementedError if the object type is not supported
 
-    Raises <Model>.DoesNotExist or Http404 if the object does not exist
+    Raises ObjectDoesNotExist if the object does not exist
     """
     if not fqid.startswith(THIS_NODE_URL):
         # the FQID is not for this node
@@ -34,7 +51,7 @@ def get_object_by_fqid(fqid: str) -> Author | Post | Comment | Like:
                 if str(getattr(found_post.author, "uuid", None)) == resolved.kwargs["author_uuid"]:
                     return found_post
                 else:
-                    raise Http404("Post does not exist")
+                    raise ObjectDoesNotExist("Post does not exist")
             else:
                 raise NotImplementedError(
                     f"{resolved.url_name} Is not yet supported in get_object_by_fqid")
