@@ -265,17 +265,20 @@ class Post(models.Model):
         self.save()
         return (0, {})
 
+    def _get_differentiators(self) -> QuerySet[PostDifferentiator]:
+        """Get all PostDifferentiator objects pointing to this post, Useful for getting likes and comments"""
+        raise NotImplementedError(
+            "This method must be implemented by a subclass")
+
     def get_likes(self) -> QuerySet[Like]:
         """Get all likes on this post"""
-        if isinstance(self, PostTextBased):
-            found_differentiators = PostDifferentiator.objects.filter(
-                _post_text=self)
-        elif isinstance(self, PostMediaBased):
-            found_differentiators = PostDifferentiator.objects.filter(
-                _post_media=self)
-        else:
-            raise ValueError("Unknown post type")
+        found_differentiators = self._get_differentiators()
         return Like.objects.filter(target_post_differentiator__in=found_differentiators)
+
+    def get_comments(self) -> QuerySet[Comment]:
+        """Get all comments on this post"""
+        found_differentiators = self._get_differentiators()
+        return Comment.objects.filter(_post_differentiator__in=found_differentiators)
 
 
 class PostTextBased(Post):
@@ -312,6 +315,10 @@ class PostTextBased(Post):
         self.post_type = new_type
         self._finalize_edit()
 
+    def _get_differentiators(self) -> QuerySet[PostDifferentiator]:
+        """Get all PostDifferentiator objects pointing to this post, useful for getting likes and comments"""
+        return PostDifferentiator.objects.filter(_post_text=self)
+
 
 class PostMediaBased(Post):
     """
@@ -319,7 +326,9 @@ class PostMediaBased(Post):
     TODO consider whether multiple classes or an enum field are better for video vs images
     """
 
-    pass  # TODO
+    def _get_differentiators(self) -> QuerySet[PostDifferentiator]:
+        """Get all PostDifferentiator objects pointing to this post, useful for getting likes and comments"""
+        return PostDifferentiator.objects.filter(_post_media=self)
 
 
 class PostDifferentiator(models.Model):
