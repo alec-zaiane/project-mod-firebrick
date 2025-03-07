@@ -85,8 +85,7 @@ class JsonGenerator:
             assert target.author is not None
             like_data["object"] = f"{THIS_NODE_URL}/api/authors/{target.author.uuid}/posts/{target.uuid}"
         elif isinstance(target, socialmodels.Comment):
-            raise NotImplementedError("Comments are not implemented yet")
-            # TODO like_data["object"] = f"{THIS_NODE_URL}/api/authors/{target.author.uuid}/posts/{target.post.uuid}/comments/{target.uuid}"
+            like_data["object"] = f"{THIS_NODE_URL}/api/authors/{target.author.uuid}/posts/{target.post.uuid}/comment/{target.uuid}"
         return like_data
 
     @staticmethod

@@ -436,7 +436,7 @@ class Like(models.Model):
 
     uuid = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False)
-    author = models.ForeignKey(
+    author: models.ForeignKey[Author, Author] = models.ForeignKey(
         Author, on_delete=models.CASCADE)
     date_created = models.DateTimeField(auto_now_add=True)
     target_post_differentiator: models.ForeignKey[PostDifferentiator, Optional[PostDifferentiator]] = models.ForeignKey(

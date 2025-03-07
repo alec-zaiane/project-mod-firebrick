@@ -57,4 +57,4 @@ def get_object_by_fqid(fqid: str) -> Author | Post | Comment | Like:
                     f"{resolved.url_name} Is not yet supported in get_object_by_fqid")
         except Resolver404:
             raise SyntaxError(
-                "Invalid FQID, are you sure it's an /api/ targeting URL?")
+                f"Invalid FQID, are you sure it's an /api/ targeting URL?, got {fqid}")
