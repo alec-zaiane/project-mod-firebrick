@@ -351,6 +351,15 @@ class PostDifferentiator(models.Model):
         else:
             raise Post.DoesNotExist("Post not found")
 
+    @staticmethod
+    def create_differentiator_for_post(post: Post) -> PostDifferentiator:
+        if isinstance(post, PostTextBased):
+            return PostDifferentiator.objects.create(_post_text=post)
+        elif isinstance(post, PostMediaBased):
+            return PostDifferentiator.objects.create(_post_media=post)
+        else:
+            raise ValueError("Unsupported post type")
+
     @property
     def post(self) -> Post:
         if self._post_text:
@@ -417,6 +426,10 @@ class Comment(models.Model):
     def check_can_be_seen_by(self, other: Author) -> bool:
         """Returns true if the other author can see this comment"""
         raise NotImplementedError("TODO")
+
+    def get_likes(self) -> QuerySet[Like]:
+        """Get all likes on this comment"""
+        return Like.objects.filter(target_comment=self)
 
 
 class Like(models.Model):

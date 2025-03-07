@@ -1,10 +1,17 @@
 from typing import Any
 
+from django.urls import reverse
+
 from rest_framework import serializers
 
 import api.serializers.custom_validators as custom_validators
 from api.serializers.author_serializers import AuthorSerializer
 from api.serializers.like_serializers import LikesSerializer
+
+from socialnetwork.models import Comment, PostDifferentiator, Post
+from socialnetwork.utils.get_object_by_fqid import get_object_by_fqid
+
+from project_firebrick.settings import THIS_NODE_URL
 
 
 class CommentSerializer(serializers.Serializer[Any]):
@@ -42,6 +49,58 @@ class CommentSerializer(serializers.Serializer[Any]):
     id = serializers.URLField(required=False)
     post = serializers.URLField()
     likes = LikesSerializer(required=False)
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initialize a CommentSerializer
+        Either initialize normally, or pass in a Comment object as arg 0 to make it from a Comment"""
+        found_comment: Comment | None = None
+        if args and isinstance(args[0], Comment):
+            found_comment = args[0]
+
+        if found_comment is None:  # we're not making this from a Comment, let the superclass handle it
+            super().__init__(*args, **kwargs)
+
+        else:  # we're making this from a Comment
+            assert found_comment.post.author is not None, "This post was deleted, edge case"  # TODO
+            type = "comment"
+            author_serializer = AuthorSerializer(found_comment.author)
+            if not author_serializer.is_valid():
+                raise serializers.ValidationError(author_serializer.errors)
+            author = author_serializer.data
+            comment = found_comment.comment
+            contentType = found_comment.comment_type
+            published = found_comment.date_created
+            id = f"{THIS_NODE_URL}{reverse("api:commented_serial", args=[found_comment.author.uuid, found_comment.uuid])}"
+            post = f"{THIS_NODE_URL}{reverse('api:post_author_specific', args=[found_comment.post.author.uuid, found_comment.post.uuid])}"
+            likes = LikesSerializer(found_comment.get_likes()).data
+            super().__init__(data={
+                "type": type,
+                "author": author,
+                "comment": comment,
+                "contentType": contentType,
+                "published": published,
+                "id": id,
+                "post": post,
+                "likes": likes
+            })
+            self.is_valid()
+
+    def create(self, validated_data: dict[str, Any]) -> Comment:
+        """Create a Comment from the validated data"""
+        post = get_object_by_fqid(validated_data["post"])
+        if not isinstance(post, Post):
+            raise serializers.ValidationError
+        post_diff = PostDifferentiator.create_differentiator_for_post(
+            post)
+        author_serializer = AuthorSerializer(data=validated_data["author"])
+        if not author_serializer.is_valid():
+            raise serializers.ValidationError(author_serializer.errors)
+        return Comment.objects.create(
+            author=author_serializer.get_mentioned_author(),
+            comment=validated_data["comment"],
+            comment_type=validated_data["contentType"],
+            _post_differentiator=post_diff
+        )
 
 
 class CommentsSerializer(serializers.Serializer[Any]):

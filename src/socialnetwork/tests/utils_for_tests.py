@@ -1,4 +1,4 @@
-import json
+from typing import Any, Literal
 
 
 from django.contrib.auth.models import User
@@ -62,18 +62,22 @@ class GeneralUserStoryApiTest(APITestCase):
 
 class JsonGenerator:
     @staticmethod
-    def generate_like(author: socialmodels.Author, target: socialmodels.Post | socialmodels.Comment) -> str:
+    def generate_author(author: socialmodels.Author) -> dict[str, Any]:
+        return {
+            "type": "author",
+            "id": f"{THIS_NODE_URL}/api/authors/{author.uuid}",
+            "host": f"{THIS_NODE_URL}/api/",
+            "displayName": author.display_name,
+            "github": author.github_url,
+            "profileImage": "http://todo.this.needs.to.be.implemented",
+            "page": f"{THIS_NODE_URL}/authors/{author.uuid}"
+        }
+
+    @staticmethod
+    def generate_like(author: socialmodels.Author, target: socialmodels.Post | socialmodels.Comment) -> dict[str, Any]:
         like_data = {
             "type": "like",
-            "author": {
-                "type": "author",
-                "id": f"{THIS_NODE_URL}/api/authors/{author.uuid}",
-                "host": f"{THIS_NODE_URL}/api/",
-                "displayName": author.display_name,
-                "github": author.github_url,
-                "profileImage": "http://todo.this.needs.to.be.implemented",
-                "page": f"{THIS_NODE_URL}/authors/{author.uuid}"
-            },
+            "author": JsonGenerator.generate_author(author),
             "published": "2015-03-09T13:07:04+00:00"
         }
 
@@ -83,4 +87,17 @@ class JsonGenerator:
         elif isinstance(target, socialmodels.Comment):
             raise NotImplementedError("Comments are not implemented yet")
             # TODO like_data["object"] = f"{THIS_NODE_URL}/api/authors/{target.author.uuid}/posts/{target.post.uuid}/comments/{target.uuid}"
-        return json.dumps(like_data)
+        return like_data
+
+    @staticmethod
+    def generate_comment(author: socialmodels.Author, target: socialmodels.Post, comment: str, comment_type: Literal["text/plain", "text/markdown"]) -> dict[str, Any]:
+        assert target.author is not None
+        comment_data = {
+            "type": "comment",
+            "author": JsonGenerator.generate_author(author),
+            "comment": comment,
+            "contentType": comment_type,
+            "published": "2015-03-09T13:07:04+00:00",
+            "post": f"{THIS_NODE_URL}/api/authors/{target.author.uuid}/posts/{target.uuid}",
+        }
+        return comment_data

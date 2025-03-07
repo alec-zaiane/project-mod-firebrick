@@ -69,7 +69,7 @@ class CommentInboxHandler(InboxHandler):
             if not target.check_can_be_seen_by(viewer):
                 return Response("Viewer does not have access to the target post", 403)
             comment = serializer.create(serializer.validated_data)
-            return Response({"detail": "Comment created", "comment": comment}, 201)
+            return Response({"detail": "Comment created", "comment": serializer.data}, 201)
         return Response({"error": "Error creating comment", "comment": serializer.errors}, 400)
 
 
