@@ -29,7 +29,7 @@ class TestUserStory39(GeneralUserStoryApiTest):
             self.sample_authors[0], self.sample_posts[1][0])
 
         response = self.client.post(
-            url, like_json, content_type="application/json")
+            url, like_json, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         new_post_ref = models.PostTextBased.objects.get(
@@ -52,7 +52,7 @@ class TestUserStory39(GeneralUserStoryApiTest):
         like_json = JsonGenerator.generate_like(
             self.sample_authors[0], self.sample_posts[1][0])
         response = self.client.post(
-            url, like_json, content_type="application/json")
+            url, like_json, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(models.Like.objects.count(), 0)
