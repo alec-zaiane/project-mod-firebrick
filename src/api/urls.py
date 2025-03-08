@@ -69,7 +69,7 @@ urlpatterns = [
      path("posts/<str:post_fqid>/comments",
           CommentsFqidView.as_view(),
           name="comments_fqid"),
-     path("authors/<str:author_uuid>/post/<str:post_uuid>/comment/<str:remote_comment_fqid>",
+     path("authors/<str:author_uuid>/posts/<str:post_uuid>/comment/<str:comment_fqid>",
           CommentsRemoteFqidView.as_view(),
           name="comments_remote_fqid"),
 
