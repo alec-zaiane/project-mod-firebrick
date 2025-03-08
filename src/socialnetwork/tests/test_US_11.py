@@ -1,44 +1,47 @@
-from django.test import TestCase
-from django.contrib.auth.models import User
-from socialnetwork.models import LocalAuthor, PostTextBased
-import time
+from django.test import tag
+from django.urls import reverse
+from rest_framework.test import APITestCase
+from socialnetwork.models import PostTextBased, Post
+from .utils_for_tests import GeneralUserStoryApiTest
 
 
-class TestUserStory11(TestCase):
+@tag("US-Posting")
+class TestUserStory11(GeneralUserStoryApiTest):
     """
     Test User Story 11:
-    https://github.com/orgs/uofa-cmput404/projects/147/views/1?pane=issue&itemId=97853544&issue=uofa-cmput404%7Cw25-project-mod-firebrick%7C11
-    As an author, I want to edit my posts locally
-    Authors should be able to modify their posts without having to delete and recreate them.
+    As an author, I want to edit my posts locally using the API.
     """
 
-    def setUp(self) -> None:
-        #create a user and local author
-        self.user = User.objects.create_user(username="test", password="pass")
-        self.author = LocalAuthor.objects.create(user=self.user)
+    @tag("check-fast")
+    def test_edit_post_content_via_api(self) -> None:
+        """Test that an author can edit their post locally using the API."""
 
-        #create a post with some content
-        self.initial_content = "This is the original post content with a typo."
-        self.post = PostTextBased.objects.create(
-            base_author=self.author,
-            content=self.initial_content,
-            visibility_type=PostTextBased.VisibilityTypes.PUBLIC,
-            post_type=PostTextBased.TextPostTypes.PLAINTEXT,
-        )
+        #init author and a Post
+        self.initialize_sample_authors(1)
+        self.initialize_sample_text_posts(posts_per_author=1)
 
-    def test_edit_post_content(self) -> None:
-        """Test that an author can edit their post locally without deleting it."""
+        author = self.sample_authors[0]
 
-        new = "This is the updated post content with the typo fixed."
+        #get first Post
+        post = self.sample_posts[0][0]
 
-        #verify the post is not edited initially
-        self.assertEqual(self.post.content, self.initial_content)
-        self.assertIsNone(self.post.date_edited)
+        initial_content = post.content
+        new_content = "This is the updated post content with the typo fixed."
 
-        self.post.edit(new)
 
-        #reload from DB to get updated values
-        self.post.refresh_from_db()
+        self.assertEqual(post.content, initial_content)
 
-        self.assertEqual(self.post.content, new)
-        self.assertIsNotNone(self.post.date_edited)
+        #authenticate as the post's author
+        self.client.force_authenticate(user=author.user)
+
+        #call api to edit the Post
+        url = reverse("socialnetwork:api_textpost_update", args=[post.uuid])
+        response = self.client.post(url, {"content": new_content}, format="json")
+
+        #check response
+        self.assertEqual(response.status_code, 200)
+
+        #reload the post from DB
+        post.refresh_from_db()
+
+        self.assertEqual(post.content, new_content)
