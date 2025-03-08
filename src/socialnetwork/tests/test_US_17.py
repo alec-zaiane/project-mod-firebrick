@@ -1,7 +1,5 @@
 from django.test import tag
-from django.urls import reverse
-from rest_framework.test import APITestCase
-from socialnetwork.models import PostTextBased, Post
+from socialnetwork.models import PostTextBased
 from .utils_for_tests import GeneralUserStoryApiTest
 from django.utils import timezone
 from datetime import timedelta
