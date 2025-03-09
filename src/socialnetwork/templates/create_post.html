@@ -4,9 +4,30 @@
 
 {% block content %}
 <h2>Create a Post</h2>
+
+<!-- Existing Markdown Post Submission -->
 {% include 'components/post_submission_card.html' %}
+
 <h3>Preview</h3>
 <div id="preview"></div>
+
+<!-- New Form for Image Upload -->
+<h2>Create an Image Post</h2>
+<form action="{% url 'socialnetwork:api_imagepost_create' %}" method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <label for="visibility">Visibility:</label>
+    <select name="visibility_type">
+        <option value="PU">Public</option>
+        <option value="FO">Friends Only</option>
+        <option value="UN">Unlisted</option>
+    </select>
+
+    <label for="image">Upload Image:</label>
+    <input type="file" name="image" accept="image/*" required>
+
+    <button type="submit">Create Image Post</button>
+</form>
 
 <script src="{% static 'scripts/markdown-editor.min.js' %}"></script>
 {% endblock %}

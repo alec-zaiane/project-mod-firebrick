@@ -3,6 +3,10 @@ from django.views.generic import RedirectView, TemplateView
 from . import views
 from . import views_api
 
+from django.conf import settings
+from django.conf.urls.static import static
+
+
 app_name = "socialnetwork"
 urlpatterns = [
     path("", RedirectView.as_view(url="stream")),
@@ -54,7 +58,15 @@ urlpatterns_api = [
          views_api.api_author_update,
          name="api_author_update"),
 
+     path("api/v1/create_image_post",
+          views_api.api_imagepost_create,
+          name="api_imagepost_create"),
+
+
 
 ]
 
 urlpatterns.extend(urlpatterns_api)
+""" Ensures all routes are registerd before adding static file serving (runs only in development)"""
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

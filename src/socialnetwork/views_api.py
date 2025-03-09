@@ -192,3 +192,33 @@ def api_textpost_update(request: Request, viewer: Optional[models.LocalAuthor], 
         serializer.update(post, request.data.copy())
         return Response({"detail": "post updated", "post": serializer.data}, 200)
     return Response({"error": "post update error", "post": serializer.errors}, 403)
+
+
+@api_view(["POST"])
+@user_controller(must_be_logged_in=True, must_be_author=True)
+def api_imagepost_create(request: Request, viewer: Optional[models.LocalAuthor]) -> Response:
+    """
+    Create an image-based post.
+
+    Expects:
+    - A multipart/form-data request containing:
+        - `image`: File
+        - `visibility_type`: PU (Public), FO (Friends Only), UN (Unlisted)
+    Returns:
+    - 201 on success with post data.
+    - 400 on failure with error messages.
+    """
+    if viewer is None:
+        return get_unauthenticated_response_api()
+
+    data = request.data.copy()
+    data["base_author"] = viewer.uuid
+
+    serializer = serializers.PostMediaBasedSerializer(data=data)
+
+    if serializer.is_valid():
+        post = serializer.save()
+        post.send_to_required_private_inboxes()
+        return Response({"detail": "Image post created", "post": serializer.data}, status=201)
+    else:
+        return Response({"error": "creation error", "post": serializer.errors}, status=400)

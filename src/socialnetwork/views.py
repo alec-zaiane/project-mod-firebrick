@@ -8,6 +8,7 @@ from django.urls import reverse
 from socialnetwork.utils.user_control_decorator import user_controller
 from . import models
 
+from itertools import chain
 
 # General Views
 # This file is for views that show browser output (eg: render a template), use views_api.py for rest_framework API views
@@ -43,19 +44,43 @@ def stream_view(request: HttpRequest, viewer: Optional[models.LocalAuthor]) -> H
     })
 
 
+# @user_controller(must_be_logged_in=True, must_be_author=True)
+# def author_profile_view(request: HttpRequest, target_author_uuid: str, viewer: Optional[models.LocalAuthor] = None) -> HttpResponse:
+#     """View `target_author_uuid`'s profile"""
+
+#     target_author = get_object_or_404(
+#         models.LocalAuthor, uuid=target_author_uuid)
+#     author_posts = models.PostTextBased.objects.filter(
+#         base_author=target_author, is_deleted=False)
+#     author_posts_sorted = sorted(
+#         author_posts, key=lambda x: x.date_created, reverse=True
+#     )
+
+#     return render(request, "author_profile.html", {"author": target_author, "viewer": viewer, "posts": author_posts_sorted})
 @user_controller(must_be_logged_in=True, must_be_author=True)
 def author_profile_view(request: HttpRequest, target_author_uuid: str, viewer: Optional[models.LocalAuthor] = None) -> HttpResponse:
     """View `target_author_uuid`'s profile"""
-
-    target_author = get_object_or_404(
-        models.LocalAuthor, uuid=target_author_uuid)
-    author_posts = models.PostTextBased.objects.filter(
+    target_author = get_object_or_404(models.LocalAuthor, uuid=target_author_uuid)
+    
+    # Retrieve text-based posts
+    text_posts = models.PostTextBased.objects.filter(
         base_author=target_author, is_deleted=False)
-    author_posts_sorted = sorted(
-        author_posts, key=lambda x: x.date_created, reverse=True
-    )
-
-    return render(request, "author_profile.html", {"author": target_author, "viewer": viewer, "posts": author_posts_sorted})
+    
+    # Retrieve media-based (image) posts
+    media_posts = models.PostMediaBased.objects.filter(
+        base_author=target_author, is_deleted=False)
+    
+    # Combine both querysets into one list
+    combined_posts = list(chain(text_posts, media_posts))
+    
+    # Sort posts by date_created, newest first
+    author_posts_sorted = sorted(combined_posts, key=lambda post: post.date_created, reverse=True)
+    
+    return render(request, "author_profile.html", {
+        "author": target_author,
+        "viewer": viewer,
+        "posts": author_posts_sorted
+    })
 
 
 @user_controller(must_be_logged_in=True, must_be_author=True)

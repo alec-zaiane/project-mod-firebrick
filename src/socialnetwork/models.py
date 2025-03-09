@@ -110,7 +110,6 @@ class LocalAuthor(Author):
         self, paginate_start: int = 0, paginate_count: Optional[int] = None
     ) -> list[Post]:
         """Get the stream of posts that this author can see
-
         Args:
             paginate_start (int, optional): returned posts start at this index of the true stream when sorted by newest to oldest. Defaults to 0.
             paginate_end (Optional[int], optional): Get this many posts, or all if None. Defaults to None.
@@ -118,29 +117,29 @@ class LocalAuthor(Author):
         Returns:
             list[Post]: QuerySet of Post objects that the author is guaranteed to be able to see
         """
-        # TODO join the self.private_inbox and the public timeline
 
         base_query = Q(is_deleted=False)
         public_posts = Q(visibility_type=Post.VisibilityTypes.PUBLIC)
+        private_inbox = Q(is_in_private_inbox_of=self)
 
-        private_inbox = Q(
-            is_in_private_inbox_of=self
-        )
-
+        # Combine public posts and anything in this author's private inbox
         query = base_query & (public_posts | private_inbox)
 
+        # Fetch text-based posts
         text_posts = PostTextBased.objects.filter(query)
+        # Fetch media-based posts
+        media_posts = PostMediaBased.objects.filter(query)
 
         # Combine and sort all posts
         all_posts: list[Post] = sorted(
-            chain(text_posts),
+            chain(text_posts, media_posts),
             key=lambda post: post.date_created,
             reverse=True
         )
 
         # Apply pagination
         if paginate_count is not None:
-            all_posts = all_posts[paginate_start:paginate_start + paginate_count]
+            all_posts = all_posts[paginate_start : paginate_start + paginate_count]
         elif paginate_start > 0:
             all_posts = all_posts[paginate_start:]
 
@@ -318,8 +317,17 @@ class PostMediaBased(Post):
     A post that contains an image
     TODO consider whether multiple classes or an enum field are better for video vs images
     """
+    # Store images in the media directory
+    image = models.ImageField(upload_to="hosted_images/", blank=True, null=True) 
 
-    pass  # TODO
+    @property
+    def css_class(self) -> str:
+        return "post-image"
+
+    def edit(self, new_image) -> None:
+        """Edit the image of this post"""
+        self.image = new_image
+        self._finalize_edit()
 
 
 class PostDifferentiator(models.Model):
