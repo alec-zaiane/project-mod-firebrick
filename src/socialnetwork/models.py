@@ -113,6 +113,9 @@ class Author(models.Model):
         # # if we're different types, we're not equal
         # return False
 
+    def __hash__(self) -> int:
+        return hash(self.uuid)
+
 
 class LocalAuthor(Author):
     """An author that is on this node"""
