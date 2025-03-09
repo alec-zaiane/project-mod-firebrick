@@ -4,6 +4,7 @@ from itertools import chain
 
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
+from django.core.exceptions import ObjectDoesNotExist
 
 from rest_framework import views
 from rest_framework.response import Response
@@ -13,9 +14,11 @@ from drf_spectacular.utils import extend_schema
 from drf_spectacular.utils import OpenApiParameter
 
 from socialnetwork.utils.user_control_decorator import user_controller, user_control
+from socialnetwork.utils.get_object_by_fqid import get_object_by_fqid, differentiate_id
 from socialnetwork import models
 from api import serializers
 from api.views.inbox import InboxHandler, register_inbox_handler
+
 
 """
 Comments API
@@ -52,7 +55,22 @@ class CommentInboxHandler(InboxHandler):
         return serializers.CommentSerializer
 
     def post(self, request: Request, viewer: Optional[models.LocalAuthor] = None) -> Response:
-        raise NotImplementedError("TODO")
+        serializer = serializers.CommentSerializer(data=request.data)
+        if viewer is None:
+            return Response("User must be authenticated", 401)
+        if serializer.is_valid():
+            # double check that the viewer has access to the target object
+            try:
+                target = get_object_by_fqid(serializer.validated_data["post"])
+            except (SyntaxError, ObjectDoesNotExist):
+                return Response("Target post is malformed", 404)
+            if not isinstance(target, models.Post):
+                return Response("Target post is not a post", 400)
+            if not target.check_can_be_seen_by(viewer):
+                return Response("Viewer does not have access to the target post", 403)
+            comment = serializer.create(serializer.validated_data)
+            return Response({"detail": "Comment created", "comment": serializer.data}, 201)
+        return Response({"error": "Error creating comment", "comment": serializer.errors}, 400)
 
 
 register_inbox_handler(CommentInboxHandler())
@@ -135,5 +153,5 @@ class CommentsRemoteFqidView(views.APIView):
         ]
     )
     @method_decorator(user_controller())
-    def get(self, request: Request, author_uuid: str, post_uuid: str, comment_fqid: str) -> Response:
+    def get(self, request: Request, author_uuid: str, post_uuid: str, comment_uuid_or_fqid: str) -> Response:
         raise NotImplementedError("TODO")

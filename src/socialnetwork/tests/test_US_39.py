@@ -29,7 +29,7 @@ class TestUserStory39(GeneralUserStoryApiTest):
             self.sample_authors[0], self.sample_posts[1][0])
 
         response = self.client.post(
-            url, like_json, content_type="application/json")
+            url, like_json, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         new_post_ref = models.PostTextBased.objects.get(
@@ -52,7 +52,7 @@ class TestUserStory39(GeneralUserStoryApiTest):
         like_json = JsonGenerator.generate_like(
             self.sample_authors[0], self.sample_posts[1][0])
         response = self.client.post(
-            url, like_json, content_type="application/json")
+            url, like_json, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(models.Like.objects.count(), 0)
@@ -66,10 +66,38 @@ class TestUserStory39(GeneralUserStoryApiTest):
         ...
 
     @tag("check-fast")
-    @skip("Waiting for implmentation of comments")
     def test_can_like_comment(self) -> None:
         """Test that an author can like a comment"""
-        ...
+        self.initialize_sample_authors(2)
+        self.initialize_sample_text_posts(posts_per_author=1)
+
+        # send a comment
+        url = reverse("api:inbox", args=[self.sample_authors[1].uuid])
+        comment_json = JsonGenerator.generate_comment(
+            author=self.sample_authors[0],
+            target=self.sample_posts[1][0],
+            comment="comment",
+            comment_type="text/plain")
+        response = self.client.post(url, comment_json, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        post = models.PostTextBased.objects.get(
+            uuid=self.sample_posts[1][0].uuid)
+        comment = post.get_comments().first()
+        assert comment is not None  # for mypy
+
+        # send a like
+        url = reverse("api:inbox", args=[self.sample_authors[1].uuid])
+        like_json = JsonGenerator.generate_like(
+            self.sample_authors[0], comment)
+        response = self.client.post(url, like_json, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        # verify the like
+        self.assertEqual(models.Like.objects.count(), 1)
+        like = models.Like.objects.first()
+        assert like is not None  # for mypy
+        assert like.author is not None  # for mypy
+        self.assertEqual(like.author.uuid, self.sample_authors[0].uuid)
 
     @tag("check-slow", "security")
     @skip("Waiting for implmentation of comments")

@@ -98,6 +98,24 @@ class Author(models.Model):
         # not sure if this is the best place to put this, but we need a centralized place for it to go
         raise NotImplementedError("TODO")
 
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, Author):
+            return False
+        return self.uuid == other.uuid
+
+        # TODO when adding remote nodes, we'll need something like this:
+        # # if we're both LocalAuthors, compare the uuid
+        # if isinstance(self, LocalAuthor) and isinstance(other, LocalAuthor):
+        #     return self.uuid == other.uuid
+        # # if we're both RemoteAuthors, do something else
+        # if isinstance(self, RemoteAuthor) and isinstance(other, RemoteAuthor):
+        #     raise NotImplementedError("TODO")
+        # # if we're different types, we're not equal
+        # return False
+
+    def __hash__(self) -> int:
+        return hash(self.uuid)
+
 
 class LocalAuthor(Author):
     """An author that is on this node"""
@@ -265,17 +283,20 @@ class Post(models.Model):
         self.save()
         return (0, {})
 
+    def _get_differentiators(self) -> QuerySet[PostDifferentiator]:
+        """Get all PostDifferentiator objects pointing to this post, Useful for getting likes and comments"""
+        raise NotImplementedError(
+            "This method must be implemented by a subclass")
+
     def get_likes(self) -> QuerySet[Like]:
         """Get all likes on this post"""
-        if isinstance(self, PostTextBased):
-            found_differentiators = PostDifferentiator.objects.filter(
-                _post_text=self)
-        elif isinstance(self, PostMediaBased):
-            found_differentiators = PostDifferentiator.objects.filter(
-                _post_media=self)
-        else:
-            raise ValueError("Unknown post type")
+        found_differentiators = self._get_differentiators()
         return Like.objects.filter(target_post_differentiator__in=found_differentiators)
+
+    def get_comments(self) -> QuerySet[Comment]:
+        """Get all comments on this post"""
+        found_differentiators = self._get_differentiators()
+        return Comment.objects.filter(_post_differentiator__in=found_differentiators)
 
 
 class PostTextBased(Post):
@@ -312,6 +333,10 @@ class PostTextBased(Post):
         self.post_type = new_type
         self._finalize_edit()
 
+    def _get_differentiators(self) -> QuerySet[PostDifferentiator]:
+        """Get all PostDifferentiator objects pointing to this post, useful for getting likes and comments"""
+        return PostDifferentiator.objects.filter(_post_text=self)
+
 
 class PostMediaBased(Post):
     """
@@ -319,7 +344,9 @@ class PostMediaBased(Post):
     TODO consider whether multiple classes or an enum field are better for video vs images
     """
 
-    pass  # TODO
+    def _get_differentiators(self) -> QuerySet[PostDifferentiator]:
+        """Get all PostDifferentiator objects pointing to this post, useful for getting likes and comments"""
+        return PostDifferentiator.objects.filter(_post_media=self)
 
 
 class PostDifferentiator(models.Model):
@@ -341,6 +368,15 @@ class PostDifferentiator(models.Model):
             return PostMediaBased.objects.get(uuid=uuid)
         else:
             raise Post.DoesNotExist("Post not found")
+
+    @staticmethod
+    def create_differentiator_for_post(post: Post) -> PostDifferentiator:
+        if isinstance(post, PostTextBased):
+            return PostDifferentiator.objects.create(_post_text=post)
+        elif isinstance(post, PostMediaBased):
+            return PostDifferentiator.objects.create(_post_media=post)
+        else:
+            raise ValueError("Unsupported post type")
 
     @property
     def post(self) -> Post:
@@ -389,7 +425,8 @@ class Comment(models.Model):
 
     uuid = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False)
-    author = models.ForeignKey(Author, on_delete=models.CASCADE)
+    author: models.ForeignKey[Author, Author] = models.ForeignKey(
+        Author, on_delete=models.CASCADE)
     comment = models.TextField()
     comment_type = models.CharField(
         max_length=2, choices=CommentTypes.choices, default=CommentTypes.PLAINTEXT
@@ -406,15 +443,25 @@ class Comment(models.Model):
         return f"Comment by {self.author} on {self._post_differentiator}"
 
     def check_can_be_seen_by(self, other: Author) -> bool:
-        """Returns true if the other author can see this comment"""
-        raise NotImplementedError("TODO")
+        """Returns true if the other author can see this comment
+        As an author, comments on my friends-only posts are visible only to my friends and the comment's author."""
+        # ? how could a comment be made on a post that the author can't see?
+        if self.post.check_can_be_seen_by(other):
+            return True
+        if self.author == other:
+            return True
+        return False
+
+    def get_likes(self) -> QuerySet[Like]:
+        """Get all likes on this comment"""
+        return Like.objects.filter(target_comment=self)
 
 
 class Like(models.Model):
 
     uuid = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False)
-    author = models.ForeignKey(
+    author: models.ForeignKey[Author, Author] = models.ForeignKey(
         Author, on_delete=models.CASCADE)
     date_created = models.DateTimeField(auto_now_add=True)
     target_post_differentiator: models.ForeignKey[PostDifferentiator, Optional[PostDifferentiator]] = models.ForeignKey(
