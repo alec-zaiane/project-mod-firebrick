@@ -68,8 +68,7 @@ class JsonGenerator:
             "id": f"{THIS_NODE_URL}/api/authors/{author.uuid}",
             "host": f"{THIS_NODE_URL}/api/",
             "displayName": author.display_name,
-            "github": author.github_url,
-            "profileImage": "http://todo.this.needs.to.be.implemented",
+            "profileImage": author.profile_image,
             "page": f"{THIS_NODE_URL}/authors/{author.uuid}"
         }
 

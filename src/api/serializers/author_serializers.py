@@ -30,8 +30,6 @@ class AuthorSerializer(serializers.Serializer[Author]):
         "host":"http://nodeaaaa/api/",
         // How the user would like the name to be displayed
         "displayName":"Greg Johnson",
-        // URL of the user's github
-        "github": "http://github.com/gjohnson",
         // URL of the user's profile image (external image in this example)
         "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
         // URL of the user's HTML profile page
@@ -115,7 +113,6 @@ class AuthorsSerializer(serializers.Serializer[Any]):
                 "id":"http://nodeaaaa/api/authors/111",
                 "host":"http://nodeaaaa/api/",
                 "displayName":"Greg Johnson",
-                "github": "http://github.com/gjohnson",
                 "profileImage": "https://i.imgur.com/k7XVwpB.jpeg",
                 "page": "http://nodeaaaa/authors/greg"
             },
