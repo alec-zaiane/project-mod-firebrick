@@ -177,9 +177,9 @@ class FollowRequest(models.Model):
 
     @property
     def actor_username(self) -> str:
-        if isinstance(self.actor, LocalAuthor):
-            return self.actor.user.username
-        return "[Unknown User]"
+        assert isinstance(self.actor, LocalAuthor)
+        return self.actor.user.username
+
 
 
 
