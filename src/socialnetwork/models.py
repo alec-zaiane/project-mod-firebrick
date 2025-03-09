@@ -277,9 +277,7 @@ class Post(models.Model):
         if self.visibility_type == self.VisibilityTypes.PUBLIC:
             return True
         elif self.visibility_type == self.VisibilityTypes.UNLISTED:
-            # Unlisted posts visible to friends and followers
-            return (self.author.get_is_friends_with(other) or 
-                    other in self.author.followers.all())
+            return True
         elif self.visibility_type == self.VisibilityTypes.FRIENDS_ONLY:
             # Friends-only posts visible only to friends
             return self.author.get_is_friends_with(other)
