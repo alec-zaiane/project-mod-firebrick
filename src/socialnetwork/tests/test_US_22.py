@@ -1,5 +1,6 @@
 from django.test import tag
-from socialnetwork.models import PostTextBased
+from django.contrib.auth.models import User
+from socialnetwork.models import LocalAuthor, PostTextBased
 from .utils_for_tests import GeneralUserStoryApiTest
 
 @tag("US-Visibility")
@@ -9,7 +10,7 @@ class TestUserStory22(GeneralUserStoryApiTest):
     As an author, I want my friends to see my friends-only, unlisted, and public posts in their stream.
     """
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data"""
         # Initialize parent class
         super().setUp()
@@ -45,7 +46,7 @@ class TestUserStory22(GeneralUserStoryApiTest):
         )
 
     @tag("check-fast")
-    def test_friend_sees_all_posts(self):
+    def test_friend_sees_all_posts(self) -> None:
         """Test that friends can see all post types in their stream"""
         stream = self.author2.get_stream()
         
@@ -57,7 +58,7 @@ class TestUserStory22(GeneralUserStoryApiTest):
             "Friend should see unlisted posts")
 
     @tag("check-fast")
-    def test_posts_in_correct_order(self):
+    def test_posts_in_correct_order(self) -> None:
         """Test that posts appear in reverse chronological order"""
         stream = self.author2.get_stream()
         
