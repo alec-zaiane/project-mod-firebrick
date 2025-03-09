@@ -54,6 +54,12 @@ class Author(models.Model):
         return Author.objects.filter(following=self)
 
     @property
+    def friends(self) -> list[Author]:
+        following_set = set(self.following.all())
+        followers_set = set(self.followers.all())
+        return list(following_set.intersection(followers_set))
+
+    @property
     def username(self) -> str:
         if isinstance(self, LocalAuthor):
             return self.user.username
@@ -159,9 +165,22 @@ class FollowRequest(models.Model):
     uuid = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False)
     actor = models.ForeignKey(
-        Author, on_delete=models.CASCADE, related_name="follow_requests_requested")
+        LocalAuthor,
+        on_delete=models.CASCADE,
+        related_name="follow_requests_requested"
+    )
     target = models.ForeignKey(
-        Author, on_delete=models.CASCADE, related_name="follow_requests_pending")
+        LocalAuthor,
+        on_delete=models.CASCADE,
+        related_name="follow_requests_pending"
+    )
+
+    @property
+    def actor_username(self) -> str:
+        if isinstance(self.actor, LocalAuthor):
+            return self.actor.user.username
+        return "[Unknown User]"
+
 
 
 class Post(models.Model):

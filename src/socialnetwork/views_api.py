@@ -52,7 +52,7 @@ def api_textpost_create(request: Request, viewer: Optional[models.LocalAuthor]) 
         return get_unauthenticated_response_api()
 
     data = request.data.copy()
-    data["base_author"] = viewer.uuid
+    data["base_author"] = str(viewer.uuid)
 
     serializer = serializers.PostTextBasedSerializer(data=data)
 
@@ -192,3 +192,26 @@ def api_textpost_update(request: Request, viewer: Optional[models.LocalAuthor], 
         serializer.update(post, request.data.copy())
         return Response({"detail": "post updated", "post": serializer.data}, 200)
     return Response({"error": "post update error", "post": serializer.errors}, 403)
+
+@extend_schema(
+    deprecated=True,
+)
+@api_view(["POST"])
+@user_controller(must_be_logged_in=True, must_be_author=True)
+def api_follow_request_send(request: Request, target_author_uuid: str, viewer: Optional[models.LocalAuthor] = None) -> Response:
+    """Send a follow request if not already following or requested."""
+
+    if viewer is None:
+        return get_unauthenticated_response_api()
+
+    target_author = get_object_or_404(models.LocalAuthor, uuid=target_author_uuid)
+
+    if viewer in target_author.followers.all():
+        return Response({"error": "You are already following this user."}, status=400)
+
+    if models.FollowRequest.objects.filter(actor=viewer, target=target_author).exists():
+        return Response({"error": "Follow request already sent."}, status=400)
+
+    models.FollowRequest.objects.create(actor=viewer, target=target_author)
+
+    return Response({"message": "Follow request sent successfully."}, status=201)

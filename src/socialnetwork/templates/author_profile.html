@@ -13,11 +13,42 @@
     <p>This is your profile</p>
     {% else %}
     <p>This is not your profile</p>
-    {% endif %}
+            {% if is_following %}
+                <form action="{% url 'api:unfollow' author.uuid %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit">Unfollow</button>
+                </form>
+            {% else %}
+                {% if follow_requests_pending %}
+                    <button disabled>Follow Request Sent</button>
+                {% else %}
+                    <form action="{% url 'api:send_follow_request' author.uuid %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit">Follow</button>
+                    </form>
+                {% endif %}
+            {% endif %}
+        {% endif %}
     {% endif %}
 
     <h3>{{ author.user }}'s Bio</h3>
     <p>{{ author.bio }}</p>
+
+    <h3>
+        <a href="{% url 'socialnetwork:followers_list' author.uuid %}">
+            Followers ({{ followers|length }})
+        </a>
+    </h3>
+    <h3>
+        <a href="{% url 'socialnetwork:following_list' author.uuid %}">
+            Following ({{ following|length }})
+        </a>
+    </h3>
+    <h3>
+        <a href="{% url 'socialnetwork:friends_list' author.uuid %}">
+            Friends ({{ friends|length }})
+        </a>
+    </h3>
 
     <a href="{% url 'socialnetwork:author_create_post' %}" class="create-post">Create Post</a>
 
