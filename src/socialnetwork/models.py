@@ -142,7 +142,6 @@ class LocalAuthor(Author):
         
         # Visibility types
         public_posts = Q(
-            base_author__in=following,
             visibility_type=Post.VisibilityTypes.PUBLIC
         )
 
