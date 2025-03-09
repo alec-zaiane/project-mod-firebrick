@@ -298,7 +298,7 @@ class Post(models.Model):
         return Comment.objects.filter(_post_differentiator__in=found_differentiators)
 
     def get_absolute_url(self) -> str:
-        """Generate the frontend URL in `/authors/{AUTHOR_UUID}/posts/{POST_UUID}/` format."""
+        """Generate the frontend URL in `posts/{POST_UUID}/` format."""
 
         if self.visibility_type == self.VisibilityTypes.FRIENDS_ONLY:
             raise ValueError("Friends-only posts cannot be shared.")
@@ -316,7 +316,6 @@ class PostTextBased(Post):
         MARKDOWN = "MD", _("Markdown")
 
     # Fields
-    title = models.CharField(max_length=255, default="Untitled Post")
     content = models.TextField()
     post_type = models.CharField(
         max_length=2, choices=TextPostTypes.choices, default=TextPostTypes.PLAINTEXT

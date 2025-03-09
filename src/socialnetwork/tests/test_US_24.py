@@ -4,7 +4,7 @@ from project_firebrick.settings import THIS_NODE_URL
 from django.urls import reverse
 
 
-class TestPostShareableLink(GeneralUserStoryApiTest):
+class TestUserStory24(GeneralUserStoryApiTest):
     """
     Tests to check if posts generate shareable links correctly.
     """

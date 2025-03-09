@@ -112,7 +112,7 @@ def view_post(request: HttpRequest, post_uuid: str, viewer: Optional[models.Auth
     if post.check_can_be_seen_by(viewer):
         return render(request, "view_post.html", {"post": post, "viewer": viewer})
 
-    #if none, then return error
+    #if none, then return
     return render(request, "error.html", {
         "message": "You do not have permission to view this post."
     }, status=403)
