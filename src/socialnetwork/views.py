@@ -87,3 +87,32 @@ def edit_post_view(request: HttpRequest, post_uuid: str, viewer: models.LocalAut
         return HttpResponse("You do not have permission to edit this post.", status=403)
 
     return render(request, "edit_post.html", {"post": post, "author": viewer})
+
+
+@user_controller(must_be_logged_in=False, must_be_author=False)
+def view_post(request: HttpRequest, post_uuid: str, viewer: Optional[models.Author]) -> HttpResponse:
+    """
+    View a post based on its UUID.
+    - Public posts are visible to everyone.
+    - Unlisted posts are visible only if you have the link.
+    - Friends-only posts are visible only to friends.
+    """
+
+    post = get_object_or_404(models.PostTextBased, uuid=post_uuid)
+
+    #deleted posts
+    if post.is_deleted:
+        return render(request, "error.html", {"message": "This post has been deleted."}, status=404)
+
+    #no authors
+    if not viewer:
+        return render(request, "error.html", {"message": "this post has no author"}, status=404)
+
+    #check the method of post
+    if post.check_can_be_seen_by(viewer):
+        return render(request, "view_post.html", {"post": post, "viewer": viewer})
+
+    #if none, then return error
+    return render(request, "error.html", {
+        "message": "You do not have permission to view this post."
+    }, status=403)

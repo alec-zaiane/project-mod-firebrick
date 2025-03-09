@@ -16,7 +16,6 @@ from django.contrib.auth.models import User
 
 from django.db.models import Q
 from itertools import chain
-
 from project_firebrick.settings import THIS_NODE_URL
 
 
@@ -298,6 +297,14 @@ class Post(models.Model):
         found_differentiators = self._get_differentiators()
         return Comment.objects.filter(_post_differentiator__in=found_differentiators)
 
+    def get_absolute_url(self) -> str:
+        """Generate the frontend URL in `/authors/{AUTHOR_UUID}/posts/{POST_UUID}/` format."""
+
+        if self.visibility_type == self.VisibilityTypes.FRIENDS_ONLY:
+            raise ValueError("Friends-only posts cannot be shared.")
+
+        return f"{THIS_NODE_URL}/post/{self.uuid}/"
+
 
 class PostTextBased(Post):
     """
@@ -309,6 +316,7 @@ class PostTextBased(Post):
         MARKDOWN = "MD", _("Markdown")
 
     # Fields
+    title = models.CharField(max_length=255, default="Untitled Post")
     content = models.TextField()
     post_type = models.CharField(
         max_length=2, choices=TextPostTypes.choices, default=TextPostTypes.PLAINTEXT
