@@ -14,7 +14,7 @@ class AuthorSearchView(APIView):
     """
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         query: str = request.GET.get("q", "").strip()
-        print(f"🔍 Searching for authors with username: '{query}'")
+        print(f"Searching for authors with username: '{query}'")
 
         if query:
             authors = LocalAuthor.objects.filter(user__username__icontains=query)
