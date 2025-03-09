@@ -22,7 +22,7 @@ class PostTextBasedSerializer(PostSerializer):
 class UserSerializer(serializers.ModelSerializer[User]):
     class Meta:
         model = User
-        fields = ["username", "email", "first_name", "last_name"]
+        fields = ["username"]
 
 # https://blog.devgenius.io/nested-serializers-in-django-rest-framework-6b36bf011074
 
