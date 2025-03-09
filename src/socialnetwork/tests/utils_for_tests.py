@@ -30,7 +30,7 @@ class GeneralUserStoryApiTest(APITestCase):
                 username=f"sample_author_{i}", password="pass")
             sample_author = socialmodels.LocalAuthor.objects.create(
                 user=User.objects.get(username=f"sample_author_{i}"),
-                github_url="http://github.com",
+                profile_image=f"https://fastly.picsum.photos/id/391/200/200.jpg",
                 display_name=f"Sample Author {i}",)
 
             self.sample_authors.append(sample_author)
@@ -70,8 +70,7 @@ class JsonGenerator:
                 "id": f"{THIS_NODE_URL}/api/authors/{author.uuid}",
                 "host": f"{THIS_NODE_URL}/api/",
                 "displayName": author.display_name,
-                "github": author.github_url,
-                "profileImage": "http://todo.this.needs.to.be.implemented",
+                "profileImage": author.profile_image,
                 "page": f"{THIS_NODE_URL}/authors/{author.uuid}"
             },
             "published": "2015-03-09T13:07:04+00:00"

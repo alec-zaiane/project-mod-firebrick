@@ -46,7 +46,8 @@ class Author(models.Model):
         'self', symmetrical=False, related_name='followers', blank=True)
     bio = models.TextField(blank=True)
     display_name = models.CharField(max_length=128)
-    github_url = models.URLField()
+    # 2048 is the character limit for URLs
+    profile_image = models.URLField(blank=True)
 
     # Computed Properties
     @property

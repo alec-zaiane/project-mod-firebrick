@@ -19,17 +19,13 @@
     <div name="errorresponse-author__user__username"></div>
     <input type="text" id="username" name="username" value="{{ author.username }}" required>
     <br>
-    <label for="email">Email:</label>
-    <div name="errorresponse-author__user__email"></div>
-    <input type="email" id="email" name="email" value="{{ author.user.email }}" required>
+    <label for="display_name">Display Name:</label>
+    <div name="errorresponse-author__user__display_name"></div>
+    <input type="text" id="display_name" name="display_name" value="{{ author.display_name }}" required>
     <br>
-    <label for="first_name">First Name:</label>
-    <div name="errorresponse-author__user__first_name"></div>
-    <input type="text" id="first_name" name="first_name" value="{{ author.user.first_name }}" required>
-    <br>
-    <label for="last_name">Last Name:</label>
-    <div name="errorresponse-author__user__last_name"></div>
-    <input type="text" id="last_name" name="last_name" value="{{ author.user.last_name }}" required>
+    <label for="profile_image">Profile Image:</label>
+    <div name="errorresponse-author__user__profile_image"></div>
+    <input type="url" id="profile_image" name="profile_image" value="{{ author.profile_image }}">
     <br>
     <label for="bio">Bio:</label>
     <div name="errorresponse-author__bio"></div>

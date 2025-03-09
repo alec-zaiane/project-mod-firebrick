@@ -6,7 +6,10 @@
 
 {% block content %}
 <main class="profile">
-    <h2>This is the profile page for {{ author.user }}</h2>
+    {% if author.profile_image %}
+    <img class="profile-image" src="{{ author.profile_image }}"/>
+    {% endif %}
+    <h2>{{ author.display_name }}</h2>
 
     {% if viewer %}
     {% if author == viewer %}
@@ -16,10 +19,13 @@
     {% endif %}
     {% endif %}
 
-    <h3>{{ author.user }}'s Bio</h3>
+    <h3>{{ author.display_name }}'s Bio</h3>
     <p>{{ author.bio }}</p>
 
+    {% if author == viewer %}
     <a href="{% url 'socialnetwork:author_create_post' %}" class="create-post">Create Post</a>
+    <a href="{% url 'socialnetwork:author_modify' author.uuid %}">Modify Profile</a>
+    {% endif %}
 
     <h3>Posts by {{ author.user }}</h3>
 
