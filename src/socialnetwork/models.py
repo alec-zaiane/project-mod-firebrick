@@ -98,6 +98,21 @@ class Author(models.Model):
         # not sure if this is the best place to put this, but we need a centralized place for it to go
         raise NotImplementedError("TODO")
 
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, Author):
+            return False
+        return self.uuid == other.uuid
+
+        # TODO when adding remote nodes, we'll need something like this:
+        # # if we're both LocalAuthors, compare the uuid
+        # if isinstance(self, LocalAuthor) and isinstance(other, LocalAuthor):
+        #     return self.uuid == other.uuid
+        # # if we're both RemoteAuthors, do something else
+        # if isinstance(self, RemoteAuthor) and isinstance(other, RemoteAuthor):
+        #     raise NotImplementedError("TODO")
+        # # if we're different types, we're not equal
+        # return False
+
 
 class LocalAuthor(Author):
     """An author that is on this node"""
@@ -407,7 +422,8 @@ class Comment(models.Model):
 
     uuid = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False)
-    author = models.ForeignKey(Author, on_delete=models.CASCADE)
+    author: models.ForeignKey[Author, Author] = models.ForeignKey(
+        Author, on_delete=models.CASCADE)
     comment = models.TextField()
     comment_type = models.CharField(
         max_length=2, choices=CommentTypes.choices, default=CommentTypes.PLAINTEXT
@@ -424,8 +440,14 @@ class Comment(models.Model):
         return f"Comment by {self.author} on {self._post_differentiator}"
 
     def check_can_be_seen_by(self, other: Author) -> bool:
-        """Returns true if the other author can see this comment"""
-        raise NotImplementedError("TODO")
+        """Returns true if the other author can see this comment
+        As an author, comments on my friends-only posts are visible only to my friends and the comment's author."""
+        # ? how could a comment be made on a post that the author can't see?
+        if self.post.check_can_be_seen_by(other):
+            return True
+        if self.author == other:
+            return True
+        return False
 
     def get_likes(self) -> QuerySet[Like]:
         """Get all likes on this comment"""

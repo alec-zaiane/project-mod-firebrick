@@ -69,9 +69,10 @@ urlpatterns = [
      path("posts/<str:post_fqid>/comments",
           CommentsFqidView.as_view(),
           name="comments_fqid"),
-     path("authors/<str:author_uuid>/posts/<str:post_uuid>/comment/<str:comment_fqid>",
+     #     Technically this should be author/.../post/... in the class spec but i'm guessing that's a typo as it's `posts` everywhere else
+     path("authors/<str:author_uuid>/posts/<str:post_uuid>/comment/<str:comment_uuid_or_fqid>",
           CommentsRemoteFqidView.as_view(),
-          name="comments_remote_fqid"),
+          name="comments_fqid_on_local_post"),
 
      # Commented API
      path("authors/<str:author_uuid_or_fqid>/commented",

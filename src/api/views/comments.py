@@ -153,5 +153,5 @@ class CommentsRemoteFqidView(views.APIView):
         ]
     )
     @method_decorator(user_controller())
-    def get(self, request: Request, author_uuid: str, post_uuid: str, comment_fqid: str) -> Response:
+    def get(self, request: Request, author_uuid: str, post_uuid: str, comment_uuid_or_fqid: str) -> Response:
         raise NotImplementedError("TODO")

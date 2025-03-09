@@ -44,17 +44,34 @@ def get_object_by_fqid(fqid: str) -> Author | Post | Comment | Like:
 
         try:
             resolved = resolve(fqid)
-            if resolved.url_name == "post_author_specific":
-                found_post = PostDifferentiator.get_post_by_uuid(
-                    resolved.kwargs["post_uuid"])
-                # have to use getattr here because author is None if the post is soft-deleted
-                if str(getattr(found_post.author, "uuid", None)) == resolved.kwargs["author_uuid"]:
-                    return found_post
-                else:
-                    raise ObjectDoesNotExist("Post does not exist")
-            else:
-                raise NotImplementedError(
-                    f"{resolved.url_name} Is not yet supported in get_object_by_fqid")
+            match resolved.url_name:
+                case "post_author_specific":
+                    found_post = PostDifferentiator.get_post_by_uuid(
+                        resolved.kwargs["post_uuid"])
+                    # have to use getattr here because author is None if the post is soft-deleted
+                    if str(getattr(found_post.author, "uuid", None)) == resolved.kwargs["author_uuid"]:
+                        return found_post
+                    else:
+                        raise ObjectDoesNotExist("Post does not exist")
+                case "comments_fqid_on_local_post":
+                    comment_id = resolved.kwargs["comment_uuid_or_fqid"]
+                    author_uuid = resolved.kwargs["author_uuid"]
+                    post_uuid = resolved.kwargs["post_uuid"]
+                    # make sure that the author and post exist
+                    post = PostDifferentiator.get_post_by_uuid(post_uuid)
+                    author = Author.objects.get(uuid=author_uuid)
+                    if post.author != author:
+                        raise ObjectDoesNotExist(
+                            f"Post does not exist, {post.author} != {author}")
+                    # get the comment
+                    if differentiate_id(comment_id) == "UUID":
+                        return post.get_comments().get(uuid=comment_id)
+                    else:
+                        raise NotImplementedError(
+                            "FQID for comments is not yet supported")
+                case _:
+                    raise NotImplementedError(
+                        f"{resolved.url_name} Is not yet supported in get_object_by_fqid")
         except Resolver404:
             raise SyntaxError(
                 f"Invalid FQID, are you sure it's an /api/ targeting URL?, got {fqid}")
