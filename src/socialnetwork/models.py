@@ -115,8 +115,7 @@ class Author(models.Model):
 
     def __hash__(self) -> int:
         return hash(self.uuid)
-
-
+    
 class LocalAuthor(Author):
     """An author that is on this node"""
 
@@ -139,19 +138,36 @@ class LocalAuthor(Author):
         # TODO join the self.private_inbox and the public timeline
 
         base_query = Q(is_deleted=False)
-        public_posts = Q(visibility_type=Post.VisibilityTypes.PUBLIC)
-
-        private_inbox = Q(
-            is_in_private_inbox_of=self
+        following = self.following.all()
+        
+        public_posts = Q(
+            base_author__in=following,
+            visibility_type=Post.VisibilityTypes.PUBLIC
         )
 
-        query = base_query & (public_posts | private_inbox)
+        unlisted_posts = Q(
+            base_author__in=following,
+            visibility_type=Post.VisibilityTypes.UNLISTED
+        )
+        
+        friends = [author for author in following if self.get_is_friends_with(author)]
+        friends_posts = Q(
+            base_author__in=friends,
+            visibility_type=Post.VisibilityTypes.FRIENDS_ONLY
+        )
+        
+        # private_inbox = Q(
+        #     is_in_private_inbox_of=self
+        # )
+
+        query = base_query & (public_posts | unlisted_posts | friends_posts)
 
         text_posts = PostTextBased.objects.filter(query)
+        media_posts = PostMediaBased.objects.filter(query)
 
         # Combine and sort all posts
         all_posts: list[Post] = sorted(
-            chain(text_posts),
+            chain(text_posts. media_posts),
             key=lambda post: post.date_created,
             reverse=True
         )
