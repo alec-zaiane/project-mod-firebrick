@@ -1,6 +1,5 @@
 from django.test import tag
-from django.contrib.auth.models import User
-from socialnetwork.models import LocalAuthor, PostTextBased
+from socialnetwork.models import PostTextBased
 from .utils_for_tests import GeneralUserStoryApiTest
 
 @tag("US-Visibility")
