@@ -86,6 +86,9 @@ urlpatterns = [
      path("authors/<str:author_uuid>/posts/<str:post_uuid>/comment/<str:comment_uuid_or_fqid>",
           CommentsRemoteFqidView.as_view(),
           name="comments_fqid_on_local_post"),
+     path("posts/<str:post_uuid>/internal_comments",
+          PostCommentInternalView.as_view(),
+          name="post_comment_internal"),
 
      # Commented API
      path("authors/<str:author_uuid_or_fqid>/commented",
@@ -108,6 +111,9 @@ urlpatterns = [
      path("authors/<str:author_uuid>/posts/<str:post_uuid>/comments/<str:comment_fqid>/likes",
           LikesOnCommentView.as_view(),
           name="likes_on_comment"),
+     path("posts/<str:post_uuid>/internal_likes",
+          LikePostInternalView.as_view(),
+          name="like_post_internal"),
 
      # Liked API
      path("authors/<str:author_uuid_or_fqid>/liked",
@@ -122,11 +128,16 @@ urlpatterns = [
           LikedSpecificLikeView.as_view(),
           name="liked_specific_like"),
 
-     path("follow/request/<str:target_id>/", SendFollowRequestView.as_view(), name="send_follow_request"),
-     path("follow/request/<uuid:request_id>/approve/", ApproveFollowRequestView.as_view(), name="approve_follow_request"),
-     path("follow/request/<uuid:request_id>/deny/", DenyFollowRequestView.as_view(), name="deny_follow_request"),
-     path("follow/<str:target_id>/unfollow/", UnfollowView.as_view(), name="unfollow"),
-     path("follow/requests/", ListFollowRequestsView.as_view(), name="list_follow_requests"),
+     path("follow/request/<str:target_id>/",
+          SendFollowRequestView.as_view(), name="send_follow_request"),
+     path("follow/request/<uuid:request_id>/approve/",
+          ApproveFollowRequestView.as_view(), name="approve_follow_request"),
+     path("follow/request/<uuid:request_id>/deny/",
+          DenyFollowRequestView.as_view(), name="deny_follow_request"),
+     path("follow/<str:target_id>/unfollow/",
+          UnfollowView.as_view(), name="unfollow"),
+     path("follow/requests/", ListFollowRequestsView.as_view(),
+          name="list_follow_requests"),
      path("follow/followers/", ListFollowersView.as_view(), name="list_followers"),
      path("follow/following/", ListFollowingView.as_view(), name="list_following"),
      path("follow/friends/", ListFriendsView.as_view(), name="list_friends"),
