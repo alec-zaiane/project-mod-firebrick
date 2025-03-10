@@ -86,6 +86,9 @@ urlpatterns = [
      path("authors/<str:author_uuid>/posts/<str:post_uuid>/comment/<str:comment_uuid_or_fqid>",
           CommentsRemoteFqidView.as_view(),
           name="comments_fqid_on_local_post"),
+     path("posts/<str:post_uuid>/internal_comments",
+          PostCommentInternalView.as_view(),
+          name="post_comment_internal"),
 
      # Commented API
      path("authors/<str:author_uuid_or_fqid>/commented",

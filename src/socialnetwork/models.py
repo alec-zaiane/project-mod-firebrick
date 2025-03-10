@@ -282,6 +282,11 @@ class Post(models.Model):
     def like_count(self) -> int:
         return self.get_likes().count()
 
+    @property
+    def comments(self) -> QuerySet[Comment]:
+        # property for django templater
+        return self.get_comments()
+
     # Methods
     def _finalize_edit(self) -> None:
         """Call this after updating a post's content"""

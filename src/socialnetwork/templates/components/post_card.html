@@ -70,9 +70,24 @@
                 <input type="hidden" name="_method" value="POST">
                 <input type="hidden" name="_after_action" value="reload">
                 <button type="submit">Like</button>
-            </form
+            </form>
         </div>
-        {{ post.comments }}
+        <div class="comments-box">
+            {% for comment in post.comments %}
+                <div class="post-comment">
+                    <a href="{% url 'socialnetwork:author_profile' comment.author.uuid %}" class="names">
+                        <h5 class="display-name">{{ comment.author.display_name }}</h5>
+                    </a>
+                    <span class="comment-content">{{ comment.comment }}</span>
+                </div>
+            {% endfor %}
+            <form name="generic-form" action="{% url 'api:post_comment_internal' post.uuid %}">
+                {% csrf_token %}
+                <input type="hidden" name="_method" value="POST">
+                <input type="hidden" name="_after_action" value="reload">
+                <textarea name="comment" placeholder="Add a comment..."></textarea>
+                <button type="submit">Comment</button>
+        </div>
         {# Comments, likes #}
     </footer>
 

@@ -3,7 +3,7 @@ from .inbox import InboxView
 from .authors import AuthorsView, AuthorView
 from .followers import FollowersView, FollowersSpecificView
 from .posts import PostAuthorSpecificView, PostByFqidView, PostCreationView, ImagePostAuthorSpecificView, ImagePostByFqidView
-from .comments import CommentsSerialView, CommentsFqidView, CommentsRemoteFqidView
+from .comments import CommentsSerialView, CommentsFqidView, CommentsRemoteFqidView, PostCommentInternalView
 from .commented import CommentedAuthorView, CommentedBySerialView, CommentedFqidView
 from .likes import LikesOnPostBySerialView, LikesOnPostByFqidView, LikesOnCommentView, LikePostInternalView
 from .liked import LikedByAuthorView, LikedByAuthorSpecificLikeView, LikedSpecificLikeView
@@ -32,5 +32,7 @@ __all__ = [
     "LikedByAuthorView",
     "LikedByAuthorSpecificLikeView",
     "LikedSpecificLikeView",
-    "LikePostInternalView",
+
+    "LikePostInternalView",  # todo clean these up
+    "PostCommentInternalView",  # ^
 ]
