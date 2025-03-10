@@ -45,12 +45,19 @@ class Author(models.Model):
         'self', symmetrical=False, related_name='followers', blank=True)
     bio = models.TextField(blank=True)
     display_name = models.CharField(max_length=128)
-    github_url = models.URLField()
+    # 2048 is the character limit for URLs
+    profile_image = models.URLField(blank=True)
 
     # Computed Properties
     @property
     def followers(self) -> models.QuerySet[Author]:
         return Author.objects.filter(following=self)
+
+    @property
+    def friends(self) -> list[Author]:
+        following_set = set(self.following.all())
+        followers_set = set(self.followers.all())
+        return list(following_set.intersection(followers_set))
 
     @property
     def username(self) -> str:
@@ -115,7 +122,6 @@ class Author(models.Model):
     def __hash__(self) -> int:
         return hash(self.uuid)
 
-
 class LocalAuthor(Author):
     """An author that is on this node"""
 
@@ -138,13 +144,30 @@ class LocalAuthor(Author):
         # TODO join the self.private_inbox and the public timeline
 
         base_query = Q(is_deleted=False)
-        public_posts = Q(visibility_type=Post.VisibilityTypes.PUBLIC)
-
-        private_inbox = Q(
-            is_in_private_inbox_of=self
+        following = self.following.all()
+        
+        # Visibility types
+        public_posts = Q(
+            visibility_type=Post.VisibilityTypes.PUBLIC
         )
 
-        query = base_query & (public_posts | private_inbox)
+        unlisted_posts = Q(
+            base_author__in=following,
+            visibility_type=Post.VisibilityTypes.UNLISTED
+        )
+        
+        # Get friends (mutual followers)
+        friends = [author for author in following if self.get_is_friends_with(author)]
+        friends_posts = Q(
+            base_author__in=friends,
+            visibility_type=Post.VisibilityTypes.FRIENDS_ONLY
+        )
+        
+        # private_inbox = Q(
+        #     is_in_private_inbox_of=self
+        # )
+
+        query = base_query & (public_posts | unlisted_posts | friends_posts)
 
         text_posts = PostTextBased.objects.filter(query)
 
@@ -176,9 +199,22 @@ class FollowRequest(models.Model):
     uuid = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False)
     actor = models.ForeignKey(
-        Author, on_delete=models.CASCADE, related_name="follow_requests_requested")
+        LocalAuthor,
+        on_delete=models.CASCADE,
+        related_name="follow_requests_requested"
+    )
     target = models.ForeignKey(
-        Author, on_delete=models.CASCADE, related_name="follow_requests_pending")
+        LocalAuthor,
+        on_delete=models.CASCADE,
+        related_name="follow_requests_pending"
+    )
+
+    @property
+    def actor_username(self) -> str:
+        assert isinstance(self.actor, LocalAuthor)
+        return self.actor.user.username
+
+
 
 
 class Post(models.Model):
@@ -260,8 +296,9 @@ class Post(models.Model):
         if self.visibility_type == self.VisibilityTypes.PUBLIC:
             return True
         elif self.visibility_type == self.VisibilityTypes.UNLISTED:
-            return False
+            return True
         elif self.visibility_type == self.VisibilityTypes.FRIENDS_ONLY:
+            # Friends-only posts visible only to friends
             return self.author.get_is_friends_with(other)
         else:
             raise ValueError(

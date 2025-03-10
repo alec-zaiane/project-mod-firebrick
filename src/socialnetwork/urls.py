@@ -2,6 +2,7 @@ from django.urls import path
 from django.views.generic import RedirectView, TemplateView
 from . import views
 from . import views_api
+from .views import author_profile_view
 
 app_name = "socialnetwork"
 urlpatterns = [
@@ -37,7 +38,27 @@ urlpatterns = [
 
     path("unauthorized",
          TemplateView.as_view(template_name="registration/unauthorized.html"),
-         name="unauthorized")
+         name="unauthorized"),
+
+     path("follow/requests/",
+          views.follow_requests_page,
+          name="follow_requests_page"),
+
+     path("author/<uuid:author_uuid>/followers/",
+          views.followers_list_view,
+          name="followers_list"),
+
+     path("author/<uuid:author_uuid>/following/",
+          views.following_list_view,
+          name="following_list"),
+
+     path("author/<uuid:author_uuid>/friends/",
+          views.friends_list_view,
+          name="friends_list"),
+
+     path("search/",
+          views.search_authors_view,
+          name="search_authors"),
 
 ]
 

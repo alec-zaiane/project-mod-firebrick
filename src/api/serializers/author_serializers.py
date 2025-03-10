@@ -30,8 +30,6 @@ class AuthorSerializer(serializers.Serializer[Author]):
         "host":"http://nodeaaaa/api/",
         // How the user would like the name to be displayed
         "displayName":"Greg Johnson",
-        // URL of the user's github
-        "github": "http://github.com/gjohnson",
         // URL of the user's profile image (external image in this example)
         "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
         // URL of the user's HTML profile page
@@ -45,8 +43,6 @@ class AuthorSerializer(serializers.Serializer[Author]):
     id = serializers.URLField()
     host = serializers.URLField()
     displayName = serializers.CharField(required=False)
-    github = serializers.URLField(
-        validators=[custom_validators.ContainsValidator("github.com")])
     profileImage = serializers.URLField()
     page = serializers.URLField()
 
@@ -64,16 +60,13 @@ class AuthorSerializer(serializers.Serializer[Author]):
             id = f"{THIS_NODE_URL}{reverse("api:author", args=[author.uuid])}"
             host = f"{THIS_NODE_URL}{reverse("api:root")}"
             displayName = author.display_name
-            github = author.github_url
-            # TODO give authors a profile image field
-            profileImage = f"https://fastly.picsum.photos/id/391/200/200.jpg"
+            profileImage = author.profile_image
             page = f"{THIS_NODE_URL}{reverse("socialnetwork:author_profile", args=[author.uuid])}"
             super().__init__(data={
                 "type": type,
                 "id": id,
                 "host": host,
                 "displayName": displayName,
-                "github": github,
                 "profileImage": profileImage,
                 "page": page
             })
@@ -120,7 +113,6 @@ class AuthorsSerializer(serializers.Serializer[Any]):
                 "id":"http://nodeaaaa/api/authors/111",
                 "host":"http://nodeaaaa/api/",
                 "displayName":"Greg Johnson",
-                "github": "http://github.com/gjohnson",
                 "profileImage": "https://i.imgur.com/k7XVwpB.jpeg",
                 "page": "http://nodeaaaa/authors/greg"
             },

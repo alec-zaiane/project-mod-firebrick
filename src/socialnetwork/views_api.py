@@ -52,7 +52,7 @@ def api_textpost_create(request: Request, viewer: Optional[models.LocalAuthor]) 
         return get_unauthenticated_response_api()
 
     data = request.data.copy()
-    data["base_author"] = viewer.uuid
+    data["base_author"] = str(viewer.uuid)
 
     serializer = serializers.PostTextBasedSerializer(data=data)
 
@@ -78,9 +78,8 @@ def api_author_update(request: Request, target_author_uuid: str, viewer: Optiona
     expects JSON
         {
             "username":<updated username>:str (optional)
-            "first_name":<updated first name>:str (optional)
-            "last_name":<updated last name>:str (optional)
-            "email":<updated email>:str (optional)
+            "display_name":<updated displayname>:str (optional)
+            "profile_image":<updated profileimage url>:str (optional)
         }
 
     will return a 404 on not found
