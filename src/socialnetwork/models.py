@@ -122,7 +122,6 @@ class Author(models.Model):
     def __hash__(self) -> int:
         return hash(self.uuid)
 
-
 class LocalAuthor(Author):
     """An author that is on this node"""
 
@@ -145,13 +144,30 @@ class LocalAuthor(Author):
         # TODO join the self.private_inbox and the public timeline
 
         base_query = Q(is_deleted=False)
-        public_posts = Q(visibility_type=Post.VisibilityTypes.PUBLIC)
-
-        private_inbox = Q(
-            is_in_private_inbox_of=self
+        following = self.following.all()
+        
+        # Visibility types
+        public_posts = Q(
+            visibility_type=Post.VisibilityTypes.PUBLIC
         )
 
-        query = base_query & (public_posts | private_inbox)
+        unlisted_posts = Q(
+            base_author__in=following,
+            visibility_type=Post.VisibilityTypes.UNLISTED
+        )
+        
+        # Get friends (mutual followers)
+        friends = [author for author in following if self.get_is_friends_with(author)]
+        friends_posts = Q(
+            base_author__in=friends,
+            visibility_type=Post.VisibilityTypes.FRIENDS_ONLY
+        )
+        
+        # private_inbox = Q(
+        #     is_in_private_inbox_of=self
+        # )
+
+        query = base_query & (public_posts | unlisted_posts | friends_posts)
 
         text_posts = PostTextBased.objects.filter(query)
 
@@ -280,8 +296,9 @@ class Post(models.Model):
         if self.visibility_type == self.VisibilityTypes.PUBLIC:
             return True
         elif self.visibility_type == self.VisibilityTypes.UNLISTED:
-            return False
+            return True
         elif self.visibility_type == self.VisibilityTypes.FRIENDS_ONLY:
+            # Friends-only posts visible only to friends
             return self.author.get_is_friends_with(other)
         else:
             raise ValueError(
