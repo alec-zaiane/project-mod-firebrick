@@ -207,11 +207,12 @@ a:link:active, a:visited:active  {
 .navbar {
     position: fixed;
     display: flex;
-    justify-content: center;
+    justify-content: flex-end;
 }
 
 .navbar-contents {
     padding: 20px;
+    padding-right: 40px;
     display: flex;
     flex-direction: column;
     position: fixed;
