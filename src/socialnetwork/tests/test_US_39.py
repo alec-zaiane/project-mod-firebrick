@@ -39,6 +39,8 @@ class TestUserStory39(GeneralUserStoryApiTest):
         assert first_like is not None  # for mypy
         assert first_like.author is not None  # for mypy
         self.assertEqual(first_like.author.uuid, self.sample_authors[0].uuid)
+        self.assertTrue(str(
+            self.sample_authors[0].uuid) in self.sample_posts[1][0].get_likes_author_uuid_strings())
 
     @tag("check-slow", "security")
     def test_cannot_like_inaccessible_post(self) -> None:
@@ -58,6 +60,8 @@ class TestUserStory39(GeneralUserStoryApiTest):
         self.assertEqual(models.Like.objects.count(), 0)
         self.assertEqual(models.PostTextBased.objects.get(
             uuid=self.sample_posts[1][0].uuid).get_likes().count(), 0)
+        self.assertFalse(str(
+            self.sample_authors[0].uuid) in self.sample_posts[1][0].get_likes_author_uuid_strings())
 
     @tag("check-slow", "security")
     @skip("Waiting for implmentation of following")

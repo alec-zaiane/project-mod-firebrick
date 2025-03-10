@@ -338,6 +338,13 @@ class Post(models.Model):
         found_differentiators = self._get_differentiators()
         return Like.objects.filter(target_post_differentiator__in=found_differentiators)
 
+    def get_likes_author_uuid_strings(self) -> list[str]:
+        """Get all author uuids on this post"""
+        authors_list: list[str] = list()
+        for like in self.get_likes():
+            authors_list.append(str(like.author.uuid))
+        return authors_list
+
     def get_comments(self) -> QuerySet[Comment]:
         """Get all comments on this post"""
         found_differentiators = self._get_differentiators()

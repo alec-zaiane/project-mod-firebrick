@@ -243,17 +243,7 @@ a:link:active, a:visited:active  {
 }
 
 .navbar-contents .logout {
-    background: #d91f2b;
-    color: var(--color);
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-style: bold;
-    border: 0;
-    cursor: pointer;
-}
-
-.navbar-contents .logout {
-    background: #d91f2b;
+    background: firebrick;
     color: var(--color);
     padding: 6px 12px;
     border-radius: 20px;
@@ -303,8 +293,15 @@ a:link:active, a:visited:active  {
     height: 100%;
     display: block;
     position: absolute;
-    left: 0;
-    top: 0;
+    left: 0px;
+    top: 0px;
+}
+
+.profile .post-card .post-view {
+    width: calc(100% + 40px);
+    height: calc(100% + 40px);
+    left: -20px;
+    top: -20px;
 }
 
 .post-card .post-view:hover {
@@ -338,10 +335,6 @@ a:link:active, a:visited:active  {
     text-decoration: underline;
 }
 
-.names display-name {
-
-}
-
 .names .username {
     color: #7b7b7b;
 }
@@ -351,6 +344,8 @@ a:link:active, a:visited:active  {
     gap: 8px;
     pointer-events: all;
     align-items: center;
+    color: #7b7b7b;
+    font-size: 14px;
 }
 
 .post-card .post-meta .edit-pencil {
@@ -365,6 +360,8 @@ a:link:active, a:visited:active  {
     align-items: center;
     white-space: nowrap;
     gap: 6px;
+    color: #7b7b7b;
+    font-size: 14px;
 }
 
 .post-card footer .visibility {
@@ -460,7 +457,7 @@ a:link:active, a:visited:active  {
     color: #d91f2b;
 }
 
-.post-card .post-content img {
+.post-card .post-content img, #preview img {
     max-width: 100%;
     border-radius: 20px;
     border: 0.1px solid #242729;
@@ -493,11 +490,116 @@ a:link:active, a:visited:active  {
     position: relative;
     z-index: 1;
     margin-top: 6px;
+    pointer-events: none;
 }
 
 .post-card footer .post-info {
     display: flex;
     gap: 6px;
+}
+
+.post-card .likes-comments {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-start;
+}
+
+.post-card .comments-box {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.post-card .comments-icon {
+    width: 20px;
+}
+
+.post-card .likes-box {
+    display: flex;
+    flex-direction: row;
+    gap: 6px;
+}
+
+.post-card .like-button {
+    border: 0;
+    background: 0;
+    padding: 0;
+    pointer-events: all;
+    cursor: pointer;
+}
+
+.post-card .like-button:hover {
+    filter: drop-shadow(0 0 5px firebrick);
+}
+
+.post-card .like-icon {
+    width: 20px;
+}
+
+.post-card .liked {
+    display: none;
+}
+
+.post-card .like-button:disabled .like {
+    display: none;
+}
+
+.post-card .like-button:disabled .liked {
+    display: block;
+}
+
+.post-full .likes-comments {
+    margin: 20px 0 10px 0;
+    padding: 12px;
+    border-top: 1px solid #242729;
+    border-bottom: 1px solid #242729;
+}
+
+.comments-section {
+    margin: 0 -20px;
+    pointer-events: all;
+}
+
+.add-comment {
+    padding: 20px;
+    border-bottom: 1px solid #242729;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.add-comment-text {
+    flex-grow: 1;
+    background: 0;
+    border: 0;
+    color: var(--color);
+    overflow-y: hidden;
+    resize: none;
+    font-size: 16px;
+    font-family: sans-serif;
+}
+
+.add-comment-text:focus-visible {
+    outline: none;
+}
+
+.post-comment {
+    padding: 20px;
+    border-bottom: 1px solid #242729;
+}
+
+.submit-comment {
+    background: firebrick;
+    color: var(--color);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-style: bold;
+    border: 0;
+    cursor: pointer;
+}
+
+.submit-comment:hover {
+    background: rgb(117, 16, 23);
 }
 
 .profile-image {

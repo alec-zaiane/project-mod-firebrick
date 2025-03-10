@@ -69,32 +69,49 @@
                 {% endif %}
             </span>
         </div>
-        {# Comments, likes #}
-        <div class="likes-box">
-            <span class="likes-count">likes: {{ post.like_count }}</span>
-            <form name="generic-form" action="{% url 'api:like_post_internal' post.uuid %}">
+        <div class="likes-comments">
+            <div class="comments-box">
+                <img class="comments-icon" src="{% static 'svg/comment.svg' %}" />
+                <span class="comments-count">{{post.comments|length}}</span>
+            </div>
+            <div class="likes-box">
+                <form name="generic-form" action="{% url 'api:like_post_internal' post.uuid %}">
+                    {% csrf_token %}
+                    {{ viewer.uuid|json_script:"viewer" }}
+                    {{ post.get_likes_author_uuid_strings|json_script:"like_authors" }}
+                    <input type="hidden" name="_method" value="POST">
+                    <input type="hidden" name="_after_action" value="reload">
+                    <button class="like-button" type="submit">
+                        <img class="like-icon like" src="{% static 'svg/like.svg' %}" />
+                        <img class="like-icon liked" src="{% static 'svg/liked.svg' %}" />
+                    </button>
+                </form>
+                <span class="likes-count">{{ post.like_count }}</span>
+            </div>
+        </div>
+        <section class="comments-section">
+            <form class="add-comment" name="generic-form" action="{% url 'api:post_comment_internal' post.uuid %}">
                 {% csrf_token %}
                 <input type="hidden" name="_method" value="POST">
                 <input type="hidden" name="_after_action" value="reload">
-                <button type="submit">Like</button>
+                {% if viewer.profile_image %}
+                    <img class="profile-image" src="{{ viewer.profile_image }}"/>
+                {% endif %}
+                <textarea class="add-comment-text" name="comment" placeholder="Add a comment..."></textarea>
+                <button class="submit-comment" type="submit">Comment</button>
             </form>
-        </div>
-        <div class="comments-box">
             {% for comment in post.comments %}
                 <div class="post-comment">
                     <a href="{% url 'socialnetwork:author_profile' comment.author.uuid %}" class="names">
-                        <h5 class="display-name">{{ comment.author.display_name }}</h5>
+                        {% if comment.author.profile_image %}
+                        <img class="profile-image" src="{{ comment.author.profile_image }}"/>
+                        {% endif %}
+                        <h3 class="display-name">{{ comment.author.display_name }}</h3>
                     </a>
                     <span class="comment-content">{{ comment.comment }}</span>
                 </div>
             {% endfor %}
-            <form name="generic-form" action="{% url 'api:post_comment_internal' post.uuid %}">
-                {% csrf_token %}
-                <input type="hidden" name="_method" value="POST">
-                <input type="hidden" name="_after_action" value="reload">
-                <textarea name="comment" placeholder="Add a comment..."></textarea>
-                <button type="submit">Comment</button>
-        </div>
+        </section>
     </footer>
 
 </article>
