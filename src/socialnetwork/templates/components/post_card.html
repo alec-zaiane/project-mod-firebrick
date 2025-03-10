@@ -2,7 +2,13 @@
 
 <article class="post-card">
     <header>
-        <h3>{{ post.author.username }}</h3>
+        <a href="{% url 'socialnetwork:author_profile' post.author.uuid %}" class="names">
+            {% if post.author.profile_image %}
+            <img class="profile-image" src="{{ post.author.profile_image }}"/>
+            {% endif %}
+            <h3 class="display-name">{{ post.author.display_name }}</h3>
+            <h5 class="username">{{ post.author.username }}</h5>
+        </a>
         <span class="post-meta">
             Posted: {{ post.date_created|date:"F j, Y, g:i a" }}
             {% if post.date_edited %}

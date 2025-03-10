@@ -73,14 +73,8 @@ class LikeSerializer(serializers.Serializer[Any]):
         except ValueError:
             raise serializers.ValidationError("Object does not exist")
         if isinstance(target, Post):
-            if isinstance(target, PostTextBased):
-                post_diff = PostDifferentiator.objects.create(
-                    _post_text=target)
-            elif isinstance(target, PostMediaBased):
-                post_diff = PostDifferentiator.objects.create(
-                    _post_media=target)
-            else:
-                raise ValueError("Unsupported post type")
+            post_diff = PostDifferentiator.create_differentiator_for_post(
+                target)
             return Like.objects.create(author=author, target_post_differentiator=post_diff)
         elif isinstance(target, Comment):
             return Like.objects.create(author=author, target_comment=target)

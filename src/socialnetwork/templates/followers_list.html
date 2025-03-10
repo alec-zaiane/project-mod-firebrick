@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Followers of {{ author.username }}{% endblock %}
+{% block content %}
+<main class="followers-list">
+    <h2>Followers of {{ author.username }}</h2>
+    {% if followers %}
+        <ul>
+            {% for follower in followers %}
+                <li><a href="{% url 'socialnetwork:author_profile' follower.uuid %}">{{ follower.username }}</a></li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No followers yet.</p>
+    {% endif %}
+</main>
+{% endblock %}
+

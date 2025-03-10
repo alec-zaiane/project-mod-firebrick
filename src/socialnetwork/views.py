@@ -7,6 +7,12 @@ from django.urls import reverse
 
 from socialnetwork.utils.user_control_decorator import user_controller
 from . import models
+from socialnetwork.models import FollowRequest
+
+from django.http import JsonResponse
+from django.db.models import Q
+from .models import LocalAuthor
+from django.contrib.auth.models import AnonymousUser
 
 from itertools import chain
 
@@ -63,12 +69,39 @@ def author_profile_view(request: HttpRequest, target_author_uuid: str, viewer: O
     # Sort posts by date_created, newest first
     author_posts_sorted = sorted(combined_posts, key=lambda post: post.date_created, reverse=True)
     
+    followers = target_author.followers.all()
+    following = target_author.following.all()
+    friends = target_author.friends
+
+    follow_requests_pending = False
+    if viewer:
+        follow_requests_pending = FollowRequest.objects.filter(actor=viewer, target=target_author).exists()
+
     return render(request, "author_profile.html", {
         "author": target_author,
         "viewer": viewer,
-        "posts": author_posts_sorted
+        "posts": author_posts_sorted,
+        "followers": followers,
+        "following": following,
+        "friends": friends,
+        "follow_requests_pending": follow_requests_pending,
     })
 
+
+    is_following = False
+    if viewer:
+        is_following = target_author.uuid in viewer.following.values_list("uuid", flat=True)
+
+    return render(request, "author_profile.html", {
+        "author": target_author,
+        "viewer": viewer,
+        "posts": author_posts_sorted,
+        "followers": followers,
+        "following": following,
+        "friends": friends,
+        "follow_requests_pending": follow_requests_pending,
+        "is_following": is_following,
+    })
 
 @user_controller(must_be_logged_in=True, must_be_author=True)
 def local_author_modify_view(request: HttpRequest, target_author_uuid: str, viewer: Optional[models.LocalAuthor] = None) -> HttpResponse:
@@ -99,3 +132,59 @@ def edit_post_view(request: HttpRequest, post_uuid: str, viewer: models.LocalAut
         return HttpResponse("You do not have permission to edit this post.", status=403)
 
     return render(request, "edit_post.html", {"post": post, "author": viewer})
+
+@user_controller(must_be_logged_in=True, must_be_author=True)
+def followers_list_view(request: HttpRequest, author_uuid: str, viewer: Optional[models.LocalAuthor] = None) -> HttpResponse:
+    """View the list of followers for a given author"""
+    author = get_object_or_404(models.LocalAuthor, uuid=author_uuid)
+    followers = models.LocalAuthor.objects.filter(following=author)
+    return render(request, "followers_list.html", {"author": author, "viewer": viewer, "followers": followers})
+
+
+
+@user_controller(must_be_logged_in=True, must_be_author=True)
+def following_list_view(request: HttpRequest, author_uuid: str, viewer: Optional[models.LocalAuthor] = None) -> HttpResponse:
+    """View the list of users an author is following"""
+    author = get_object_or_404(models.LocalAuthor, uuid=author_uuid)
+    following = models.LocalAuthor.objects.filter(uuid__in=author.following.values_list("uuid", flat=True))
+    return render(request, "following_list.html", {"author": author, "viewer": viewer, "following": following})
+
+
+@user_controller(must_be_logged_in=True, must_be_author=True)
+def friends_list_view(request: HttpRequest, author_uuid: str, viewer: Optional[models.LocalAuthor] = None) -> HttpResponse:
+    """View the list of friends (mutual followers) for a given author"""
+    author = get_object_or_404(models.LocalAuthor, uuid=author_uuid)
+    friends = models.LocalAuthor.objects.filter(uuid__in=[friend.uuid for friend in author.friends])
+    return render(request, "friends_list.html", {"author": author, "viewer": viewer,"friends": friends})
+
+
+
+def follow_requests_page(request: HttpRequest) -> HttpResponse:
+    """
+    Displays a page with the user's pending follow requests.
+
+    Returns:
+        HttpResponse: Rendered follow requests page, or redirects if user is not authenticated.
+    """
+    if isinstance(request.user, AnonymousUser) or not request.user.is_authenticated:
+        return HttpResponse("Unauthorized: Please log in to view follow requests.", status=401)
+
+    current_author = request.user.author
+    follow_requests = FollowRequest.objects.filter(target=current_author)
+    return render(request, "follow_requests.html", {"follow_requests": follow_requests})
+
+def search_authors_view(request: HttpRequest) -> JsonResponse:
+    """
+    Handles searching for authors by username or display name.
+
+    Returns:
+        JsonResponse: JSON response containing a list of matching authors.
+    """
+    query = request.GET.get("q", "")
+    if query:
+        authors = LocalAuthor.objects.filter(Q(user__username__icontains=query) | Q(display_name__icontains=query))
+        results = [{"uuid": str(author.uuid), "username": author.user.username, "display_name": author.display_name} for author in authors]
+    else:
+        results = []
+
+    return JsonResponse({"authors": results})

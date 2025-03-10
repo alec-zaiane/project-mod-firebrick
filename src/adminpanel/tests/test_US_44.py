@@ -77,9 +77,8 @@ class TestUserStory44(NodeAdminUserStoryApiTest):
         # ie. send `data` to the api, check if `author.property_name` == `new_value`
         updates: list[tuple[dict[str, Any], tuple[str, str]]] = [
             ({"username": "new_username"}, ("username", "new_username")),               # noqa
-            ({"first_name": "new_first_name"}, ("user.first_name", "new_first_name")),  # noqa
-            ({"last_name": "new_last_name"}, ("user.last_name", "new_last_name")),      # noqa
-            ({"email": "new@new.com"}, ("user.email", "new@new.com")),                  # noqa
+            ({"display_name": "new_display_name"}, ("display_name", "new_display_name")),  # noqa
+            ({"profile_image": "new_url"}, ("profile_image", "new_url")),                # noqa
             ({"bio": "new_bio"}, ("bio", "new_bio"))                                    # noqa
         ]
         self.initialize_sample_authors(len(updates))
@@ -88,7 +87,6 @@ class TestUserStory44(NodeAdminUserStoryApiTest):
             for a in attr.split("."):
                 obj = getattr(obj, a)
             return obj
-
 
         for (data, (prop_name, expected)), author in zip(updates, self.sample_authors):
             url = reverse("socialnetwork:api_author_update",

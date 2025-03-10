@@ -16,13 +16,13 @@ class PostTextBasedSerializer(PostSerializer):
     class Meta:
         model = models.PostTextBased
         fields = ["content", "base_author", "visibility_type", "post_type"]
-        read_only_fields = ["base_author"]
+        # read_only_fields = ["base_author"]
 
 
 class UserSerializer(serializers.ModelSerializer[User]):
     class Meta:
         model = User
-        fields = ["username", "email", "first_name", "last_name"]
+        fields = ["username"]
 
 # https://blog.devgenius.io/nested-serializers-in-django-rest-framework-6b36bf011074
 
@@ -55,10 +55,11 @@ class LocalAuthorSerializer(serializers.ModelSerializer[models.LocalAuthor]):
     def update(self, instance: models.LocalAuthor, validated_data: dict[str, Any]) -> Any:
         user = instance.user
         user.username = validated_data.get("username", user.username)
-        user.email = validated_data.get("email", user.email)
-        user.first_name = validated_data.get("first_name", user.first_name)
-        user.last_name = validated_data.get("last_name", user.last_name)
         user.save()
+        instance.profile_image = validated_data.get(
+            "profile_image", instance.profile_image)
+        instance.display_name = validated_data.get(
+            "display_name", instance.display_name)
         instance.bio = validated_data.get("bio", instance.bio)
         instance.save()
 
@@ -77,3 +78,15 @@ class PostMediaBasedSerializer(PostSerializer):
         model = models.PostMediaBased
         fields = ["image", "base_author", "visibility_type"]
         read_only_fields = ["base_author"]
+
+
+class FollowRequestSerializer(serializers.ModelSerializer[models.FollowRequest]):
+    """
+    Serializer for FollowRequest model.
+    """
+    actor = LocalAuthorSerializer(read_only=True)
+    target = LocalAuthorSerializer(read_only=True)
+
+    class Meta:
+        model = models.FollowRequest
+        fields = ['uuid', 'actor', 'target']

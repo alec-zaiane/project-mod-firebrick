@@ -5,6 +5,19 @@ from django.views import View
 
 from drf_spectacular import views as spectacular_views
 
+from api.views.search import AuthorSearchView
+
+from api.views.follow import (
+    SendFollowRequestView,
+    ApproveFollowRequestView,
+    DenyFollowRequestView,
+    UnfollowView,
+    ListFollowRequestsView,
+    ListFollowersView,
+    ListFollowingView,
+    ListFriendsView,
+)
+
 app_name = "api"
 urlpatterns = [
     path("", View.as_view(), name="root"),
@@ -69,9 +82,10 @@ urlpatterns = [
      path("posts/<str:post_fqid>/comments",
           CommentsFqidView.as_view(),
           name="comments_fqid"),
-     path("authors/<str:author_uuid>/post/<str:post_uuid>/comment/<str:remote_comment_fqid>",
+     #     Technically this should be author/.../post/... in the class spec but i'm guessing that's a typo as it's `posts` everywhere else
+     path("authors/<str:author_uuid>/posts/<str:post_uuid>/comment/<str:comment_uuid_or_fqid>",
           CommentsRemoteFqidView.as_view(),
-          name="comments_remote_fqid"),
+          name="comments_fqid_on_local_post"),
 
      # Commented API
      path("authors/<str:author_uuid_or_fqid>/commented",
@@ -107,4 +121,15 @@ urlpatterns = [
      path("liked/<str:like_fqid>",
           LikedSpecificLikeView.as_view(),
           name="liked_specific_like"),
+
+     path("follow/request/<str:target_id>/", SendFollowRequestView.as_view(), name="send_follow_request"),
+     path("follow/request/<uuid:request_id>/approve/", ApproveFollowRequestView.as_view(), name="approve_follow_request"),
+     path("follow/request/<uuid:request_id>/deny/", DenyFollowRequestView.as_view(), name="deny_follow_request"),
+     path("follow/<str:target_id>/unfollow/", UnfollowView.as_view(), name="unfollow"),
+     path("follow/requests/", ListFollowRequestsView.as_view(), name="list_follow_requests"),
+     path("follow/followers/", ListFollowersView.as_view(), name="list_followers"),
+     path("follow/following/", ListFollowingView.as_view(), name="list_following"),
+     path("follow/friends/", ListFriendsView.as_view(), name="list_friends"),
+
+     path("search/authors/", AuthorSearchView.as_view(), name="author_search"),
 ]
