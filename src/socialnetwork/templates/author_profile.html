@@ -13,11 +13,50 @@
     <p>This is your profile</p>
     {% else %}
     <p>This is not your profile</p>
-    {% endif %}
+            {% if is_following %}
+                <form name="generic-form" action="{% url 'api:unfollow' author.uuid %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="_method" value="POST">
+                    <input type="hidden" name="_after_action" value="reload">
+                    <button type="submit">Unfollow</button>
+                    <div name="response-detail"></div>
+                    <div name="errorresponse-error"></div>
+                </form>
+            {% else %}
+                {% if follow_requests_pending %}
+                    <button disabled>Follow Request Sent</button>
+                {% else %}
+                    <form name="generic-form" action="{% url 'api:send_follow_request' author.uuid %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="_method" value="POST">
+                        <input type="hidden" name="_after_action" value="reload">
+                        <button type="submit">Follow</button>
+                        <div name="response-detail"></div>
+                        <div name="errorresponse-error"></div>
+                    </form>
+                {% endif %}
+            {% endif %}
+        {% endif %}
     {% endif %}
 
     <h3>{{ author.user }}'s Bio</h3>
     <p>{{ author.bio }}</p>
+
+    <h3>
+        <a href="{% url 'socialnetwork:followers_list' author.uuid %}">
+            Followers ({{ followers|length }})
+        </a>
+    </h3>
+    <h3>
+        <a href="{% url 'socialnetwork:following_list' author.uuid %}">
+            Following ({{ following|length }})
+        </a>
+    </h3>
+    <h3>
+        <a href="{% url 'socialnetwork:friends_list' author.uuid %}">
+            Friends ({{ friends|length }})
+        </a>
+    </h3>
 
     <a href="{% url 'socialnetwork:author_create_post' %}" class="create-post">Create Post</a>
 
