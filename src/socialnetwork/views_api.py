@@ -52,7 +52,7 @@ def api_textpost_create(request: Request, viewer: Optional[models.LocalAuthor]) 
         return get_unauthenticated_response_api()
 
     data = request.data.copy()
-    data["base_author"] = viewer.uuid
+    data["base_author"] = str(viewer.uuid)
 
     serializer = serializers.PostTextBasedSerializer(data=data)
 

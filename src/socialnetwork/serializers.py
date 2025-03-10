@@ -16,7 +16,7 @@ class PostTextBasedSerializer(PostSerializer):
     class Meta:
         model = models.PostTextBased
         fields = ["content", "base_author", "visibility_type", "post_type"]
-        read_only_fields = ["base_author"]
+        # read_only_fields = ["base_author"]
 
 
 class UserSerializer(serializers.ModelSerializer[User]):
@@ -72,3 +72,15 @@ class HostedImageSerializer(serializers.ModelSerializer[models.HostedImage]):
     class Meta:
         model = models.HostedImage
         fields = ["id", "title", "image", "uploaded_at"]
+
+
+class FollowRequestSerializer(serializers.ModelSerializer[models.FollowRequest]):
+    """
+    Serializer for FollowRequest model.
+    """
+    actor = LocalAuthorSerializer(read_only=True)
+    target = LocalAuthorSerializer(read_only=True)
+
+    class Meta:
+        model = models.FollowRequest
+        fields = ['uuid', 'actor', 'target']
