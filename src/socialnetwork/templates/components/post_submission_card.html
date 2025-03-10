@@ -1,5 +1,5 @@
 <div class="post-submission-card">
-    <form name="generic-form" action="{% url 'socialnetwork:api_textpost_create' %}" method="post">
+    <form name="generic-form" action="{% url 'socialnetwork:api_textpost_create' %}" >
         {% csrf_token %}
         <input type="hidden" name="_method" value="POST">
         <div name="response-detail"></div>
