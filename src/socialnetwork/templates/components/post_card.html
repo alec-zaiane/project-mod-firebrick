@@ -1,5 +1,7 @@
 {# expects a post object as a models.Post subclass instance #}
 
+{% load static %}
+
 <article class="post-card">
     <header>
         <a href="{% url 'socialnetwork:author_profile' post.author.uuid %}" class="names">
@@ -9,12 +11,50 @@
             <h3 class="display-name">{{ post.author.display_name }}</h3>
             <h5 class="username">{{ post.author.username }}</h5>
         </a>
+        ·
         <span class="post-meta">
-            Posted: {{ post.date_created|date:"F j, Y, g:i a" }}
+            <div class="posted"><time title="{{ post.date_created|date:'F j, Y, g:i a' }}" datetime="{{ post.date_created|date:'Y-m-d H:i:s' }}">{{ post.date_created|date:"M jS" }}</time></div>
             {% if post.date_edited %}
-            (Edited: {{ post.date_edited|date:"F j, Y, g:i a" }})
+            <img class="edit-pencil" title="Edited {{ post.date_edited|date:'F j, Y, g:i a' }}" src="{% static 'svg/edit.svg' %}" />
             {% endif %}
         </span>
+
+        <span class="visibility">
+            {% if post.get_visibility_type_display == "Public" %}
+                <img class="visibility-icon" title="Public" src="{% static 'svg/public.svg' %}" />
+            {% elif post.get_visibility_type_display == "Unlisted" %}
+                <img class="visibility-icon" title="Unlisted" src="{% static 'svg/unlisted.svg' %}" />
+            {% elif post.get_visibility_type_display == "Friends-Only" %}
+                <img class="visibility-icon" title="Friends Only" src="{% static 'svg/friends.svg' %}" />
+            {% endif %}
+        </span>
+
+        {% if post.author == viewer %}
+        <div class="settings">
+            <img class="settings-dropdown" src="{% static 'svg/dots.svg' %}"/>
+            <div class="settings-dropdown-content">
+                <a href="{% url 'socialnetwork:edit_post' post.uuid %}" class="edit-button">
+                    <div class="setting">
+                        <img class="edit-icon" title="Edit Post" src="{% static 'svg/editpost.svg' %}" />
+                        Edit Post
+                    </div>
+                </a>
+                <form name="generic-form" action="{% url 'socialnetwork:api_post_delete' post.uuid %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="_method" value="POST">
+                    <input type="hidden" name="_after_action" value="reload confirm">
+                    <input type="hidden" name="_confirm_text" value="Are you sure you want to delete this post?">
+                    <button type="submit" class="delete-button">
+                        <div class="setting delete">
+                            <img class="delete-icon" title="Delete Post" src="{% static 'svg/delete.svg' %}" />
+                            Delete Post
+                        </div>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        {% endif %}
     </header>
 
     <div class="post-content {{ post.css_class }}">
@@ -22,9 +62,6 @@
     </div>
 
     <footer>
-        <span class="visibility">{{ post.get_visibility_type_display }}</span>
-        {% if post.author == viewer %}
-         <a href="{% url 'socialnetwork:edit_post' post.uuid %}" class="edit-button">Edit</a>
-        {% endif %}
+        {# Comments, likes #}
     </footer>
 </article>

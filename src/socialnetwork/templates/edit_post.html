@@ -4,7 +4,7 @@
 
 {% block content %}
 <h2>Edit Post</h2>
-<form method="POST", action="{% url 'socialnetwork:api_post_update' post.uuid %}">
+<form method="POST", action="{% url 'socialnetwork:api_textpost_update' post.uuid %}">
     {% csrf_token %}
 
     <label for="content">Edit Content:</label><br>
@@ -12,8 +12,8 @@
 
     <label for="post_type">Select Format:</label>
     <select name="post_type" id="post_type">
-        <option value="PT" {% if post.post_type=="PT" %}selected{% endif %}>Plain Text</option>
-        <option value="MD" {% if post.post_type=="MD" %}selected{% endif %}>Markdown</option>
+        <option value="PT" {% if post.post_type == "PT" %}selected{% endif %}>Plain Text</option>
+        <option value="MD" {% if post.post_type == "MD" %}selected{% endif %}>Markdown</option>
     </select>
 
     <br><br>
@@ -21,6 +21,6 @@
 </form>
 
 <h3>Preview</h3>
-<div id="preview"></div>
+<div id="preview" class="post-card"></div>
 <script src="{% static 'scripts/markdown-editor.min.js' %}"></script>
 {% endblock %}

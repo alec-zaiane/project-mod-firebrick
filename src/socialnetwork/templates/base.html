@@ -3,44 +3,46 @@
 
 {% block body %}
 <body>
-    <div class="navbar">
-        {% if user.is_authenticated %}
-            <span>Logged in as {{ user }}</span>
-            {% if user.is_superuser %}
-                <a href="{% url 'adminpanel:adminpanel' %}">Admin Panel</a>
+    <section class="main">
+        <div class="navbar">
+            {% if user.is_authenticated %}
+                <span>Logged in as {{ user }}</span>
+                {% if user.is_superuser %}
+                    <a href="{% url 'adminpanel:adminpanel' %}">Admin Panel</a>
+                {% endif %}
+            {% else %}
+                <span>Not logged in</span>
             {% endif %}
-        {% else %}
-            <span>Not logged in</span>
-        {% endif %}
-        <a href="{% url 'socialnetwork:stream' %}">Home</a>
-        {% if viewer %}
-            <a href="{% url 'socialnetwork:author_profile' viewer.uuid %}">Profile</a>
-            <a href="{% url 'socialnetwork:follow_requests_page' %}">
-                Follow Requests<span id="follow-request-count"></span>
-            </a>
-        {% endif %}
-        <form action="{% url 'logout' %}" method="post" style="display: inline;">
-            {% csrf_token %}
-            <button type="submit">Log Out</button>
-        </form>
-    </div>
-
-    {% if request.path == '/stream' %}
-        <div id="search-container">
-            <form id="search-form">
-                <input type="text" id="search-input" placeholder="Search users...">
-                <button type="submit">Search</button>
+            <a href="{% url 'socialnetwork:stream' %}">Home</a>
+            {% if viewer %}
+                <a href="{% url 'socialnetwork:author_profile' viewer.uuid %}">Profile</a>
+                <a href="{% url 'socialnetwork:follow_requests_page' %}">
+                    Follow Requests<span id="follow-request-count"></span>
+                </a>
+            {% endif %}
+            <form action="{% url 'logout' %}" method="post" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit">Log Out</button>
             </form>
-            <div id="search-results"></div>
         </div>
-    {% endif %}
 
-    <div class="content">
-        {% block content %}{% endblock %}
-    </div>
+        <div class="content">
+            {% block content %}{% endblock %}
+        </div>
 
-    <script src="{% static 'scripts/search.js' %}"></script>
-    <script src="{% static 'scripts/follow_requests.js' %}"></script>
-    {% block script %}{% endblock %}
+        {% if request.path == '/stream' %}
+            <div id="search-container">
+                <form id="search-form">
+                    <input type="text" id="search-input" placeholder="Search users...">
+                    <button type="submit">Search</button>
+                </form>
+                <div id="search-results"></div>
+            </div>
+        {% endif %}
+
+        <script src="{% static 'scripts/search.js' %}"></script>
+        <script src="{% static 'scripts/follow_requests.js' %}"></script>
+        {% block script %}{% endblock %}
+    </section>
 </body>
 {% endblock %}

@@ -188,6 +188,7 @@ def api_textpost_update(request: Request, viewer: Optional[models.LocalAuthor], 
     serializer = serializers.PostTextBasedSerializer(
         post, data=request.data, partial=True)
     if serializer.is_valid():
+        post.edit(request.data['content'])  # Edit content, to give edited time
         serializer.update(post, request.data.copy())
         return Response({"detail": "post updated", "post": serializer.data}, 200)
     return Response({"error": "post update error", "post": serializer.errors}, 403)

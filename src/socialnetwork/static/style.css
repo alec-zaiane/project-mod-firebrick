@@ -196,12 +196,27 @@ a:link:active, a:visited:active  {
     content:"test";
 }
 
+.main {
+    display: flex;
+}
+
+.navbar, .search-container {
+    width: calc((100% - 600px) / 2);
+}
+
+.content {
+    width: 600px;
+}
+
 .stream-container, .profile .post-list {
     padding-left: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 10px;
+    border-left: 1px solid #242729;
+    border-right: 1px solid #242729;
+    padding: 0 20px;
 }
 
 .stream-container .stream-title {
@@ -209,12 +224,21 @@ a:link:active, a:visited:active  {
 }
 
 .stream-container .post-card, .profile .post {
-    padding: 20px;
-    background: #161519;
-    border: 1px solid #6e6e6e;
-    border-radius: 10px;
-    box-shadow: 0px 2px 4px rgb(255 255 255 / 10%), 0px 8px 16px rgb(255 255 255 / 10%);
+    width: 100%;
     list-style: none;
+    overflow: visible;
+    padding: 20px;
+}
+
+.stream-container .post-card:not(:last-child), .profile .post:not(:last-child) {
+    border-bottom: 1px solid #242729;
+}
+
+.post-card header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #7b7b7b;
 }
 
 .post-card .names {
@@ -232,11 +256,127 @@ a:link:active, a:visited:active  {
     color: #7b7b7b;
 }
 
+.post-card .post-meta {
+    display: flex;
+    gap: 8px;
+}
+
+.post-card .post-meta .edit-pencil {
+    width: 20px;
+}
+
+.post-card .visibility {
+    margin-left: auto;
+    width: 20px;
+}
+
+.post-card .visibility-icon {
+    max-width: 100%;
+}
+
+.post-card .settings {
+    position: relative;
+}
+
+.post-card .edit-icon {
+    width: 20px;
+}
+
+.post-card .delete-icon {
+    width: 20px;
+}
+
+.post-card .settings-dropdown {
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 10px;
+    width: 20px;
+}
+
+.post-card .settings-dropdown:hover {
+    background: rgb(72, 72, 92);
+}
+
+.post-card .settings-dropdown-content {
+    position: absolute;
+    visibility: hidden;
+    right: 0;
+    display: flex;
+    margin-top: 2px;
+    flex-direction: column;
+    background: #161519;
+    border: 1px solid #6e6e6e;
+    border-radius: 10px;
+    box-shadow: 0px 2px 4px rgb(255 255 255 / 10%), 0px 8px 16px rgb(255 255 255 / 10%);
+    z-index: 9999;
+}
+
+.post-card .setting {
+    gap: 6px;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    color: var(--color);
+    font-weight: bold;
+    cursor: pointer;
+    padding: 10px;
+}
+
+.post-card .setting:first-child {
+    border-radius: 10px 10px 0 0;
+}
+
+.post-card .setting:last-child {
+    border-radius: 0 0 10px 10px;
+}
+
+.post-card .setting:hover {
+    background: rgb(44, 45, 48);
+}
+
+.post-card .edit-button {
+    text-decoration: none;
+}
+
+.post-card .delete-button {
+    border: 0;
+    background: 0;
+    padding: 0;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.post-card .setting.delete {
+    color: #d91f2b;
+}
+
+.post-card img:not(header img) {
+    max-width: 100%;
+    border-radius: 20px;
+    border: 0.1px solid #242729;
+    margin: 15px 0;
+}
+
+.post-card .post-content {
+    max-height: 600px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 2px;
+}
+
 .profile-image {
     width: 40px;
     height: 40px;
     object-fit: cover;
     border-radius: 100%;
+}
+
+#preview {
+    background: #161519;
+    border: 1px solid #6e6e6e;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0px 2px 4px rgb(255 255 255 / 10%), 0px 8px 16px rgb(255 255 255 / 10%);
 }
 
 #admin {
