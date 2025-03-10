@@ -223,7 +223,10 @@ def api_imagepost_create(request: Request, viewer: Optional[models.LocalAuthor])
         post.send_to_required_private_inboxes()
         
         # Generate Markdown format
-        markdown_url = f"![{post.image.name}]({request.build_absolute_uri(post.image.url)})"
+        if isinstance(post, models.PostMediaBased) and post.image:
+            markdown_url = f"![{post.image.name}]({request.build_absolute_uri(post.image.url)})"
+        else:
+            markdown_url = "" 
         
         return Response(
             {
