@@ -19,6 +19,7 @@
                 <img class="logo" src="{% static 'firebrick.webp' %}" />
 
                 {% if user.is_authenticated %}
+                    {% if user.author %}
                     <a href="{% url 'socialnetwork:author_profile' user.author.uuid %}" class="names">
                         {% if user.author.profile_image %}
                         <img class="profile-image" src="{{ user.author.profile_image }}"/>
@@ -26,6 +27,7 @@
                         <span class="text-names"><h3 class="display-name">{{ user.author.display_name }}</h3>
                         <h5 class="username">{{ user.author.username }}</h5></span>
                     </a>
+                    {% endif %}
                     {% if user.is_superuser %}
                         <a class="navbar-category" href="{% url 'adminpanel:adminpanel' %}"><img class="navbar-icon" src="{% static 'svg/admin.svg' %}"/> <span class="navbar-title">Admin Panel</span></a>
                     {% endif %}
