@@ -19,6 +19,8 @@ from itertools import chain
 
 from project_firebrick.settings import THIS_NODE_URL
 
+from typing import Any
+
 
 class RemoteNode(models.Model):
     # TODO will contain fields for the remote nodes that this instance knows about
@@ -324,7 +326,7 @@ class PostMediaBased(Post):
     def css_class(self) -> str:
         return "post-image"
 
-    def edit(self, new_image) -> None:
+    def edit(self, new_image: Any) -> None:
         """Edit the image of this post"""
         self.image = new_image
         self._finalize_edit()
