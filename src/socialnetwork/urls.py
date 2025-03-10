@@ -36,6 +36,10 @@ urlpatterns = [
          views.edit_post_view,
          name="edit_post"),
 
+    path("post/<uuid:post_uuid>/",
+         views.view_post,
+         name="view_post"),
+
     path("unauthorized",
          TemplateView.as_view(template_name="registration/unauthorized.html"),
          name="unauthorized"),
