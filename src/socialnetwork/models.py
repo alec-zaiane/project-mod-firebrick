@@ -108,7 +108,7 @@ class LocalAuthor(Author):
 
     def get_stream(
         self, paginate_start: int = 0, paginate_count: Optional[int] = None
-    ) -> list[Post]:
+    ) -> list["Post"]:
         """Get the stream of posts that this author can see
         Args:
             paginate_start (int, optional): returned posts start at this index of the true stream when sorted by newest to oldest. Defaults to 0.
