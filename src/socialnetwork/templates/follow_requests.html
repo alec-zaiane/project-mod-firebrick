@@ -10,13 +10,17 @@
                 <li>
                     <strong>{{ request.actor.user.username|default:"[No Username]" }}</strong> has requested to follow you.
 
-                    <form method="post" action="{% url 'api:approve_follow_request' request.uuid %}">
+                    <form  name="generic-form" action="{% url 'api:approve_follow_request' request.uuid %}">
                         {% csrf_token %}
+                        <input type="hidden" name="_method" value="POST">
+                        <input type="hidden" name="_after_action" value="reload">
                         <button type="submit">Approve</button>
                     </form>
 
-                    <form method="post" action="{% url 'api:deny_follow_request' request.uuid %}">
+                    <form  name="generic-form" action="{% url 'api:deny_follow_request' request.uuid %}">
                         {% csrf_token %}
+                        <input type="hidden" name="_method" value="POST">
+                        <input type="hidden" name="_after_action" value="reload">
                         <button type="submit">Deny</button>
                     </form>
                 </li>

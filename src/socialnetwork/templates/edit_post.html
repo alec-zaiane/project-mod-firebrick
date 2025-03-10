@@ -4,9 +4,10 @@
 
 {% block content %}
 <h2>Edit Post</h2>
-<form method="POST", action="{% url 'socialnetwork:api_textpost_update' post.uuid %}">
+<form name="generic-form" action="{% url 'socialnetwork:api_textpost_update' post.uuid %}">
     {% csrf_token %}
-
+    <input type="hidden" name="_method" value="POST">
+    <input type="hidden" name="_after_action" value="url:{% url 'socialnetwork:stream' %}">
     <label for="content">Edit Content:</label><br>
     <textarea name="content" id="content" rows="5" cols="50">{{ post.content }}</textarea><br><br>
 
