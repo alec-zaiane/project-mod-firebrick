@@ -72,6 +72,12 @@ class HostedImageSerializer(serializers.ModelSerializer[models.HostedImage]):
         model = models.HostedImage
         fields = ["id", "title", "image", "uploaded_at"]
 
+class PostMediaBasedSerializer(PostSerializer):
+    class Meta:
+        model = models.PostMediaBased
+        fields = ["image", "base_author", "visibility_type"]
+        read_only_fields = ["base_author"]
+
 
 class FollowRequestSerializer(serializers.ModelSerializer[models.FollowRequest]):
     """

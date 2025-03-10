@@ -18,6 +18,8 @@ from django.db.models import Q
 from itertools import chain
 from project_firebrick.settings import THIS_NODE_URL
 
+from typing import Any
+
 
 class RemoteNode(models.Model):
     # TODO will contain fields for the remote nodes that this instance knows about
@@ -132,9 +134,8 @@ class LocalAuthor(Author):
 
     def get_stream(
         self, paginate_start: int = 0, paginate_count: Optional[int] = None
-    ) -> list[Post]:
+    ) -> list["Post"]:
         """Get the stream of posts that this author can see
-
         Args:
             paginate_start (int, optional): returned posts start at this index of the true stream when sorted by newest to oldest. Defaults to 0.
             paginate_end (Optional[int], optional): Get this many posts, or all if None. Defaults to None.
@@ -142,47 +143,40 @@ class LocalAuthor(Author):
         Returns:
             list[Post]: QuerySet of Post objects that the author is guaranteed to be able to see
         """
-        # TODO join the self.private_inbox and the public timeline
 
         base_query = Q(is_deleted=False)
         following = self.following.all()
-
-        # Visibility types
-        public_posts = Q(
-            visibility_type=Post.VisibilityTypes.PUBLIC
-        )
+        public_posts = Q(visibility_type=Post.VisibilityTypes.PUBLIC)
+        private_inbox = Q(is_in_private_inbox_of=self)
 
         unlisted_posts = Q(
-            base_author__in=following,
-            visibility_type=Post.VisibilityTypes.UNLISTED
+          base_author__in=following,
+          visibility_type=Post.VisibilityTypes.UNLISTED
         )
-
-        # Get friends (mutual followers)
-        friends = [
-            author for author in following if self.get_is_friends_with(author)]
+        
+        friends = [author for author in following if self.get_is_friends_with(author)]
         friends_posts = Q(
-            base_author__in=friends,
-            visibility_type=Post.VisibilityTypes.FRIENDS_ONLY
+          base_author__in=friends,
+          visibility_type=Post.VisibilityTypes.FRIENDS_ONLY
         )
+               
+        query = base_query & (public_posts | private_inbox | unlisted_posts | friends_posts)
 
-        # private_inbox = Q(
-        #     is_in_private_inbox_of=self
-        # )
-
-        query = base_query & (public_posts | unlisted_posts | friends_posts)
-
+        # Fetch text-based posts
         text_posts = PostTextBased.objects.filter(query)
+        # Fetch media-based posts
+        media_posts = PostMediaBased.objects.filter(query)
 
         # Combine and sort all posts
         all_posts: list[Post] = sorted(
-            chain(text_posts),
+            chain(text_posts, media_posts),
             key=lambda post: post.date_created,
             reverse=True
         )
 
         # Apply pagination
         if paginate_count is not None:
-            all_posts = all_posts[paginate_start:paginate_start + paginate_count]
+            all_posts = all_posts[paginate_start : paginate_start + paginate_count]
         elif paginate_start > 0:
             all_posts = all_posts[paginate_start:]
 
@@ -403,7 +397,18 @@ class PostMediaBased(Post):
     A post that contains an image
     TODO consider whether multiple classes or an enum field are better for video vs images
     """
+    # Store images in the media directory
+    image = models.ImageField(upload_to="hosted_images/", blank=True, null=True) 
 
+    @property
+    def css_class(self) -> str:
+        return "post-image"
+
+    def edit(self, new_image: Any) -> None:
+        """Edit the image of this post"""
+        self.image = new_image
+        self._finalize_edit()
+        
     def _get_differentiators(self) -> QuerySet[PostDifferentiator]:
         """Get all PostDifferentiator objects pointing to this post, useful for getting likes and comments"""
         return PostDifferentiator.objects.filter(_post_media=self)

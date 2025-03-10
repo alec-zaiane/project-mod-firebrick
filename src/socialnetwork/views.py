@@ -14,9 +14,11 @@ from django.db.models import Q
 from .models import LocalAuthor
 from django.contrib.auth.models import AnonymousUser
 
+from itertools import chain
 
 # General Views
 # This file is for views that show browser output (eg: render a template), use views_api.py for rest_framework API views
+
 
 def get_unauthenticated_response() -> HttpResponse:
     return HttpResponseRedirect(reverse("socialnetwork:not_logged_in"))
@@ -52,13 +54,23 @@ def stream_view(request: HttpRequest, viewer: Optional[models.LocalAuthor]) -> H
 @user_controller(must_be_logged_in=True, must_be_author=True)
 def author_profile_view(request: HttpRequest, target_author_uuid: str, viewer: Optional[models.LocalAuthor] = None) -> HttpResponse:
     """View `target_author_uuid`'s profile"""
-
     target_author = get_object_or_404(
         models.LocalAuthor, uuid=target_author_uuid)
-    author_posts = models.PostTextBased.objects.filter(
+
+    # Retrieve text-based posts
+    text_posts = models.PostTextBased.objects.filter(
         base_author=target_author, is_deleted=False)
+
+    # Retrieve media-based (image) posts
+    media_posts = models.PostMediaBased.objects.filter(
+        base_author=target_author, is_deleted=False)
+
+    # Combine both querysets into one list
+    combined_posts = list(chain(text_posts, media_posts))
+
+    # Sort posts by date_created, newest first
     author_posts_sorted = sorted(
-        author_posts, key=lambda x: x.date_created, reverse=True)
+        combined_posts, key=lambda post: post.date_created, reverse=True)
 
     followers = target_author.followers.all()
     following = target_author.following.all()
@@ -138,8 +150,9 @@ def following_list_view(request: HttpRequest, author_uuid: str, viewer: Optional
 def friends_list_view(request: HttpRequest, author_uuid: str, viewer: Optional[models.LocalAuthor] = None) -> HttpResponse:
     """View the list of friends (mutual followers) for a given author"""
     author = get_object_or_404(models.LocalAuthor, uuid=author_uuid)
-    friends = models.LocalAuthor.objects.filter(uuid__in=[friend.uuid for friend in author.friends])
-    return render(request, "friends_list.html", {"author": author, "viewer": viewer,"friends": friends})
+    friends = models.LocalAuthor.objects.filter(
+        uuid__in=[friend.uuid for friend in author.friends])
+    return render(request, "friends_list.html", {"author": author, "viewer": viewer, "friends": friends})
 
 @user_controller(must_be_logged_in=False, must_be_author=False)
 def view_post(request: HttpRequest, post_uuid: str, viewer: models.Author) -> HttpResponse:
