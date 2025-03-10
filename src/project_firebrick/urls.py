@@ -22,6 +22,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
+    path("api/", include("api.urls", namespace="api")),
     path("", include("socialnetwork.urls")),
     path('admin/', admin.site.urls),
     path('adminpanel/', include("adminpanel.urls")),

@@ -36,10 +36,10 @@ class AuthorPostVisibilityTest(TestCase):
         """
         test to see if the author can see all types of their own post"""
         # assertions to check
-        self.assertTrue(self.public_post._check_can_be_seen_by(self.author))
-        self.assertTrue(self.unlisted_post._check_can_be_seen_by(self.author))
+        self.assertTrue(self.public_post.check_can_be_seen_by(self.author))
+        self.assertTrue(self.unlisted_post.check_can_be_seen_by(self.author))
         self.assertTrue(
-            self.friends_only_post._check_can_be_seen_by(self.author))
+            self.friends_only_post.check_can_be_seen_by(self.author))
 
     def test_author_cannot_see_deleted_post(self) -> None:
         """
@@ -49,7 +49,7 @@ class AuthorPostVisibilityTest(TestCase):
         self.unlisted_post.delete()
         self.friends_only_post.delete()
 
-        self.assertFalse(self.public_post._check_can_be_seen_by(self.author))
-        self.assertFalse(self.unlisted_post._check_can_be_seen_by(self.author))
+        self.assertFalse(self.public_post.check_can_be_seen_by(self.author))
+        self.assertFalse(self.unlisted_post.check_can_be_seen_by(self.author))
         self.assertFalse(
-            self.friends_only_post._check_can_be_seen_by(self.author))
+            self.friends_only_post.check_can_be_seen_by(self.author))

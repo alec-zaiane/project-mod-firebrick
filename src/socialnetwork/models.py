@@ -1,17 +1,24 @@
 from __future__ import annotations
 import uuid
-from typing import Any
+from typing import Any, Collection
 
 from datetime import datetime
 
 from django.db import models
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
+from django.urls import reverse
+from django.db.models import QuerySet
+
 from typing import Optional
 from django.contrib.auth.models import User
 
 from django.db.models import Q
 from itertools import chain
+from project_firebrick.settings import THIS_NODE_URL
+
+from typing import Any
 
 
 class RemoteNode(models.Model):
@@ -39,6 +46,9 @@ class Author(models.Model):
     following = models.ManyToManyField(
         'self', symmetrical=False, related_name='followers', blank=True)
     bio = models.TextField(blank=True)
+    display_name = models.CharField(max_length=128)
+    # 2048 is the character limit for URLs
+    profile_image = models.URLField(blank=True)
 
     # Computed Properties
     @property
@@ -46,9 +56,19 @@ class Author(models.Model):
         return Author.objects.filter(following=self)
 
     @property
+    def friends(self) -> list[Author]:
+        following_set = set(self.following.all())
+        followers_set = set(self.followers.all())
+        return list(following_set.intersection(followers_set))
+
+    @property
     def username(self) -> str:
-        raise NotImplementedError(
-            "This method must be implemented by a subclass")
+        if isinstance(self, LocalAuthor):
+            return self.user.username
+        elif isinstance(self, RemoteAuthor):
+            return self.username
+        raise SyntaxError(
+            "Author objects should never be instantiated directly")
 
     @property
     def posts(self) -> list[Post]:
@@ -81,6 +101,29 @@ class Author(models.Model):
             self.user.delete()
         return super().delete(*args, **kwargs)
 
+    @classmethod
+    def get_author_by_FQID(cls, fqid: str) -> Author:
+        # not sure if this is the best place to put this, but we need a centralized place for it to go
+        raise NotImplementedError("TODO")
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, Author):
+            return False
+        return self.uuid == other.uuid
+
+        # TODO when adding remote nodes, we'll need something like this:
+        # # if we're both LocalAuthors, compare the uuid
+        # if isinstance(self, LocalAuthor) and isinstance(other, LocalAuthor):
+        #     return self.uuid == other.uuid
+        # # if we're both RemoteAuthors, do something else
+        # if isinstance(self, RemoteAuthor) and isinstance(other, RemoteAuthor):
+        #     raise NotImplementedError("TODO")
+        # # if we're different types, we're not equal
+        # return False
+
+    def __hash__(self) -> int:
+        return hash(self.uuid)
+
 
 class LocalAuthor(Author):
     """An author that is on this node"""
@@ -89,15 +132,10 @@ class LocalAuthor(Author):
         User, on_delete=models.CASCADE, related_name="author"
     )  # https://docs.djangoproject.com/en/dev/topics/auth/customizing/#extending-the-existing-user-model
 
-    @property
-    def username(self) -> str:
-        return self.user.username
-
     def get_stream(
         self, paginate_start: int = 0, paginate_count: Optional[int] = None
-    ) -> list[Post]:
+    ) -> list["Post"]:
         """Get the stream of posts that this author can see
-
         Args:
             paginate_start (int, optional): returned posts start at this index of the true stream when sorted by newest to oldest. Defaults to 0.
             paginate_end (Optional[int], optional): Get this many posts, or all if None. Defaults to None.
@@ -105,29 +143,40 @@ class LocalAuthor(Author):
         Returns:
             list[Post]: QuerySet of Post objects that the author is guaranteed to be able to see
         """
-        # TODO join the self.private_inbox and the public timeline
 
         base_query = Q(is_deleted=False)
+        following = self.following.all()
         public_posts = Q(visibility_type=Post.VisibilityTypes.PUBLIC)
+        private_inbox = Q(is_in_private_inbox_of=self)
 
-        private_inbox = Q(
-            is_in_private_inbox_of=self
+        unlisted_posts = Q(
+          base_author__in=following,
+          visibility_type=Post.VisibilityTypes.UNLISTED
         )
+        
+        friends = [author for author in following if self.get_is_friends_with(author)]
+        friends_posts = Q(
+          base_author__in=friends,
+          visibility_type=Post.VisibilityTypes.FRIENDS_ONLY
+        )
+               
+        query = base_query & (public_posts | private_inbox | unlisted_posts | friends_posts)
 
-        query = base_query & (public_posts | private_inbox)
-
+        # Fetch text-based posts
         text_posts = PostTextBased.objects.filter(query)
+        # Fetch media-based posts
+        media_posts = PostMediaBased.objects.filter(query)
 
         # Combine and sort all posts
         all_posts: list[Post] = sorted(
-            chain(text_posts),
+            chain(text_posts, media_posts),
             key=lambda post: post.date_created,
             reverse=True
         )
 
         # Apply pagination
         if paginate_count is not None:
-            all_posts = all_posts[paginate_start:paginate_start + paginate_count]
+            all_posts = all_posts[paginate_start : paginate_start + paginate_count]
         elif paginate_start > 0:
             all_posts = all_posts[paginate_start:]
 
@@ -138,12 +187,28 @@ class RemoteAuthor(Author):
     """An author that is on another node"""
 
     date_joined = models.DateTimeField(auto_now_add=True, editable=False)
-    remote_username = models.CharField(max_length=50)
+    # Eventually will contain extra fields and methods/overrides for authors on other nodes
+
+
+class FollowRequest(models.Model):
+    """A follow request, `actor` wants to follow `target`"""
+    uuid = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False)
+    actor = models.ForeignKey(
+        LocalAuthor,
+        on_delete=models.CASCADE,
+        related_name="follow_requests_requested"
+    )
+    target = models.ForeignKey(
+        LocalAuthor,
+        on_delete=models.CASCADE,
+        related_name="follow_requests_pending"
+    )
 
     @property
-    def username(self) -> str:
-        return self.remote_username
-    # Eventually will contain extra fields and methods/overrides for authors on other nodes
+    def actor_username(self) -> str:
+        assert isinstance(self.actor, LocalAuthor)
+        return self.actor.user.username
 
 
 class Post(models.Model):
@@ -191,22 +256,30 @@ class Post(models.Model):
     @property
     def author(self) -> Author | None:
         """The author of this post"""
-        fetched_author: Author | None = self.base_author
-        if fetched_author is None:
+        # implementation is a little janky due to Django's inheritance  , but it should work
+        if self.base_author is None:
             return None
-        fetched_uuid = fetched_author.uuid
 
-        if LocalAuthor.objects.filter(uuid=fetched_uuid).exists():
-            return LocalAuthor.objects.get(uuid=fetched_uuid)
-        elif RemoteAuthor.objects.filter(uuid=fetched_uuid).exists():
-            return RemoteAuthor.objects.get(uuid=fetched_uuid)
+        if LocalAuthor.objects.filter(uuid=self.base_author.uuid).exists():
+            return LocalAuthor.objects.get(uuid=self.base_author.uuid)
+        elif RemoteAuthor.objects.filter(uuid=self.base_author.uuid).exists():
+            return RemoteAuthor.objects.get(uuid=self.base_author.uuid)
         else:
-            raise ValueError(f"Unknown author type: {fetched_author}")
+            raise ValueError("Unknown author type, this should never happen")
 
     @property
     def css_class(self) -> str:
         raise NotImplementedError(
             "This method must be implemented by a subclass")
+
+    @property
+    def like_count(self) -> int:
+        return self.get_likes().count()
+
+    @property
+    def comments(self) -> QuerySet[Comment]:
+        # property for django templater
+        return self.get_comments()
 
     # Methods
     def _finalize_edit(self) -> None:
@@ -214,7 +287,7 @@ class Post(models.Model):
         self.date_edited = timezone.now()
         self.save()
 
-    def _check_can_be_seen_by(self, other: Author) -> bool:
+    def check_can_be_seen_by(self, other: Author) -> bool:
         """Returns true if the other author can see this post"""
 
         if isinstance(other, LocalAuthor) and other.user.is_superuser:
@@ -226,8 +299,9 @@ class Post(models.Model):
         if self.visibility_type == self.VisibilityTypes.PUBLIC:
             return True
         elif self.visibility_type == self.VisibilityTypes.UNLISTED:
-            return False
+            return True
         elif self.visibility_type == self.VisibilityTypes.FRIENDS_ONLY:
+            # Friends-only posts visible only to friends
             return self.author.get_is_friends_with(other)
         else:
             raise ValueError(
@@ -238,7 +312,7 @@ class Post(models.Model):
         if self.author is None:
             return None
         for author in self.author.followers.all():
-            if self._check_can_be_seen_by(author):
+            if self.check_can_be_seen_by(author):
                 self.is_in_private_inbox_of.add(author)
 
     def delete(self, using: Any | None = None, keep_parents: bool = False) -> tuple[int, dict[str, int]]:
@@ -247,6 +321,36 @@ class Post(models.Model):
         self.is_deleted = True
         self.save()
         return (0, {})
+
+    def _get_differentiators(self) -> QuerySet[PostDifferentiator]:
+        """Get all PostDifferentiator objects pointing to this post, Useful for getting likes and comments"""
+        raise NotImplementedError(
+            "This method must be implemented by a subclass")
+
+    def get_likes(self) -> QuerySet[Like]:
+        """Get all likes on this post"""
+        found_differentiators = self._get_differentiators()
+        return Like.objects.filter(target_post_differentiator__in=found_differentiators)
+
+    def get_likes_author_uuid_strings(self) -> list[str]:
+        """Get all author uuids on this post"""
+        authors_list: list[str] = list()
+        for like in self.get_likes():
+            authors_list.append(str(like.author.uuid))
+        return authors_list
+
+    def get_comments(self) -> QuerySet[Comment]:
+        """Get all comments on this post"""
+        found_differentiators = self._get_differentiators()
+        return Comment.objects.filter(_post_differentiator__in=found_differentiators)
+
+    def get_absolute_url(self) -> str:
+        """Generate the frontend URL in `posts/{POST_UUID}/` format."""
+
+        if self.visibility_type == self.VisibilityTypes.FRIENDS_ONLY:
+            raise ValueError("Friends-only posts cannot be shared.")
+
+        return f"{THIS_NODE_URL}/post/{self.uuid}/"
 
 
 class PostTextBased(Post):
@@ -283,14 +387,77 @@ class PostTextBased(Post):
         self.post_type = new_type
         self._finalize_edit()
 
+    def _get_differentiators(self) -> QuerySet[PostDifferentiator]:
+        """Get all PostDifferentiator objects pointing to this post, useful for getting likes and comments"""
+        return PostDifferentiator.objects.filter(_post_text=self)
+
 
 class PostMediaBased(Post):
     """
     A post that contains an image
     TODO consider whether multiple classes or an enum field are better for video vs images
     """
+    # Store images in the media directory
+    image = models.ImageField(upload_to="hosted_images/", blank=True, null=True) 
 
-    pass  # TODO
+    @property
+    def css_class(self) -> str:
+        return "post-image"
+
+    def edit(self, new_image: Any) -> None:
+        """Edit the image of this post"""
+        self.image = new_image
+        self._finalize_edit()
+        
+    def _get_differentiators(self) -> QuerySet[PostDifferentiator]:
+        """Get all PostDifferentiator objects pointing to this post, useful for getting likes and comments"""
+        return PostDifferentiator.objects.filter(_post_media=self)
+
+
+class PostDifferentiator(models.Model):
+    """A model that links to exactly one post subclass, used as a ForeignKey"""
+    _post_text = models.ForeignKey(
+        PostTextBased, on_delete=models.CASCADE, blank=True, null=True)
+    _post_media = models.ForeignKey(
+        PostMediaBased, on_delete=models.CASCADE, blank=True, null=True)
+
+    # if you add a post type, add it to the `fields` list too :)
+    FIELDS = ["_post_text", "_post_media"]
+
+    @classmethod
+    def get_post_by_uuid(cls, uuid: uuid.UUID) -> Post:
+        """Get a post by its UUID"""
+        if PostTextBased.objects.filter(uuid=uuid).exists():
+            return PostTextBased.objects.get(uuid=uuid)
+        elif PostMediaBased.objects.filter(uuid=uuid).exists():
+            return PostMediaBased.objects.get(uuid=uuid)
+        else:
+            raise Post.DoesNotExist("Post not found")
+
+    @staticmethod
+    def create_differentiator_for_post(post: Post) -> PostDifferentiator:
+        if isinstance(post, PostTextBased):
+            return PostDifferentiator.objects.create(_post_text=post)
+        elif isinstance(post, PostMediaBased):
+            return PostDifferentiator.objects.create(_post_media=post)
+        else:
+            raise ValueError("Unsupported post type")
+
+    @property
+    def post(self) -> Post:
+        if self._post_text:
+            return self._post_text
+        elif self._post_media:
+            return self._post_media
+        else:
+            raise ValueError("This post differentiator has no post")
+
+    def clean(self) -> None:
+        num_set = sum(
+            [getattr(self, field) is not None for field in self.FIELDS])
+        if num_set != 1:
+            raise ValidationError("Exactly one post field must be set")
+        return super().clean()
 
 
 class HostedImage(models.Model):
@@ -312,3 +479,105 @@ class HostedImage(models.Model):
 
     def __str__(self) -> str:
         return self.title or str(self.image.name)
+
+
+class Comment(models.Model):
+    """A comment on a post"""
+    # Serializer: api.serializers.comment_serializers.CommentSerializer
+    class CommentTypes(models.TextChoices):
+        PLAINTEXT = "PT", _("Plain Text")
+        MARKDOWN = "MD", _("Markdown")
+
+    uuid = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False)
+    author: models.ForeignKey[Author, Author] = models.ForeignKey(
+        Author, on_delete=models.CASCADE)
+    comment = models.TextField()
+    comment_type = models.CharField(
+        max_length=2, choices=CommentTypes.choices, default=CommentTypes.PLAINTEXT
+    )
+    _post_differentiator: models.ForeignKey[PostDifferentiator, PostDifferentiator] = models.ForeignKey(
+        PostDifferentiator, on_delete=models.CASCADE)
+    date_created = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def post(self) -> Post:
+        return self._post_differentiator.post
+
+    def __str__(self) -> str:
+        return f"Comment by {self.author} on {self._post_differentiator}"
+
+    def check_can_be_seen_by(self, other: Author) -> bool:
+        """Returns true if the other author can see this comment
+        As an author, comments on my friends-only posts are visible only to my friends and the comment's author."""
+        # ? how could a comment be made on a post that the author can't see?
+        if self.post.check_can_be_seen_by(other):
+            return True
+        if self.author == other:
+            return True
+        return False
+
+    def get_likes(self) -> QuerySet[Like]:
+        """Get all likes on this comment"""
+        return Like.objects.filter(target_comment=self)
+
+
+class Like(models.Model):
+
+    uuid = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False)
+    author: models.ForeignKey[Author, Author] = models.ForeignKey(
+        Author, on_delete=models.CASCADE)
+    date_created = models.DateTimeField(auto_now_add=True)
+    target_post_differentiator: models.ForeignKey[PostDifferentiator, Optional[PostDifferentiator]] = models.ForeignKey(
+        PostDifferentiator, on_delete=models.CASCADE, blank=True, null=True)
+    target_comment = models.ForeignKey(
+        Comment, on_delete=models.CASCADE, blank=True, null=True)
+    # target_comment and target_post should not both be null
+    # target_comment and target_post should not both be set
+
+    def clean(self) -> None:
+        if self.target_comment is None and self.target_post_differentiator is None:
+            raise ValidationError(
+                _("Like must target a comment or post"))
+        if self.target_comment is not None and self.target_post_differentiator is not None:
+            raise ValidationError(
+                _("Like must target a comment or post, not both"))
+        return super().clean()
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    @property
+    def target(self) -> Post | Comment:
+        if self.target_comment:
+            return self.target_comment
+        elif self.target_post_differentiator:
+            return self.target_post_differentiator.post
+        else:
+            raise ValueError(
+                "This like has no target, this should never happen")
+
+    def get_id_url(self, prepend_host: bool = True) -> str:
+        url = reverse("api:liked_author_specific_like",
+                      args=[self.author.uuid, self.uuid])
+        if prepend_host:
+            return f"{THIS_NODE_URL}{url}"
+        return url
+
+    def get_target_url(self, prepend_host: bool = True) -> str:
+        if isinstance(self.target, Post):
+            url = reverse("api:post_author_specific", args=[
+                getattr(self.target.author, "uuid", None), self.target.uuid])
+        elif isinstance(self.target, Comment):
+            url = reverse("api:comments_serial", args=[
+                self.target.post.uuid, self.target.uuid])
+        else:
+            raise ValueError("Unknown target type")
+        if prepend_host:
+            return f"{THIS_NODE_URL}{url}"
+        return url
+
+    def __str__(self) -> str:
+        return f"Like by {self.author} on {self.target}"

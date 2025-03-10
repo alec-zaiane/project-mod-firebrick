@@ -5,21 +5,23 @@
 <div class="alert">
     <p>You don't have an Author associated with your admin account, this normally happens when creating an admin account
         for the first time</p>
-    <form action="{% url 'adminpanel:api_author_create_for_superuser' %}" method="post">
+    <form name="generic-form" action="{% url 'adminpanel:api_author_create_for_superuser' %}" method="post">
         {% csrf_token %}
+        <input type="hidden" name="_method" value="POST">
+        <input type="hidden" name="_after_action" value="reload">
         <input type="hidden" name="user_id" value="{{ user.pk }}">
         <button type="submit">Click here to create your Author</button>
     </form>
 </div>
 {% else %}
-<a href="{% url 'socialnetwork:stream' %}">Stream</a>
 <a href="{% url 'adminpanel:hosted_images' %}">Hosted Images</a>
 {% endif %}
 
+<section class="join-requests">
 <h1>Join Requests</h1>
 {# https://stackoverflow.com/questions/1465249/get-lengths-of-a-list-in-a-jinja2-template #}
 <h2>Pending Join Requests ({{ requests_active|length }})</h2>
-<section class="join-requests">
+
     {% for join_request in requests_active %}
     {% include 'components/join_request_card.html' %}
     {% endfor %}

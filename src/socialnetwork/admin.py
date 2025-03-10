@@ -5,3 +5,6 @@ admin.site.register(models.LocalAuthor)
 admin.site.register(models.PostTextBased)
 
 admin.site.register(models.HostedImage)
+
+admin.site.register(models.Comment)
+admin.site.register(models.Like)

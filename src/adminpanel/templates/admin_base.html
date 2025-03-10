@@ -8,19 +8,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'">
     <link id="_stylesheet" rel="stylesheet" type="text/css" href="{% static 'style.css' %}" />
+    <script src="{% static 'scripts/generic-form.min.js' %}"></script>
 </head>
 
 <body>
     <main id="admin">
         {% if user.is_authenticated and user.is_staff %}
-        <nav>
-            <span>Welcome, {{ user.username }}</span>
-            <form action="{% url 'logout' %}" method="post" style="display: inline;">
-                {% csrf_token %}
-                <button type="submit">Log Out</button>
-            </form>
-        </nav>
-        <main>
+        <div class="navbar">
+            <section class="navbar-contents">
+                <img class="logo" src="{% static 'firebrick.webp' %}" />
+
+                {% if user.is_authenticated %}
+                    {% if user.author %}
+                    <a href="{% url 'socialnetwork:author_profile' user.author.uuid %}" class="names">
+                        {% if user.author.profile_image %}
+                        <img class="profile-image" src="{{ user.author.profile_image }}"/>
+                        {% endif %}
+                        <span class="text-names"><h3 class="display-name">{{ user.author.display_name }}</h3>
+                        <h5 class="username">{{ user.author.username }}</h5></span>
+                    </a>
+                    {% endif %}
+                    {% if user.is_superuser %}
+                        <a class="navbar-category" href="{% url 'adminpanel:adminpanel' %}"><img class="navbar-icon" src="{% static 'svg/admin.svg' %}"/> <span class="navbar-title">Admin Panel</span></a>
+                    {% endif %}
+                {% else %}
+                    <span>Not logged in</span>
+                {% endif %}
+                <a class="navbar-category" href="{% url 'socialnetwork:stream' %}"><img class="navbar-icon" src="{% static 'svg/home.svg' %}"/> <span class="navbar-title">Home</span></a>
+                {% if viewer %}
+                    <a class="navbar-category" href="{% url 'socialnetwork:follow_requests_page' %}">
+                        <img class="navbar-icon" src="{% static 'svg/followrequests.svg' %}"/>
+                        <span class="navbar-title">
+                            Follow Requests<span id="follow-request-count"></span>
+                        </span>
+                    </a>
+                {% endif %}
+                <form class="logout-container" action="{% url 'logout' %}" method="post">
+                    {% csrf_token %}
+                    <button class="logout" type="submit">Log Out</button>
+                </form>
+            </section>
+        </div>
+        <main class="admin-main content">
             {% block content %}
             {% endblock %}
         </main>

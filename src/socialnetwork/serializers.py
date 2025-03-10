@@ -1,5 +1,4 @@
 from typing import Any
-
 from rest_framework import serializers
 from . import models
 from django.contrib.auth.models import User
@@ -16,12 +15,13 @@ class PostTextBasedSerializer(PostSerializer):
     class Meta:
         model = models.PostTextBased
         fields = ["content", "base_author", "visibility_type", "post_type"]
+        # read_only_fields = ["base_author"]
 
 
 class UserSerializer(serializers.ModelSerializer[User]):
     class Meta:
         model = User
-        fields = ["username", "email", "first_name", "last_name"]
+        fields = ["username"]
 
 # https://blog.devgenius.io/nested-serializers-in-django-rest-framework-6b36bf011074
 
@@ -31,36 +31,36 @@ class LocalAuthorSerializer(serializers.ModelSerializer[models.LocalAuthor]):
 
     class Meta:
         model = models.LocalAuthor
-        fields = ["uuid", "following", "followers", "user", "bio"]
+        fields = ["uuid", "following", "followers", "bio", "user"]
         read_only_fields = ["uuid", "followers"]
 
+    def validate(self, data: dict[str, Any]) -> dict[str, Any]:
+        validated_data: dict[str, Any] = super().validate(data)
+        if "username" in validated_data:
+            if User.objects.filter(username=validated_data["username"]).exists():
+                raise serializers.ValidationError(
+                    f"Username {validated_data["username"]} already exists")
+        if "email" in validated_data:
+            if User.objects.filter(email=validated_data["email"]).exists():
+                raise serializers.ValidationError(
+                    f"Email {validated_data["email"]} already exists")
+        return validated_data
+
     def create(self, validated_data: dict[str, Any]) -> Any:
-        user_data = validated_data.pop("user")
-        user = User.objects.create_user(**user_data)
+        user = User.objects.create_user(**validated_data)
         author = models.LocalAuthor.objects.create(user=user, **validated_data)
         return author
 
     def update(self, instance: models.LocalAuthor, validated_data: dict[str, Any]) -> Any:
-        user_data: Any | None = validated_data.pop("user", [None])[0]
-        if user_data is None:
-            # should not happen, maybe super can handle it
-            return super().update(instance, validated_data)
         user = instance.user
-        if isinstance(user_data, dict):
-            user.username = user_data.get("username", user.username)
-            user.email = user_data.get("email", user.email)
-            user.first_name = user_data.get("first_name", user.first_name)
-            user.last_name = user_data.get("last_name", user.last_name)
-            user.save()
-        elif isinstance(user_data, str):
-            user.username = validated_data.pop("username", [user.username])[0]
-            user.email = validated_data.pop("email", [user.email])[0]
-            user.first_name = validated_data.pop(
-                "first_name", [user.first_name])[0]
-            user.last_name = validated_data.pop(
-                "last_name", [user.last_name])[0]
-            user.save()
-        return super().update(instance, validated_data)
+        user.username = validated_data.get("username", user.username)
+        user.save()
+        instance.profile_image = validated_data.get(
+            "profile_image", instance.profile_image)
+        instance.display_name = validated_data.get(
+            "display_name", instance.display_name)
+        instance.bio = validated_data.get("bio", instance.bio)
+        instance.save()
 
 
 class HostedImageSerializer(serializers.ModelSerializer[models.HostedImage]):
@@ -71,3 +71,21 @@ class HostedImageSerializer(serializers.ModelSerializer[models.HostedImage]):
     class Meta:
         model = models.HostedImage
         fields = ["id", "title", "image", "uploaded_at"]
+
+class PostMediaBasedSerializer(PostSerializer):
+    class Meta:
+        model = models.PostMediaBased
+        fields = ["image", "base_author", "visibility_type"]
+        read_only_fields = ["base_author"]
+
+
+class FollowRequestSerializer(serializers.ModelSerializer[models.FollowRequest]):
+    """
+    Serializer for FollowRequest model.
+    """
+    actor = LocalAuthorSerializer(read_only=True)
+    target = LocalAuthorSerializer(read_only=True)
+
+    class Meta:
+        model = models.FollowRequest
+        fields = ['uuid', 'actor', 'target']

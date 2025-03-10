@@ -6,32 +6,30 @@
 
 {% block title %}Modify Author{% endblock %}
 
-{% block head %}
-    <script src="{% static 'author-modify.min.js' %}"></script>
-{% endblock %}
-
 {% block content %}
 <h1>Modify {{ author.username}} </h1>
-<form name=modify-author-form action="{% url 'socialnetwork:api_author_update' author.uuid %}">
-    <div name="server-response"></div>
+<form name="generic-form" action="{% url 'socialnetwork:api_author_update' author.uuid %}">
     {% csrf_token %}
+    <div name="response-detail"></div>
+    <div name="errorresponse-error"></div>
     <input type="hidden" name="_method" value="PUT">
     <input type="hidden" name="user" value="{{ author.uuid }}">
+    <br>
     <label for="username">Username:</label>
+    <div name="errorresponse-author__user__username"></div>
     <input type="text" id="username" name="username" value="{{ author.username }}" required>
     <br>
-    <label for="email">Email:</label>
-    <input type="email" id="email" name="email" value="{{ author.user.email }}" required>
+    <label for="display_name">Display Name:</label>
+    <div name="errorresponse-author__display_name"></div>
+    <input type="text" id="display_name" name="display_name" value="{{ author.display_name }}" required>
     <br>
-    <label for="first_name">First Name:</label>
-    <input type="text" id="first_name" name="first_name" value="{{ author.user.first_name }}" required>
-    <br>
-    <label for="last_name">Last Name:</label>
-    <input type="text" id="last_name" name="last_name" value="{{ author.user.last_name }}" required>
+    <label for="profile_image">Profile Image:</label>
+    <div name="errorresponse-author__profile_image"></div>
+    <input type="url" id="profile_image" name="profile_image" value="{{ author.profile_image }}">
     <br>
     <label for="bio">Bio:</label>
+    <div name="errorresponse-author__bio"></div>
     <textarea id="bio" name="bio">{{ author.bio }}</textarea>
-    <br>
     <input type="submit" value="Submit">
     <a href="{% url 'socialnetwork:author_profile' author.uuid %}">Cancel</a>
 </form>

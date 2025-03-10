@@ -54,6 +54,8 @@ class AuthorJoinRequest(models.Model):
             username=self.username, password=self.password)
         author = LocalAuthor()
         author.user = user
+        # Initialize it to just be equal to username at first
+        author.display_name = user.username
         author.save()
         self.delete()
         return author

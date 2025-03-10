@@ -20,3 +20,9 @@ class AuthorJoinRequestSerializer(serializers.ModelSerializer[AuthorJoinRequest]
                                              queryset=User.objects.all(), message="Username is already taken"),
                                          UnicodeUsernameValidator(),
                                      ])
+
+    def validate_password(self, value: str) -> str:
+        if len(value) < 8:
+            raise serializers.ValidationError(
+                "Password must be at least 8 characters long")
+        return value
