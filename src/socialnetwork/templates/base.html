@@ -17,15 +17,18 @@
                         <h5 class="username">{{ user.author.username }}</h5>
                     </a>
                     {% if user.is_superuser %}
-                        <a href="{% url 'adminpanel:adminpanel' %}">Admin Panel</a>
+                        <a class="navbar-category" href="{% url 'adminpanel:adminpanel' %}"><img class="navbar-icon" src="{% static 'svg/admin.svg' %}"/> <span class="navbar-title">Admin Panel</span></a>
                     {% endif %}
                 {% else %}
                     <span>Not logged in</span>
                 {% endif %}
-                <a href="{% url 'socialnetwork:stream' %}">Home</a>
+                <a class="navbar-category" href="{% url 'socialnetwork:stream' %}"><img class="navbar-icon" src="{% static 'svg/home.svg' %}"/> <span class="navbar-title">Home</span></a>
                 {% if viewer %}
-                    <a href="{% url 'socialnetwork:follow_requests_page' %}">
-                        Follow Requests<span id="follow-request-count"></span>
+                    <a class="navbar-category" href="{% url 'socialnetwork:follow_requests_page' %}">
+                        <img class="navbar-icon" src="{% static 'svg/followrequests.svg' %}"/>
+                        <span class="navbar-title">
+                            Follow Requests<span id="follow-request-count"></span>
+                        </span>
                     </a>
                 {% endif %}
                 <form class="logout-container" action="{% url 'logout' %}" method="post">

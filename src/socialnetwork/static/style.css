@@ -210,6 +210,27 @@ a:link:active, a:visited:active  {
     justify-content: flex-end;
 }
 
+.navbar-category {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.navbar-icon {
+    width: 30px;
+}
+
+.navbar .names {
+    align-items: center;
+    padding: 0 6px;
+    margin-top: -30px;
+}
+
+.navbar .names:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+}
+
 .navbar-contents {
     padding: 20px;
     padding-right: 40px;
@@ -217,7 +238,7 @@ a:link:active, a:visited:active  {
     flex-direction: column;
     position: fixed;
     width: fit-content;
-    gap: 10px;
+    gap: 40px;
     height: 100%;
 }
 
