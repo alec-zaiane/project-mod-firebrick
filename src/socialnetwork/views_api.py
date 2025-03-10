@@ -61,8 +61,6 @@ def api_textpost_create(request: Request, viewer: Optional[models.LocalAuthor]) 
     # save it all
     if serializer.is_valid():
         post = serializer.save()
-        post.base_author = viewer
-        post.save()
         post.send_to_required_private_inboxes()
         return Response({"detail": "post created", "post": serializer.data}, status=201)
     else:
@@ -216,13 +214,11 @@ def api_imagepost_create(request: Request, viewer: Optional[models.LocalAuthor])
 
     data = request.data.copy()
     data["base_author"] = viewer.uuid  # Assign author to post
-    
+
     serializer = serializers.PostMediaBasedSerializer(data=data)
 
     if serializer.is_valid():
         post = serializer.save()
-        post.base_author = viewer
-        post.save()
         post.send_to_required_private_inboxes()
         
         # Generate Markdown format
