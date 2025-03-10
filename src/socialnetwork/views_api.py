@@ -15,6 +15,8 @@ from socialnetwork import models
 from drf_spectacular.utils import extend_schema
 
 
+
+
 def get_unauthenticated_response_api() -> Response:
     return Response(status=401)
 
@@ -59,6 +61,8 @@ def api_textpost_create(request: Request, viewer: Optional[models.LocalAuthor]) 
     # save it all
     if serializer.is_valid():
         post = serializer.save()
+        post.base_author = viewer
+        post.save()
         post.send_to_required_private_inboxes()
         return Response({"detail": "post created", "post": serializer.data}, status=201)
     else:
@@ -191,3 +195,49 @@ def api_textpost_update(request: Request, viewer: Optional[models.LocalAuthor], 
         serializer.update(post, request.data.copy())
         return Response({"detail": "post updated", "post": serializer.data}, 200)
     return Response({"error": "post update error", "post": serializer.errors}, 403)
+
+
+@api_view(["POST"])
+@user_controller(must_be_logged_in=True, must_be_author=True)
+def api_imagepost_create(request: Request, viewer: Optional[models.LocalAuthor]) -> Response:
+    """
+    Create an image-based post and return the markdown link.
+
+    Expects:
+    - A multipart/form-data request containing:
+        - `image`: File
+        - `visibility_type`: PU (Public), FO (Friends Only), UN (Unlisted)
+    Returns:
+    - 201 on success with post data + Markdown URL.
+    - 400 on failure with error messages.
+    """
+    if viewer is None:
+        return get_unauthenticated_response_api()
+
+    data = request.data.copy()
+    data["base_author"] = viewer.uuid  # Assign author to post
+    
+    serializer = serializers.PostMediaBasedSerializer(data=data)
+
+    if serializer.is_valid():
+        post = serializer.save()
+        post.base_author = viewer
+        post.save()
+        post.send_to_required_private_inboxes()
+        
+        # Generate Markdown format
+        if isinstance(post, models.PostMediaBased) and post.image:
+            markdown_url = f"![{post.image.name}]({request.build_absolute_uri(post.image.url)})"
+        else:
+            markdown_url = "" 
+        
+        return Response(
+            {
+                "detail": "Image post created",
+                "post": serializer.data,
+                "markdown": markdown_url  # Return the Markdown URL
+            }, 
+            status=201
+        )
+    else:
+        return Response({"error": "creation error", "post": serializer.errors}, status=400)

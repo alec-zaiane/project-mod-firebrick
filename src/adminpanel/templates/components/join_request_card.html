@@ -17,13 +17,13 @@
         <input type="submit" value="Permanently Delete">
         {% else %}
         {# show the approve/deny buttons #}
-        <form name="generic-form" action="{% url 'adminpanel:api_join_request_approve' join_request.pk %}">
+        <form name="generic-form"  action="{% url 'adminpanel:api_join_request_approve' join_request.pk %}">
             {% csrf_token %}
             <input type="hidden" name="_method" value="POST">
             <input type="hidden" name="_after_action" value="reload">
             <input type="submit" value="Approve">
         </form>
-        <form name="generic-form" action="{% url 'adminpanel:api_join_request_deny' join_request.pk %}">
+        <form name="generic-form"  action="{% url 'adminpanel:api_join_request_deny' join_request.pk %}">
             {% csrf_token %}
             <input type="hidden" name="_method" value="POST">
             <input type="hidden" name="_after_action" value="reload">
