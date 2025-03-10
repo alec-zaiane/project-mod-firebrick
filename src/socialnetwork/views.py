@@ -134,6 +134,44 @@ def friends_list_view(request: HttpRequest, author_uuid: str, viewer: Optional[m
     friends = models.LocalAuthor.objects.filter(uuid__in=[friend.uuid for friend in author.friends])
     return render(request, "friends_list.html", {"author": author, "viewer": viewer,"friends": friends})
 
+@user_controller(must_be_logged_in=False, must_be_author=False)
+def view_post(request: HttpRequest, post_uuid: str, viewer: Optional[models.Author]) -> HttpResponse:
+    """
+    View a post based on its UUID.
+    - Public posts are visible to everyone.
+    - Unlisted posts are visible only if you have the link.
+    - Friends-only posts are visible only to friends.
+    """
+
+    post = get_object_or_404(models.PostTextBased, uuid=post_uuid)
+
+    #deleted posts
+    if post.is_deleted:
+        return render(request, "error.html", {"message": "This post has been deleted."}, status=404)
+
+    #if no author:
+    if not post.author:
+        return HttpResponse("this post has no author", status = 404)
+
+    #if post is public type
+    if post.visibility_type == models.PostTextBased.VisibilityTypes.PUBLIC:
+        return render(request, "view_post.html", {"post": post, "viewer": viewer})
+
+    #if post is unlisted type
+    elif post.visibility_type == models.PostTextBased.VisibilityTypes.UNLISTED:
+        return render(request, "view_post.html", {"post": post, "viewer": viewer})
+
+    #if friends_only post
+    elif post.visibility_type == models.PostTextBased.VisibilityTypes.FRIENDS_ONLY:
+
+        if viewer is None or not post.author.get_is_friends_with(viewer):
+            return HttpResponse("You do not have permission to view this post", status=403)
+
+        return render(request, "view_post.html", {"post": post, "viewer": viewer})
+
+    return HttpResponse("Unknown visibility type.", status=400)
+
+
 
 
 def follow_requests_page(request: HttpRequest) -> HttpResponse:
@@ -165,3 +203,4 @@ def search_authors_view(request: HttpRequest) -> JsonResponse:
         results = []
 
     return JsonResponse({"authors": results})
+
