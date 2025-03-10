@@ -63,6 +63,15 @@
     </div>
 
     <footer>
+        <div class="likes-box">
+            <span class="likes-count">likes: {{ post.like_count }}</span>
+            <form name="generic-form" action="{% url 'api:like_post_internal' post.uuid %}">
+                {% csrf_token %}
+                <input type="hidden" name="_method" value="POST">
+                <input type="hidden" name="_after_action" value="reload">
+                <button type="submit">Like</button>
+            </form
+        </div>
         {{ post.comments }}
         {# Comments, likes #}
     </footer>
