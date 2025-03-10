@@ -315,6 +315,7 @@ a:link:active, a:visited:active  {
     gap: 10px;
     border-left: 1px solid #242729;
     border-right: 1px solid #242729;
+    border-bottom: 1px solid #242729;
     padding: 0 20px;
 }
 
