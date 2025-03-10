@@ -4,8 +4,6 @@
 
 {% block content %}
 <div class="stream-container">
-    <h1 class="stream-title">Your Stream</h1>
-
     {% if posts %}
     {% for post in posts %}
     {% include 'components/post_card.html' %}
