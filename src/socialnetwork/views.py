@@ -138,10 +138,8 @@ def following_list_view(request: HttpRequest, author_uuid: str, viewer: Optional
 def friends_list_view(request: HttpRequest, author_uuid: str, viewer: Optional[models.LocalAuthor] = None) -> HttpResponse:
     """View the list of friends (mutual followers) for a given author"""
     author = get_object_or_404(models.LocalAuthor, uuid=author_uuid)
-    friends = models.LocalAuthor.objects.filter(
-        uuid__in=[friend.uuid for friend in author.friends])
-    return render(request, "friends_list.html", {"author": author, "viewer": viewer, "friends": friends})
-
+    friends = models.LocalAuthor.objects.filter(uuid__in=[friend.uuid for friend in author.friends])
+    return render(request, "friends_list.html", {"author": author, "viewer": viewer,"friends": friends})
 
 @user_controller(must_be_logged_in=False, must_be_author=False)
 def view_post(request: HttpRequest, post_uuid: str, viewer: models.Author) -> HttpResponse:
@@ -158,18 +156,28 @@ def view_post(request: HttpRequest, post_uuid: str, viewer: models.Author) -> Ht
     if post.is_deleted:
         return render(request, "error.html", {"message": "This post has been deleted."}, status=404)
 
-    # no authors
+    #if no author:
     if not post.author:
-        return HttpResponse("This post has no author.", status=404)
+        return HttpResponse("this post has no author", status = 404)
 
-    # check the method of post
-    if post.check_can_be_seen_by(viewer):
+    #if post is public type
+    if post.visibility_type == models.PostTextBased.VisibilityTypes.PUBLIC:
         return render(request, "view_post.html", {"post": post, "viewer": viewer})
 
-    # if none, then return
-    return render(request, "error.html", {
-        "message": "You do not have permission to view this post."
-    }, status=403)
+    #if post is unlisted type
+    elif post.visibility_type == models.PostTextBased.VisibilityTypes.UNLISTED:
+        return render(request, "view_post.html", {"post": post, "viewer": viewer})
+
+    #if friends_only post
+    elif post.visibility_type == models.PostTextBased.VisibilityTypes.FRIENDS_ONLY:
+
+        if viewer is None or not post.author.get_is_friends_with(viewer):
+            return HttpResponse("You do not have permission to view this post", status=403)
+
+        return render(request, "view_post.html", {"post": post, "viewer": viewer})
+
+    return HttpResponse("Unknown visibility type.", status=400)
+
 
 
 def follow_requests_page(request: HttpRequest) -> HttpResponse:
