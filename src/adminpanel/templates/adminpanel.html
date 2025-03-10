@@ -14,14 +14,14 @@
     </form>
 </div>
 {% else %}
-<a href="{% url 'socialnetwork:stream' %}">Stream</a>
 <a href="{% url 'adminpanel:hosted_images' %}">Hosted Images</a>
 {% endif %}
 
+<section class="join-requests">
 <h1>Join Requests</h1>
 {# https://stackoverflow.com/questions/1465249/get-lengths-of-a-list-in-a-jinja2-template #}
 <h2>Pending Join Requests ({{ requests_active|length }})</h2>
-<section class="join-requests">
+
     {% for join_request in requests_active %}
     {% include 'components/join_request_card.html' %}
     {% endfor %}

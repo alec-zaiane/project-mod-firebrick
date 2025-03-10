@@ -4,8 +4,6 @@
 
 {% block content %}
 <div class="stream-container">
-    <h1 class="stream-title">Your Stream</h1>
-
     {% if posts %}
     {% for post in posts %}
     {% include 'components/post_card.html' %}
@@ -16,6 +14,7 @@
 
 </div>
 
+<script src="{% static 'scripts/posts.min.js' %}"></script>
 <script src="{% static 'scripts/markdown-renderer.min.js' %}"></script>
 
 {% endblock %}

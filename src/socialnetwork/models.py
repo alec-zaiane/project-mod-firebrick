@@ -124,6 +124,7 @@ class Author(models.Model):
     def __hash__(self) -> int:
         return hash(self.uuid)
 
+
 class LocalAuthor(Author):
     """An author that is on this node"""
 
@@ -210,8 +211,6 @@ class FollowRequest(models.Model):
         return self.actor.user.username
 
 
-
-
 class Post(models.Model):
     """
     A post made by an Author, this is an abstract class and should not be instantiated, use one of the subclasses below
@@ -273,6 +272,15 @@ class Post(models.Model):
         raise NotImplementedError(
             "This method must be implemented by a subclass")
 
+    @property
+    def like_count(self) -> int:
+        return self.get_likes().count()
+
+    @property
+    def comments(self) -> QuerySet[Comment]:
+        # property for django templater
+        return self.get_comments()
+
     # Methods
     def _finalize_edit(self) -> None:
         """Call this after updating a post's content"""
@@ -323,6 +331,13 @@ class Post(models.Model):
         """Get all likes on this post"""
         found_differentiators = self._get_differentiators()
         return Like.objects.filter(target_post_differentiator__in=found_differentiators)
+
+    def get_likes_author_uuid_strings(self) -> list[str]:
+        """Get all author uuids on this post"""
+        authors_list: list[str] = list()
+        for like in self.get_likes():
+            authors_list.append(str(like.author.uuid))
+        return authors_list
 
     def get_comments(self) -> QuerySet[Comment]:
         """Get all comments on this post"""
