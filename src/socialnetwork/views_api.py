@@ -78,9 +78,8 @@ def api_author_update(request: Request, target_author_uuid: str, viewer: Optiona
     expects JSON
         {
             "username":<updated username>:str (optional)
-            "first_name":<updated first name>:str (optional)
-            "last_name":<updated last name>:str (optional)
-            "email":<updated email>:str (optional)
+            "display_name":<updated displayname>:str (optional)
+            "profile_image":<updated profileimage url>:str (optional)
         }
 
     will return a 404 on not found
