@@ -155,3 +155,41 @@ class CommentsRemoteFqidView(views.APIView):
     @method_decorator(user_controller())
     def get(self, request: Request, author_uuid: str, post_uuid: str, comment_uuid_or_fqid: str) -> Response:
         raise NotImplementedError("TODO")
+
+
+# ====== Internal ======
+
+class PostCommentInternalView(views.APIView):
+    @extend_schema(
+        description="Create a comment on an internal post",
+        request="{comment:str}",
+        responses={201: "Success", 400: "Bad request",
+                   401: "Unauthorized", 403: "Forbidden"},
+        parameters=[
+            OpenApiParameter("post_uuid", str, OpenApiParameter.PATH,
+                             description="The UUID of the post to comment on")
+        ]
+    )
+    @method_decorator(user_controller(must_be_logged_in=True, must_be_author=True))
+    def post(self, request: Request, post_uuid: str, viewer: Optional[models.LocalAuthor] = None) -> Response:
+        if viewer is None:
+            return Response("User must be authenticated", 401)
+        maybe_text_post = models.PostTextBased.objects.filter(
+            uuid=post_uuid).first()
+        maybe_image_post = models.PostMediaBased.objects.filter(
+            uuid=post_uuid).first()
+        if maybe_text_post is None and maybe_image_post is None:
+            return Response("Post not found", 404)
+        post = maybe_text_post or maybe_image_post
+        assert post is not None  # for mypy
+        user_control(request, verify_true=post.check_can_be_seen_by(viewer))
+        post_diff = models.PostDifferentiator.create_differentiator_for_post(
+            post)
+        if not isinstance(request.data.get("comment", None), str):
+            return Response("Comment must be provided as a string", 400)
+        models.Comment.objects.create(
+            author=viewer,
+            _post_differentiator=post_diff,
+            comment=request.data["comment"]
+        )
+        return Response(status=200)

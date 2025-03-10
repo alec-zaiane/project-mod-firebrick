@@ -180,3 +180,29 @@ class LikesOnCommentView(views.APIView):
         except ValueError:
             return Response("Incorrectly formatted `page` or `size` parameter", 400)
         raise NotImplementedError("TODO")
+
+
+# INTERNAL
+
+class LikePostInternalView(views.APIView):
+    @extend_schema(
+        summary="As a local author, like a post",
+        description="Like a post by POST_UUID",
+        request=None,
+        responses={201: "Success", 400: "Bad Request",
+                   401: "Unauthorized", 403: "Forbidden"},
+        parameters=[
+            OpenApiParameter("post_uuid", str, OpenApiParameter.PATH,
+                             description="The UUID of the local post to like"),
+        ]
+    )
+    @method_decorator(user_controller(must_be_logged_in=True, must_be_author=True))
+    def post(self, request: Request, post_uuid: str, viewer: Optional[models.LocalAuthor] = None) -> Response:
+        if viewer is None:
+            return Response("User must be authenticated", status.HTTP_401_UNAUTHORIZED)
+        post = get_object_or_404(models.PostTextBased, uuid=post_uuid)
+        post_diff = models.PostDifferentiator.create_differentiator_for_post(
+            post)
+        like = models.Like.objects.create(
+            author=viewer, target_post_differentiator=post_diff)
+        return Response(status=200)
