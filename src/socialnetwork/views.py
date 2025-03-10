@@ -44,19 +44,6 @@ def stream_view(request: HttpRequest, viewer: Optional[models.LocalAuthor]) -> H
     })
 
 
-# @user_controller(must_be_logged_in=True, must_be_author=True)
-# def author_profile_view(request: HttpRequest, target_author_uuid: str, viewer: Optional[models.LocalAuthor] = None) -> HttpResponse:
-#     """View `target_author_uuid`'s profile"""
-
-#     target_author = get_object_or_404(
-#         models.LocalAuthor, uuid=target_author_uuid)
-#     author_posts = models.PostTextBased.objects.filter(
-#         base_author=target_author, is_deleted=False)
-#     author_posts_sorted = sorted(
-#         author_posts, key=lambda x: x.date_created, reverse=True
-#     )
-
-#     return render(request, "author_profile.html", {"author": target_author, "viewer": viewer, "posts": author_posts_sorted})
 @user_controller(must_be_logged_in=True, must_be_author=True)
 def author_profile_view(request: HttpRequest, target_author_uuid: str, viewer: Optional[models.LocalAuthor] = None) -> HttpResponse:
     """View `target_author_uuid`'s profile"""
