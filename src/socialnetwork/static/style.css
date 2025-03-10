@@ -204,7 +204,70 @@ a:link:active, a:visited:active  {
     width: calc((100% - 600px) / 2);
 }
 
+.navbar {
+    position: fixed;
+    display: flex;
+    justify-content: center;
+}
+
+.navbar-contents {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    width: fit-content;
+    gap: 10px;
+    height: 100%;
+}
+
+.navbar-contents .logo {
+    width: 60px;
+    filter: drop-shadow(3px 3px 1px rgb(247, 247, 247));
+    margin-bottom: 14px;
+}
+
+.navbar-contents a {
+    font-weight: bold;
+    color: var(--color);
+    text-decoration: none;
+}
+
+.navbar-contents a:hover {
+    text-decoration: underline;
+}
+
+.navbar-contents .logout-container {
+    margin-top: auto;
+    margin-bottom: 50px;
+}
+
+.navbar-contents .logout {
+    background: #d91f2b;
+    color: var(--color);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-style: bold;
+    border: 0;
+    cursor: pointer;
+}
+
+.navbar-contents .logout {
+    background: #d91f2b;
+    color: var(--color);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-style: bold;
+    border: 0;
+    cursor: pointer;
+}
+
+.navbar-contents .logout:hover {
+    background: rgb(117, 16, 23);
+}
+
+
 .content {
+    margin-left: calc((100% - 600px) / 2);
     width: 600px;
 }
 
@@ -262,19 +325,23 @@ a:link:active, a:visited:active  {
     pointer-events: none;
 }
 
-.post-card .names {
+.names {
     display: flex;
     gap: 10px;
-    color: var(--color);
+    color: var(--color) !important;
     text-decoration: none;
     pointer-events: all;
 }
 
-.post-card .names:hover .display-name {
+.names:hover .display-name {
     text-decoration: underline;
 }
 
-.post-card .names .username {
+.names display-name {
+
+}
+
+.names .username {
     color: #7b7b7b;
 }
 
@@ -282,6 +349,7 @@ a:link:active, a:visited:active  {
     display: flex;
     gap: 8px;
     pointer-events: all;
+    align-items: center;
 }
 
 .post-card .post-meta .edit-pencil {
@@ -292,15 +360,32 @@ a:link:active, a:visited:active  {
     margin-left: auto;
     width: 20px;
     pointer-events: all;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    gap: 6px;
+}
+
+.post-card footer .visibility {
+    width: fit-content;
+    margin-left: 0;
 }
 
 .post-card .visibility-icon {
     max-width: 100%;
 }
 
+.post-card footer .visibility-icon {
+    width: 20px;
+}
+
 .post-card .settings {
     position: relative;
     pointer-events: all;
+}
+
+.post-card.post-full .settings {
+    margin-left: auto;
 }
 
 .post-card .edit-icon {
@@ -374,7 +459,7 @@ a:link:active, a:visited:active  {
     color: #d91f2b;
 }
 
-.post-card img:not(header img) {
+.post-card .post-content img {
     max-width: 100%;
     border-radius: 20px;
     border: 0.1px solid #242729;
@@ -394,9 +479,24 @@ a:link:active, a:visited:active  {
     pointer-events: none;
 }
 
-.post-card .footer {
+.post-full {
+    padding: 20px;
+    height: fit-content;
+    min-height: 100vh;
+    box-sizing: border-box;
+    border-left: 1px solid #242729;
+    border-right: 1px solid #242729;
+}
+
+.post-card footer {
     position: relative;
     z-index: 1;
+    margin-top: 6px;
+}
+
+.post-card footer .post-info {
+    display: flex;
+    gap: 6px;
 }
 
 .profile-image {
@@ -415,8 +515,17 @@ a:link:active, a:visited:active  {
 }
 
 #admin {
-    padding: 60px;
-    box-sizing: border-box;
+    width: 100%;
+}
+
+.admin-main {
+    min-width: 50%;
+    max-width: 50%;
+    margin-left: auto;
+    margin-right: auto;
+    border-left: 1px solid #242729;
+    border-right: 1px solid #242729;
+    padding: 20px;
 }
 
 #admin .join-requests, #admin .local-authors {
@@ -429,6 +538,8 @@ a:link:active, a:visited:active  {
 #admin .join-request-card, #admin .author-card {
     min-width: 300px;
     margin-right: 10%;
+    margin-left: auto;
+    margin-right: auto;
     background: #161519;
     display: flex;
     flex-direction: column;

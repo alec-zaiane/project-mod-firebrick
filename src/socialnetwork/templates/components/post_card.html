@@ -14,9 +14,9 @@
         </a>
         ·
         <span class="post-meta">
-            <div class="posted"><time title="{{ post.date_created|date:'F j, Y, g:i a' }}" datetime="{{ post.date_created|date:'Y-m-d H:i:s' }}">{{ post.date_created|date:"M jS" }}</time></div>
+            <div class="posted"><time title="{{ post.date_created|date:'g:i a · F j, Y' }}" datetime="{{ post.date_created|date:'Y-m-d H:i:s' }}">{{ post.date_created|date:"M jS" }}</time></div>
             {% if post.date_edited %}
-            <img class="edit-pencil" title="Edited {{ post.date_edited|date:'F j, Y, g:i a' }}" src="{% static 'svg/edit.svg' %}" />
+            <img class="edit-pencil" title="Edited {{ post.date_edited|date:'g:i a · F j, Y' }}" src="{% static 'svg/edit.svg' %}" />
             {% endif %}
         </span>
 

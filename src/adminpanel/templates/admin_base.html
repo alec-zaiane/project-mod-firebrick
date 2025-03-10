@@ -14,14 +14,37 @@
 <body>
     <main id="admin">
         {% if user.is_authenticated and user.is_staff %}
-        <nav>
-            <span>Welcome, {{ user.username }}</span>
-            <form action="{% url 'logout' %}" method="post" style="display: inline;">
-                {% csrf_token %}
-                <button type="submit">Log Out</button>
-            </form>
-        </nav>
-        <main>
+        <div class="navbar">
+            <section class="navbar-contents">
+                <img class="logo" src="{% static 'firebrick.webp' %}" />
+
+                {% if user.is_authenticated %}
+                    <a href="{% url 'socialnetwork:author_profile' user.author.uuid %}" class="names">
+                        {% if user.author.profile_image %}
+                        <img class="profile-image" src="{{ user.author.profile_image }}"/>
+                        {% endif %}
+                        <h3 class="display-name">{{ user.author.display_name }}</h3>
+                        <h5 class="username">{{ user.author.username }}</h5>
+                    </a>
+                    {% if user.is_superuser %}
+                        <a href="{% url 'adminpanel:adminpanel' %}">Admin Panel</a>
+                    {% endif %}
+                {% else %}
+                    <span>Not logged in</span>
+                {% endif %}
+                <a href="{% url 'socialnetwork:stream' %}">Home</a>
+                {% if viewer %}
+                    <a href="{% url 'socialnetwork:follow_requests_page' %}">
+                        Follow Requests<span id="follow-request-count"></span>
+                    </a>
+                {% endif %}
+                <form class="logout-container" action="{% url 'logout' %}" method="post">
+                    {% csrf_token %}
+                    <button class="logout" type="submit">Log Out</button>
+                </form>
+            </section>
+        </div>
+        <main class="admin-main">
             {% block content %}
             {% endblock %}
         </main>

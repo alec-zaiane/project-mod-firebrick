@@ -12,10 +12,7 @@
     <h2>{{ author.display_name }}</h2>
 
     {% if viewer %}
-    {% if author == viewer %}
-    <p>This is your profile</p>
-    {% else %}
-    <p>This is not your profile</p>
+    {% if author != viewer %}
             {% if is_following %}
                 <form name="generic-form" action="{% url 'api:unfollow' author.uuid %}">
                     {% csrf_token %}

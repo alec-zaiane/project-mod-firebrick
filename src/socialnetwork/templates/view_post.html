@@ -13,23 +13,6 @@
             <h3 class="display-name">{{ post.author.display_name }}</h3>
             <h5 class="username">{{ post.author.username }}</h5>
         </a>
-        ·
-        <span class="post-meta">
-            <div class="posted"><time title="{{ post.date_created|date:'F j, Y, g:i a' }}" datetime="{{ post.date_created|date:'Y-m-d H:i:s' }}">{{ post.date_created|date:"M jS" }}</time></div>
-            {% if post.date_edited %}
-            <img class="edit-pencil" title="Edited {{ post.date_edited|date:'F j, Y, g:i a' }}" src="{% static 'svg/edit.svg' %}" />
-            {% endif %}
-        </span>
-
-        <span class="visibility">
-            {% if post.get_visibility_type_display == "Public" %}
-                <img class="visibility-icon" title="Public" src="{% static 'svg/public.svg' %}" />
-            {% elif post.get_visibility_type_display == "Unlisted" %}
-                <img class="visibility-icon" title="Unlisted" src="{% static 'svg/unlisted.svg' %}" />
-            {% elif post.get_visibility_type_display == "Friends-Only" %}
-                <img class="visibility-icon" title="Friends Only" src="{% static 'svg/friends.svg' %}" />
-            {% endif %}
-        </span>
 
         {% if post.author == viewer %}
         <div class="settings">
@@ -64,6 +47,28 @@
     </div>
 
     <footer>
+
+        <div class="post-info">
+            <div class="visibility">
+                {% if post.get_visibility_type_display == "Public" %}
+                    <img class="visibility-icon" title="Public" src="{% static 'svg/public.svg' %}" /> Public
+                {% elif post.get_visibility_type_display == "Unlisted" %}
+                    <img class="visibility-icon" title="Unlisted" src="{% static 'svg/unlisted.svg' %}" /> Unlisted
+                {% elif post.get_visibility_type_display == "Friends-Only" %}
+                    <img class="visibility-icon" title="Friends Only" src="{% static 'svg/friends.svg' %}" /> Friends Only
+                {% endif %}
+                ·
+            </div>
+
+            <span class="post-meta">
+                {% if post.date_edited %}
+                <img class="edit-pencil" src="{% static 'svg/edit.svg' %}" />
+                <span class="last-edited" title="Posted {{ post.date_created|date:'g:i a · F j, Y' }}">Last Edited <time datetime="{{ post.date_edited|date:'Y-m-d H:i:s' }}">{{ post.date_edited|date:'g:i a · F j, Y' }}</time></span>
+                {% else %}
+                <div class="posted">Posted <time datetime="{{ post.date_created|date:'Y-m-d H:i:s' }}">{{ post.date_created|date:"g:i a · F j, Y" }}</time></div>
+                {% endif %}
+            </span>
+        </div>
         {# Comments, likes #}
     </footer>
 
