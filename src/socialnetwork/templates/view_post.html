@@ -43,7 +43,19 @@
     </header>
 
     <div class="post-content {{ post.css_class }}">
-        {{ post.content }}
+        {% if post.image %}
+            <img src="{{ post.image.url }}" alt="Image Post" class="post-image">
+
+            <!-- Display Markdown Link Below Image -->
+            <div class="markdown-container">
+                <p><strong>Markdown for this image:</strong></p>
+                <textarea class="markdown-box" readonly>[![{{ post.image.url|cut:"/media/hosted_images/" }}]({{ post.image.url }})]</textarea>
+            </div>
+        {% else %}
+            <div class="text">
+                {{ post.content }}
+            </div>
+        {% endif %}
     </div>
 
     <footer>
