@@ -3,6 +3,7 @@
 {% load static %}
 
 <article class="post-card">
+    <a class="post-view" href="{% url 'socialnetwork:view_post' post.uuid %}"></a>
     <header>
         <a href="{% url 'socialnetwork:author_profile' post.author.uuid %}" class="names">
             {% if post.author.profile_image %}
@@ -62,6 +63,8 @@
     </div>
 
     <footer>
+        {{ post.comments }}
         {# Comments, likes #}
     </footer>
+
 </article>
