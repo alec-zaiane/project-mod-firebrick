@@ -200,7 +200,14 @@ class LikePostInternalView(views.APIView):
     def post(self, request: Request, post_uuid: str, viewer: Optional[models.LocalAuthor] = None) -> Response:
         if viewer is None:
             return Response("User must be authenticated", status.HTTP_401_UNAUTHORIZED)
-        post = get_object_or_404(models.PostTextBased, uuid=post_uuid)
+        text_maybe = models.PostTextBased.objects.filter(
+            uuid=post_uuid).first()
+        image_maybe = models.PostMediaBased.objects.filter(
+            uuid=post_uuid).first()
+        if text_maybe is None and image_maybe is None:
+            return Response("Post not found", status.HTTP_404_NOT_FOUND)
+        post = text_maybe or image_maybe
+        assert post is not None  # for mypy
         post_diff = models.PostDifferentiator.create_differentiator_for_post(
             post)
         like = models.Like.objects.create(
