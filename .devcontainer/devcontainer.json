@@ -43,6 +43,8 @@
                 "njpwerner.autodocstring",
                 "matangover.mypy",
                 "ms-python.autopep8",
+                "github.vscode-github-actions",
+                "batisteo.vscode-django"
             ]
         }
     },
