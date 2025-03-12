@@ -106,6 +106,12 @@ class LocalAuthorManager(ApiObjectManager["Author"]):
                 "Local authors must have a user account, consider creating a JoinRequest and approving it instead")
         return cast(LocalAuthor, super().create(*args, **kwargs))
 
+    def create_author(self,  username: str, password: str, email: Optional[str] = None, display_name: Optional[str] = None) -> LocalAuthor:
+        """Create a local author (this will happen by creating and automatically approving a join request)"""
+        join_request = JoinRequest.objects.create_join_request(
+            username, password, email, display_name)
+        return join_request.approve()
+
 
 class ExternalAuthorManager(ApiObjectManager["Author"]):
     """Custom manager for External Author model"""
