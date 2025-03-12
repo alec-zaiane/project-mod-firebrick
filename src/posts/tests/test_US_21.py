@@ -4,9 +4,9 @@ from django.urls import reverse
 
 from rest_framework import status
 
-from socialnetwork.models import PostTextBased
+from posts.models import Post, VisibilityTypes
 
-from .utils_for_tests import GeneralUserStoryApiTest
+from core.utils.testing_utils import GeneralUserStoryApiTest
 
 
 @skip("API changes required")
@@ -26,9 +26,10 @@ class TestUserStory21(GeneralUserStoryApiTest):
         self.client.force_authenticate(user=self.sample_authors[0].user)
         response = self.client.post(reverse("socialnetwork:api_textpost_create"), {
             "content": "sample post",
-            "visibility": PostTextBased.VisibilityTypes.FRIENDS_ONLY
+            "visibility": VisibilityTypes.FRIENDS_ONLY
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        # TODO
         # check that the post was created, and it is friends-only
         # post_query = PostTextBased.objects.filter(...)
         # self.assertTrue(post_query.exists())

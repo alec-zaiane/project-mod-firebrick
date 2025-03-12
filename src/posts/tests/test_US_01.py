@@ -3,9 +3,9 @@ from django.urls import reverse
 
 from rest_framework import status
 
-from socialnetwork.models import PostTextBased
+from posts.models import Post
 
-from .utils_for_tests import GeneralUserStoryApiTest
+from core.utils.testing_utils import GeneralUserStoryApiTest
 
 
 @tag("US-posting")
@@ -23,21 +23,18 @@ class TestUserStory01(GeneralUserStoryApiTest):
         self.initialize_sample_text_posts(posts_per_author=1)
 
         # check that the post was created
-        self.assertTrue(PostTextBased.objects.filter(
-            uuid=self.sample_posts[0][0].uuid).exists())
-        self.assertFalse(PostTextBased.objects.filter(
-            uuid=self.sample_posts[0][0].uuid).get().is_deleted)
+        self.assertEqual(self.sample_authors[0].posts.count(), 1)
+        self.assertFalse(self.sample_authors[0].posts.get().is_soft_deleted)
 
         # delete the post
         url = reverse("socialnetwork:api_post_delete",
-                      args=[self.sample_posts[0][0].uuid])
+                      args=[self.sample_authors[0].posts.get().uuid])
         self.client.force_authenticate(user=self.sample_authors[0].user)
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         # check that the post was deleted
-        self.assertTrue(PostTextBased.objects.filter(
-            uuid=self.sample_posts[0][0].uuid).get().is_deleted)
+        self.assertTrue(self.sample_authors[0].posts.get().is_soft_deleted)
 
     @tag("check-medium", "security")
     def test_other_user_cannot_delete_post(self) -> None:
@@ -46,11 +43,10 @@ class TestUserStory01(GeneralUserStoryApiTest):
         self.initialize_sample_text_posts(posts_per_author=1)
 
         url = reverse("socialnetwork:api_post_delete",
-                      args=[self.sample_posts[0][0].uuid])
+                      args=[self.sample_authors[0].posts.get().uuid])
         self.client.force_authenticate(user=self.sample_authors[1].user)
         response = self.client.post(url)
         self.assertEqual(response.status_code, 403)
 
         # check that the post was not deleted
-        self.assertFalse(PostTextBased.objects.filter(
-            uuid=self.sample_posts[0][0].uuid).get().is_deleted)
+        self.assertFalse(self.sample_authors[0].posts.get().is_soft_deleted)
