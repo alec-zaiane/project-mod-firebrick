@@ -24,6 +24,7 @@ In addition, most `Model.objects` Managers will have a `create_xyz()` function t
 - (this is like our old `project_firebrick` folder)
 - has `settings.py` etc
 - contains `utils` folder with some project-wide utils
+    - `adminpanel.py` has `/admin` related helper functions, `testing_utils.py` has testing related helpers
     - this folder contains the `ApiObject` abstract model, which all external Api-related models extend (`Author`, `Post`, `Comment`, `Like`)
     - The `ApiObject` model has extra fields that are easy to forget about when looking at each individual model:
         - `uuid`: a UUID
