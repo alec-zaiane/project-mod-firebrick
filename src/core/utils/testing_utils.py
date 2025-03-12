@@ -63,7 +63,7 @@ class WebElementLoggingWrapper:
 
     If it's missing an action you need, please add it and follow the same pattern!"""
 
-    def init(self, element: WebElement, test_case: UITestCase) -> None:
+    def __init__(self, element: WebElement, test_case: UITestCase) -> None:
         self.element = element
         self.test_case = test_case
 
@@ -154,20 +154,26 @@ class UITestCase(LiveServerTestCase):
             pass
 
     # --------- Find element methods --------------
-    def find_element_by_id(self, element_id: str) -> WebElement:
+    def find_element_by_id(self, element_id: str) -> WebElementLoggingWrapper:
         """Find an element by its ID"""
         self.log(f"Finding element by ID: {element_id}")
-        return self.driver.find_element(by=By.ID, value=element_id)
+        element = self.driver.find_element(by=By.ID, value=element_id)
+        return WebElementLoggingWrapper(element, self)
 
-    def find_element_by_name(self, element_name: str) -> WebElement:
+    def find_element_by_name(self, element_name: str) -> WebElementLoggingWrapper:
         """Find an element by its name"""
         self.log(f"Finding element by name: {element_name}")
-        return self.driver.find_element(by=By.NAME, value=element_name)
+        element = self.driver.find_element(by=By.NAME, value=element_name)
+        return WebElementLoggingWrapper(element, self)
 
-    def find_elements_by_name(self, element_name: str) -> list[WebElement]:
+    def find_elements_by_name(self, element_name: str) -> list[WebElementLoggingWrapper]:
         """Find elements by their name"""
         self.log(f"Finding elements by name: {element_name}")
-        return self.driver.find_elements(by=By.NAME, value=element_name)
+        elements = self.driver.find_elements(by=By.NAME, value=element_name)
+        output: list[WebElementLoggingWrapper] = []
+        for element in elements:
+            output.append(WebElementLoggingWrapper(element, self))
+        return output
 
     # --------- Assertion methods --------------
     def assert_title(self, expected_title: str) -> None:
