@@ -23,6 +23,9 @@ class ApiObjectManager(models.Manager[ModelT], Generic[ModelT]):
         instance.save(force_insert=True)
         return instance
 
+    def get_by_fqid(self, fqid: str) -> ModelT:
+        return self.get(fqid=fqid)
+
 
 class ApiObject(models.Model):
     class Meta:

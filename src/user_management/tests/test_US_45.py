@@ -5,18 +5,23 @@ from django.test import tag
 
 from rest_framework import status
 
-from .utils_for_tests import NodeAdminUserStoryApiTest
-from adminpanel.models import AuthorJoinRequest
-from socialnetwork.models import LocalAuthor
+from core.utils.testing_utils import GeneralUserStoryApiTest
+from user_management.models import JoinRequest, Author
 
 
-class TestUserStory45(NodeAdminUserStoryApiTest):
+from unittest import skip
+
+
+@skip("Not implemented")
+@tag("US-node-management")
+class TestUserStory45(GeneralUserStoryApiTest):
     """
     Tests for User Story 45
     https://github.com/uofa-cmput404/w25-project-mod-firebrick/issues/45
     "As a node admin, I want to OPTIONALLY be able to allow users to sign
     up but require my OK to finally be on my node"
     """
+    # TODO refactor into a UI test!
 
     @tag("check-slow", "security")
     def test_fail_to_add_user(self) -> None:

@@ -3,6 +3,8 @@ import itertools
 from django.apps import apps
 from django.test import TestCase, tag
 
+from django.db.models import Model
+
 
 @tag("US-node-management", "check-slow")
 class TestUserStory48(TestCase):
@@ -21,12 +23,14 @@ class TestUserStory48(TestCase):
         except ImportError:
             # skip otherwise
             POSTGRES_AVAILABLE = False
+
         # get all models
+        all_models: list[type[Model]] = []
+        for _, app_models in apps.all_models.items():
+            for __, model in app_models.items():
+                all_models.append(model)
 
-        models = apps.get_app_config("socialnetwork").get_models()
-        models_adminpanel = apps.get_app_config("adminpanel").get_models()
-
-        for model in itertools.chain(models, models_adminpanel):
+        for model in itertools.chain(all_models):
             for field in model._meta.get_fields():
                 if POSTGRES_AVAILABLE and isinstance(field, (ArrayField, JSONField)):
                     self.fail(
