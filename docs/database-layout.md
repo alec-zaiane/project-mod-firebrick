@@ -6,6 +6,15 @@ Instead of `Model.objects.(...)` or similar, many of the models have extra `Mana
 
 In addition, most `Model.objects` Managers will have a `create_xyz()` function that makes it easier to create an xyz (they have proper arguments). *Always use these instead of `create()` if available*
 
+## The Admin Panel
+`/admin` is actually useful this time, and we will no longer have our `/adminpanel` endpoint
+- you can approve/deny join requests
+- you can soft delete posts
+- more functionality will be added as needed
+- creating API objects directly is janky for now, just put `127.0.0.1:8000/<some_gibberish>` in the FQID if you are manually making Posts/Likes/Comments
+    - change the gibberish everytime or else you may run into uniqueness constraint errors
+- *Do not manually create authors unless they are external*
+
 ## `core` folder
 - (this is like our old `project_firebrick` folder)
 - has `settings.py` etc
