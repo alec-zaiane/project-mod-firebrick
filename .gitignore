@@ -185,4 +185,4 @@ jspm_packages/
 .npm
 
 # Esbuild output
-src/socialnetwork/static/*/*.min.*
+src/core/static/*/*.min.*
