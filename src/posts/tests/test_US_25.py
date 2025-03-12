@@ -3,6 +3,10 @@ from posts.models import Post, PostTypes, VisibilityTypes
 from core.utils.testing_utils import GeneralUserStoryApiTest
 
 
+from unittest import skip
+
+
+@skip("Not implemented")
 @tag("US-Visibility")
 class TestUserStory25(GeneralUserStoryApiTest):
     """

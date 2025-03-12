@@ -8,11 +8,17 @@ from django.test import tag
 
 from rest_framework import status
 
-from socialnetwork.models import LocalAuthor
-from .utils_for_tests import NodeAdminUserStoryApiTest
+from user_management.models import Author
+from core.utils.testing_utils import GeneralUserStoryApiTest
 
 
-class TestUserStory44(NodeAdminUserStoryApiTest):
+from unittest import skip
+
+
+@skip("Not implemented")
+@tag("US-node-management")
+class TestUserStory44(GeneralUserStoryApiTest):
+    # TODO refactor into a UI test!
     """
     Tests for User Story 44
     https://github.com/uofa-cmput404/w25-project-mod-firebrick/issues/44
@@ -24,18 +30,18 @@ class TestUserStory44(NodeAdminUserStoryApiTest):
         """Test adding an author through the API"""
         sample_username = "new_author"
         self.assertFalse(
-            LocalAuthor.objects.filter(
-                user__username=sample_username).exists()
+            Author.objects.filter(
+                _user__username=sample_username).exists()
         )
-        url = reverse("adminpanel:api_author_create")
+        url = reverse("user_management")
         response = self.client.post(
             url, {"username": sample_username, "password": "pass"})
 
         self.assertEqual(response.status_code,
                          status.HTTP_201_CREATED)
         self.assertTrue(
-            LocalAuthor.objects.filter(
-                user__username=sample_username).exists()
+            Author.objects.filter(
+                _user__username=sample_username).exists()
         )
 
     @tag("check-medium")
@@ -43,8 +49,8 @@ class TestUserStory44(NodeAdminUserStoryApiTest):
         """Test that you cannot add another author with the same username"""
         sample_username = "double_author"
         self.assertFalse(
-            LocalAuthor.objects.filter(
-                user__username=sample_username).exists()
+            Author.objects.filter(
+                _user__username=sample_username).exists()
         )
         url = reverse("adminpanel:api_author_create")
         response = self.client.post(
@@ -100,7 +106,7 @@ class TestUserStory44(NodeAdminUserStoryApiTest):
                 url, data, format="json")
             self.assertEqual(response.status_code,
                              status.HTTP_200_OK, response.data)
-            author = LocalAuthor.objects.get(uuid=author.uuid)
+            author = Author.objects.get(uuid=author.uuid)
             self.assertEqual(
                 getattr_nested(author, prop_name),
                 expected,

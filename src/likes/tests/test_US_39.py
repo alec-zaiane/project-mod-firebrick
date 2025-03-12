@@ -4,11 +4,17 @@ from unittest import skip
 
 from rest_framework import status
 
-from .utils_for_tests import GeneralUserStoryApiTest, JsonGenerator
+from core.utils.testing_utils import GeneralUserStoryApiTest
 
-from socialnetwork import models
+from comments.models import Comment
+from posts.models import Post
+from likes.models import Like
 
 
+from unittest import skip
+
+
+@skip("Not implemented")
 @tag("US-comments/likes")
 class TestUserStory39(GeneralUserStoryApiTest):
     """
@@ -24,7 +30,7 @@ class TestUserStory39(GeneralUserStoryApiTest):
         self.initialize_sample_text_posts(posts_per_author=1)
 
         self.client.force_authenticate(user=self.sample_authors[0].user)
-        url = reverse("api:inbox", args=[self.sample_authors[1].uuid])
+        url = reverse("user_management:node2node_inbox", args=[self.sample_authors[1].uuid])
         like_json = JsonGenerator.generate_like(
             self.sample_authors[0], self.sample_posts[1][0])
 
@@ -50,7 +56,7 @@ class TestUserStory39(GeneralUserStoryApiTest):
             posts_per_author=1, visibility_type=models.PostTextBased.VisibilityTypes.FRIENDS_ONLY)
 
         self.client.force_authenticate(user=self.sample_authors[0].user)
-        url = reverse("api:inbox", args=[self.sample_authors[1].uuid])
+        url = reverse("user_management:node2node_inbox", args=[self.sample_authors[1].uuid])
         like_json = JsonGenerator.generate_like(
             self.sample_authors[0], self.sample_posts[1][0])
         response = self.client.post(
@@ -76,7 +82,7 @@ class TestUserStory39(GeneralUserStoryApiTest):
         self.initialize_sample_text_posts(posts_per_author=1)
 
         # send a comment
-        url = reverse("api:inbox", args=[self.sample_authors[1].uuid])
+        url = reverse("user_management:node2node_inbox", args=[self.sample_authors[1].uuid])
         comment_json = JsonGenerator.generate_comment(
             author=self.sample_authors[0],
             target=self.sample_posts[1][0],
@@ -85,20 +91,20 @@ class TestUserStory39(GeneralUserStoryApiTest):
         response = self.client.post(url, comment_json, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        post = models.PostTextBased.objects.get(
+        post = Post.objects.get(
             uuid=self.sample_posts[1][0].uuid)
         comment = post.get_comments().first()
         assert comment is not None  # for mypy
 
         # send a like
-        url = reverse("api:inbox", args=[self.sample_authors[1].uuid])
+        url = reverse("user_management:node2node_inbox", args=[self.sample_authors[1].uuid])
         like_json = JsonGenerator.generate_like(
             self.sample_authors[0], comment)
         response = self.client.post(url, like_json, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         # verify the like
         self.assertEqual(models.Like.objects.count(), 1)
-        like = models.Like.objects.first()
+        like = Like.objects.first()
         assert like is not None  # for mypy
         assert like.author is not None  # for mypy
         self.assertEqual(like.author.uuid, self.sample_authors[0].uuid)

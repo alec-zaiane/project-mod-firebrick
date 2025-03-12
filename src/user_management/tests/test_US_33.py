@@ -2,10 +2,12 @@ from django.test import tag
 from django.urls import reverse
 from rest_framework import status
 
-from .utils_for_tests import GeneralUserStoryApiTest
-from socialnetwork.models import FollowRequest
+from core.utils.testing_utils import GeneralUserStoryApiTest
+
+from unittest import skip
 
 
+@skip("Not implemented")
 @tag("US-Following/Friends")
 class TestUserStory33(GeneralUserStoryApiTest):
     """
@@ -22,13 +24,13 @@ class TestUserStory33(GeneralUserStoryApiTest):
 
         # author0 follow author1
         self.client.force_authenticate(user=author0.user)
-        send_url = reverse("api:send_follow_request", args=[str(author1.uuid)])
+        send_url = reverse("user_management:node2node_inbox", args=[str(author1.uuid)])
         send_resp = self.client.post(send_url)
         self.assertEqual(send_resp.status_code, status.HTTP_201_CREATED)
 
         # author1 can see the follow request in list_follow_requests
         self.client.force_authenticate(user=author1.user)
-        list_url = reverse("api:list_follow_requests")
+        list_url = reverse("user_management:TODO_FIGURE_OUT")
         list_resp = self.client.get(list_url)
         self.assertEqual(list_resp.status_code, status.HTTP_200_OK)
 

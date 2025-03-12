@@ -76,7 +76,7 @@ class User(AbstractUser):
 
     type = models.CharField(
         _("User Type"), max_length=6, choices=Types.choices, blank=False, null=False)
-    email = models.EmailField(_("Email Address"), blank=True, unique=True)
+    email = models.EmailField(_("Email Address"), blank=True)
 
     # managers, `objects` might not be available, but it shouldn't be used anyway
     authors = AuthorUserManager()
@@ -87,7 +87,11 @@ class User(AbstractUser):
 # Authors
 # =============================================================================
 
-class LocalAuthorManager(ApiObjectManager["Author"]):
+class AuthorManager(ApiObjectManager["Author"]):
+    pass
+
+
+class LocalAuthorManager(AuthorManager):
     """Custom manager for Local Author model"""
 
     def get_queryset(self) -> models.QuerySet[LocalAuthor]:
@@ -113,7 +117,7 @@ class LocalAuthorManager(ApiObjectManager["Author"]):
         return join_request.approve()
 
 
-class ExternalAuthorManager(ApiObjectManager["Author"]):
+class ExternalAuthorManager(AuthorManager):
     """Custom manager for External Author model"""
 
     def get_queryset(self) -> models.QuerySet[Author]:
@@ -140,21 +144,26 @@ class Author(ApiObject):
     display_name = models.CharField(_("Display Name"), max_length=255)
     bio = models.TextField(_("Bio"), blank=True)
     profile_image = models.URLField(_("Profile Image"), blank=True)
+    following = models.ManyToManyField(
+        'self', symmetrical=False, related_name='followers', blank=True)
 
     # external authors will not have a user account
     _user: models.OneToOneField[User, Optional[User]] = models.OneToOneField(
         User, on_delete=models.CASCADE, null=True, blank=True)
 
     # managers
-    objects = models.Manager()
+    objects: AuthorManager = AuthorManager()
     local_authors = LocalAuthorManager()
     external_authors = ExternalAuthorManager()
 
-    # type hints for reverse relations
+    # type hints for reverse relations (you can use author.posts/author.comments to get all posts/comments by the author, etc)
     if TYPE_CHECKING:
         posts: QuerySet[Post]
         comments: QuerySet[Comment]
         likes: QuerySet[Like]
+        follow_requests_sent: QuerySet[FollowRequest]
+        follow_requests_received: QuerySet[FollowRequest]
+        followers: QuerySet[Author]
 
     # properties
     @property
@@ -215,6 +224,34 @@ class ExternalAuthor(Author):
             raise ValidationError(
                 "External authors cannot have a user account, this should never happen")
         return None
+
+# =============================================================================
+# Follow Requests
+# =============================================================================
+
+
+class FollowRequestManager(ApiObjectManager["FollowRequest"]):
+    def create_follow_request(self, follower: Author, followee: Author) -> FollowRequest:
+        """Create a new follow request"""
+        host_node = followee.host_node
+        return self.create(follower=follower, followee=followee, host_node=host_node)
+
+    def get_follow_request(self, follower: Author, followee: Author) -> FollowRequest:
+        """Get a follow request if it exists, raises DoesNotExist if it doesn't"""
+        return self.get(follower=follower, followee=followee)
+
+    def check_exists(self, follower: Author, followee: Author) -> bool:
+        return self.get_follow_request(follower, followee) is not None
+
+
+class FollowRequest(ApiObject):
+    """A request for author `follower` to follow author `followee`"""
+    follower: models.ForeignKey[Author] = models.ForeignKey(
+        Author, related_name="follow_requests_sent", on_delete=models.CASCADE)
+    followee: models.ForeignKey[Author] = models.ForeignKey(
+        Author, related_name="follow_requests_received", on_delete=models.CASCADE)
+
+    objects: FollowRequestManager = FollowRequestManager()
 
 # =============================================================================
 # External Nodes

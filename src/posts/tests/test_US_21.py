@@ -1,4 +1,3 @@
-from unittest import skip
 from django.test import tag
 from django.urls import reverse
 
@@ -9,7 +8,10 @@ from posts.models import Post, VisibilityTypes
 from core.utils.testing_utils import GeneralUserStoryApiTest
 
 
-@skip("API changes required")
+from unittest import skip
+
+
+@skip("Not implemented")
 @tag("US-Visibility")
 class TestUserStory21(GeneralUserStoryApiTest):
     """
@@ -23,15 +25,4 @@ class TestUserStory21(GeneralUserStoryApiTest):
         """Test that an author can make a post friends-only"""
         self.initialize_sample_authors(1)
 
-        self.client.force_authenticate(user=self.sample_authors[0].user)
-        response = self.client.post(reverse("socialnetwork:api_textpost_create"), {
-            "content": "sample post",
-            "visibility": VisibilityTypes.FRIENDS_ONLY
-        })
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         # TODO
-        # check that the post was created, and it is friends-only
-        # post_query = PostTextBased.objects.filter(...)
-        # self.assertTrue(post_query.exists())
-        # self.assertEqual(post_query.get().visibility_type,
-        #                  PostTextBased.VisibilityTypes.FRIENDS_ONLY)

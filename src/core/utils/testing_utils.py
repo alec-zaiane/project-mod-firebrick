@@ -25,6 +25,7 @@ class GeneralUserStoryApiTest(APITestCase):
             username="testuser", password="testpassword", display_name="Mr Test")
         self.client.force_authenticate(user=self.author.user)
         self.sample_authors: list[Author] = []
+        self.sample_posts: list[list[Post]] = []
         # to get the posts of the sample authors (if initialized), use self.sample_authors[author_index].posts
 
     def initialize_sample_authors(self, num_authors: int = 5) -> None:
@@ -47,8 +48,9 @@ class GeneralUserStoryApiTest(APITestCase):
             post_type (socialmodels.PostTextBased.TextPostTypes, optional): post type of posts. Defaults to socialmodels.PostTextBased.TextPostTypes.PLAINTEXT.
         """
         for author in self.sample_authors:
+            author_posts: list[Post] = []
             for i in range(posts_per_author):
-                Post.objects.create_post(
+                post = Post.objects.create_post(
                     author=author,
                     title=f"Sample post {i}",
                     description=f"Description {i}",
@@ -56,6 +58,11 @@ class GeneralUserStoryApiTest(APITestCase):
                     visibility_type=visibility_type,
                     post_type=post_type,
                 )
+                author_posts.append(post)
+            if len(self.sample_posts) < len(self.sample_authors):
+                self.sample_posts.append(author_posts)
+            else:
+                self.sample_posts[i].extend(author_posts)
 
 
 class WebElementLoggingWrapper:
