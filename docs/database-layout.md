@@ -2,9 +2,14 @@
 Structure is separated into multiple distinct apps: `comments`, `likes`, `posts`, and `user_management`. `core` is the "project" folder that contains stuff like `settings.py`
 
 ## Important:
-Instead of `Model.objects.(...)` or similar, many of the models have extra `Manager`s that can return the set of what you're looking for (eg: `Authors.local_authors.(...)`), these will be outlined below, and are always better to use if you can (they give better type hints)
+Instead of `<Model>.objects.(...)` or similar, many of the models have extra `Manager`s that can return the set of what you're looking for (eg: `Authors.local_authors.(...)`), these will be outlined below, and are always better to use if you can (they give better type hints)
 
 In addition, most `Model.objects` Managers will have a `create_xyz()` function that makes it easier to create an xyz (they have proper arguments). *Always use these instead of `create()` if available*
+
+## Double important:
+***Never* use `<Model>.objects.(...)` inside a view, with the exception of `.all()` and `.create_<thing>()`**.
+
+ I.e: if you need to `.filter()` or anything else like that, find a way to put it in a `models.py`, or talk to me about it and we can find the best place to put it (often it'll be in a `Manager`)
 
 ## The Admin Panel
 `/admin` is actually useful this time, and we will no longer have our `/adminpanel` endpoint
