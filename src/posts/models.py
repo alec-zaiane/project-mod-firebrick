@@ -68,6 +68,10 @@ class DeletedPostManager(PostManager):
     def get_queryset(self) -> models.QuerySet[Post]:
         return super().get_queryset().filter(is_soft_deleted=True)
 
+    def create_post(self, author: Author, title: str, description: str, content: str, post_type: PostTypes, visibility_type: VisibilityTypes) -> Post:
+        raise ValidationError(
+            "Cannot create a post in the deleted posts manager")
+
 
 class VisiblePostManager(PostManager):
     """Visible posts are posts that are not soft-deleted"""
@@ -129,4 +133,5 @@ class Post(ApiObject):
         self.save()
 
     def generate_fqid(self) -> str:
-        return f"{self.host_node.host_url}/posts/{self.uuid}"  # TODO replace with reverse() call :)
+        # TODO replace with reverse() call :)
+        return f"{self.host_node.host_url}/posts/{self.uuid}"
