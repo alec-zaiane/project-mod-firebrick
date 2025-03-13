@@ -110,11 +110,16 @@ class LocalAuthorManager(AuthorManager):
                 "Local authors must have a user account, consider creating a JoinRequest and approving it instead")
         return cast(LocalAuthor, super().create(*args, **kwargs))
 
-    def create_author(self,  username: str, password: str, email: Optional[str] = None, display_name: Optional[str] = None) -> LocalAuthor:
+    def create_author(self,  username: str, password: str, email: Optional[str] = None, display_name: Optional[str] = None, is_superuser: bool = False) -> LocalAuthor:
         """Create a local author (this will happen by creating and automatically approving a join request)"""
         join_request = JoinRequest.objects.create_join_request(
             username, password, email, display_name)
-        return join_request.approve()
+        author = join_request.approve()
+        if is_superuser:
+            author.user.is_superuser = True
+            author.user.is_staff = True
+            author.user.save()
+        return author
 
 
 class ExternalAuthorManager(AuthorManager):
@@ -139,8 +144,9 @@ class ExternalAuthorManager(AuthorManager):
 class Author(ApiObject):
     """Author model for both local and external authors"""
 
+    # unique=False because we have external authors, which can have the same username as a local one (fqid is the unique identifier)
     username: models.CharField[str, str] = models.CharField(
-        _("Username"), max_length=255, unique=True)
+        _("Username"), max_length=255, unique=False)
     display_name = models.CharField(_("Display Name"), max_length=255)
     bio = models.TextField(_("Bio"), blank=True)
     profile_image = models.URLField(_("Profile Image"), blank=True)

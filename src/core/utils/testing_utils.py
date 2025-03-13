@@ -5,14 +5,14 @@ import platform
 import logging
 import traceback
 
-from django.test import LiveServerTestCase, tag
+from django.test import LiveServerTestCase, tag, override_settings
 from rest_framework.test import APITestCase
 
 from selenium import webdriver
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
-
+from selenium.webdriver.support.ui import Select
 
 from user_management.models import Author
 from posts.models import Post, PostTypes, VisibilityTypes
@@ -132,7 +132,7 @@ class UITestCase(LiveServerTestCase):
         stream_handler.setLevel(logging.DEBUG)
         stream_handler.setFormatter(formatter)
         memory_handler = logging.handlers.MemoryHandler(
-            capacity=5000, flushLevel=logging.ERROR, target=stream_handler)
+            capacity=5000, flushLevel=logging.ERROR, target=stream_handler, flushOnClose=False)
         memory_handler.setLevel(logging.DEBUG)
         memory_handler.setFormatter(formatter)
         logger.addHandler(memory_handler)
@@ -142,9 +142,19 @@ class UITestCase(LiveServerTestCase):
         self.driver = self._get_driver()
         self.logger = self._get_logger()
 
+    def tearDown(self) -> None:
+        # if there was no error, close the browser, otherwise leave it open and print the logs
+        any_failures = self._outcome.result.errors or self._outcome.result.failures  # type: ignore
+        if not any_failures:
+            self.driver.quit()
+        else:
+            self.log("Test failed, browser will remain open for debugging", level=logging.ERROR)
+            self.logger.handlers[0].flush()
+
     # ======================= PUBLIC UTILITY METHODS START HERE =======================
 
     # --------- Action methods --------------
+
     def log(self, message: str, level: int = logging.INFO) -> None:
         """Log a message with a certain level, and an indentation level based on the *current stack depth*"""
         indentation_level = max(
@@ -152,13 +162,35 @@ class UITestCase(LiveServerTestCase):
         indentation = " " + "---" * indentation_level + " "
         self.logger.log(level, f"{indentation}{message}")
 
-    def visit(self, url: str, validate_html: bool = True) -> None:
-        """Visit a URL, optionally validate the HTML (this may add a delay)"""
+    def visit(self, url: str, relative_url: bool = True, validate_html: bool = True) -> None:
+        """Visit a URL
+
+        eg: `visit("/admin")` will visit the admin panel (local_server_url/admin)
+        eg: `visit("https://google.com", relative_url=False)` will visit google.com
+
+        Args:
+            url (str): url to visit
+            relative_url (bool, optional): if True, the URL will be appended to the live server URL. Defaults to True.
+            validate_html (bool, optional): check HTML validity upon visiting. Defaults to True.
+        """
+        if relative_url:
+            url = self.live_server_url + url
         self.log(f"Visiting {url}")
         self.driver.get(url)
         if validate_html:
-            # TODO wait for everything to load? then validate the HTML
-            pass
+            self.validate_html()
+
+    def validate_html(self) -> None:
+        """Validate the HTML of the current page, raise an exception if it's invalid"""
+        pass  # TODO
+
+    def login_as(self, author: Author) -> None:
+        """Log in as an author"""
+        raise NotImplementedError("This method has not been implemented yet")
+
+    def log_out(self) -> None:
+        """Log out of the current session"""
+        raise NotImplementedError("This method has not been implemented yet")
 
     # --------- Find element methods --------------
     def find_element_by_id(self, element_id: str) -> WebElementLoggingWrapper:
@@ -180,6 +212,27 @@ class UITestCase(LiveServerTestCase):
         output: list[WebElementLoggingWrapper] = []
         for element in elements:
             output.append(WebElementLoggingWrapper(element, self))
+        self.log(f"Found {len(output)} elements")
+        return output
+
+    def find_elements_by_selector(self, selector: str) -> list[WebElementLoggingWrapper]:
+        """Find elements by a CSS selector, **Do not use unless absolutely necessary**"""
+        self.log(f"Finding elements by selector: {selector}")
+        elements = self.driver.find_elements(by=By.CSS_SELECTOR, value=selector)
+        output: list[WebElementLoggingWrapper] = []
+        for element in elements:
+            output.append(WebElementLoggingWrapper(element, self))
+        self.log(f"Found {len(output)} elements")
+        return output
+
+    def find_elements_by_value(self, value: str) -> list[WebElementLoggingWrapper]:
+        """Find elements by their value"""
+        self.log(f"Finding elements by value: {value}")
+        elements = self.driver.find_elements(by=By.XPATH, value=f"//*[@value='{value}']")
+        output: list[WebElementLoggingWrapper] = []
+        for element in elements:
+            output.append(WebElementLoggingWrapper(element, self))
+        self.log(f"Found {len(output)} elements")
         return output
 
     # --------- Assertion methods --------------
@@ -207,3 +260,35 @@ class UITestCase(LiveServerTestCase):
         self.log(f"Asserting element with ID does not exist: {element_id}")
         with self.assertRaises(NoSuchElementException):
             self.find_element_by_id(element_id)
+
+
+class AdminUITestCase(UITestCase):
+    """Ui Test case for the admin panel, has some extra functionality for logging in as the admin user"""
+
+    def setUp(self) -> None:
+        self.admin_user = Author.local_authors.create_author(
+            username="admin", password="admin", is_superuser=True)
+        super().setUp()
+
+    def login_as_admin(self) -> None:
+        self.log("Logging in as admin")
+        self.visit("/admin")
+        if "Log in" in self.driver.title:
+            self.find_element_by_name("username").send_keys("admin")
+            self.find_element_by_name("password").send_keys("admin")
+            self.find_elements_by_selector("input[type=submit]")[0].click()
+            self.log("Logged in as admin")
+        else:
+            self.log("Already logged in")
+
+    def adminpanel_set_action_to(self, action_name: str) -> None:
+        self.log(f"Setting action to: {action_name}")
+        try:
+            action_dropdown = self.find_elements_by_selector("select[name=action]")[0]
+        except IndexError:
+            self.fail("No action dropdown found")
+        action_dropdown_selector = Select(action_dropdown.element)
+        try:
+            action_dropdown_selector.select_by_visible_text(action_name)
+        except NoSuchElementException:
+            self.fail(f"No action with name {action_name} found")

@@ -8,16 +8,16 @@ from django.test import tag
 
 from rest_framework import status
 
-from user_management.models import Author
-from core.utils.testing_utils import UITestCase
+from user_management.models import Author, JoinRequest
+from core.utils.testing_utils import AdminUITestCase
 
 
 from unittest import skip
 
 
-@skip("Not implemented")
-@tag("US-node-management")
-class TestUserStory44(UITestCase):
+# @skip("Not implemented")
+@tag("US-node-management", "ui")
+class TestUserStory44(AdminUITestCase):
     # TODO refactor into a UI test!
     """
     Tests for User Story 44
@@ -25,26 +25,43 @@ class TestUserStory44(UITestCase):
     "As a node admin, I want to be able to add, modify, and delete authors"
     """
 
-    @tag("check-fast")
+    @tag("check-slow")
     def test_add_author(self) -> None:
-        """Test adding an author through the API"""
-        sample_username = "new_author"
-        self.assertFalse(
-            Author.objects.filter(
-                _user__username=sample_username).exists()
-        )
-        url = reverse("user_management")
-        response = self.client.post(
-            url, {"username": sample_username, "password": "pass"})
+        """Test adding an author"""
+        self.login_as_admin()
+        # create a join request
+        self.visit("/admin/user_management/joinrequest/add")
+        self.find_element_by_name("username").send_keys("new_author")
+        self.find_element_by_name("display_name").send_keys("New Author")
+        self.find_element_by_name("password").send_keys("pass")
+        self.find_element_by_name("_save").click()
 
-        self.assertEqual(response.status_code,
-                         status.HTTP_201_CREATED)
+        self.assertTrue(
+            JoinRequest.objects.filter(
+                username="new_author").exists()
+        )
+        join_request = JoinRequest.objects.get(username="new_author")
+
+        # approve the join request
+        self.visit("/admin/user_management/joinrequest/")
+        # select the join request
+        self.find_elements_by_value(str(join_request.uuid))[0].click()
+        # approve the join request
+        self.adminpanel_set_action_to("Approve selected join requests")
+        self.find_element_by_name("index").click()
+        self.visit("/admin/user_management/joinrequest/")  # wait for page refresh
+
+        self.assertFalse(
+            JoinRequest.objects.filter(
+                username="new_author").exists()
+        )
         self.assertTrue(
             Author.objects.filter(
-                _user__username=sample_username).exists()
+                _user__username="new_author").exists()
         )
 
-    @tag("check-medium")
+    @skip("Not implemented")
+    @tag("check-slow")
     def test_fail_on_add_existing_username(self) -> None:
         """Test that you cannot add another author with the same username"""
         sample_username = "double_author"
@@ -60,6 +77,7 @@ class TestUserStory44(UITestCase):
             url, {"username": sample_username, "password": "pass"})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @skip("Not implemented")
     @tag("check-slow")
     def test_fail_on_no_username(self) -> None:
         """Test that you cannot add an author without a username"""
@@ -67,6 +85,7 @@ class TestUserStory44(UITestCase):
         response = self.client.post(url, {"password": "pass"})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @skip("Not implemented")
     @tag("check-slow")
     def test_fail_on_no_password(self) -> None:
         """Test that you cannot add an author without a password"""
@@ -74,6 +93,7 @@ class TestUserStory44(UITestCase):
         response = self.client.post(url, {"username": "new_author"})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @skip("Not implemented")
     @tag("check-fast")
     def test_modify_author(self) -> None:
         """Test modifying the sample authors for success"""
@@ -113,6 +133,7 @@ class TestUserStory44(UITestCase):
                 f"Author {author.uuid} does not have {prop_name} == {expected} post-update"
             )
 
+    @skip("Not implemented")
     @tag("check-slow", "security")
     def test_modify_author_fail_on_unauthorized(self) -> None:
         """Test that non-admins cannot modify authors that aren't themselves"""
@@ -125,6 +146,7 @@ class TestUserStory44(UITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    @skip("Not implemented")
     @tag("check-slow")
     def test_modify_author_fail_on_double_username(self) -> None:
         """Test if updating a user to have the same username as another fails as expected"""
@@ -144,6 +166,7 @@ class TestUserStory44(UITestCase):
                 uuid=self.sample_authors[1].uuid).username
         )
 
+    @skip("Not implemented")
     @tag("check-fast")
     def test_delete_user(self) -> None:
         """Test that deleting users works"""
@@ -169,6 +192,7 @@ class TestUserStory44(UITestCase):
                 User.objects.filter(username=authors_user).exists()
             )
 
+    @skip("Not implemented")
     @tag("check-slow")
     def test_delete_user_404(self) -> None:
         """Test that failing to delete a nonexistant user doesn't delete any existing users"""
