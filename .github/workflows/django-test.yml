@@ -19,6 +19,9 @@ jobs:
     - name: Install firefox
       uses: browser-actions/setup-firefox@v1
 
+    - name: Install geckodriver
+      uses: browser-actions/setup-geckodriver@latest
+
     - name: Install dependencies
       run: |
         pip install -r src/requirements.txt
