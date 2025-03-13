@@ -5,6 +5,8 @@ import os
 import logging
 import traceback
 
+from typing import Any, Never
+
 from django.test import LiveServerTestCase, tag
 from rest_framework.test import APITestCase
 
@@ -14,7 +16,7 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support.ui import Select
 
-from user_management.models import Author
+from user_management.models import Author, JoinRequest
 from posts.models import Post, PostTypes, VisibilityTypes
 
 
@@ -85,9 +87,13 @@ class WebElementLoggingWrapper:
         self.test_case.log(f"{self}: Sending keys: {keys}")
         self.element.send_keys(keys)
 
+    def clear(self) -> None:
+        self.test_case.log(f"{self}: Clearing")
+        self.element.clear()
+
 
 @tag("ui")
-class UITestCase(LiveServerTestCase):
+class UITestCase(LiveServerTestCase, GeneralUserStoryApiTest):
     """Testing class for UI tests that require a live server
     - all UI tests should:
         - spawn a firefox browser
@@ -146,6 +152,12 @@ class UITestCase(LiveServerTestCase):
     def setUp(self) -> None:
         self.driver = self._get_driver()
         self.logger = self._get_logger()
+        super().setUp()
+
+    def fail(self, msg: Any = ...) -> Never:
+        """Fail the test"""
+        self.logger.critical("Test Failed")
+        super().fail(msg)
 
     def end_test(self) -> None:
         self.driver.quit()
@@ -291,3 +303,27 @@ class AdminUITestCase(UITestCase):
             action_dropdown_selector.select_by_visible_text(action_name)
         except NoSuchElementException:
             self.fail(f"No action with name {action_name} found")
+
+    def ui_joinrequest_create(self, username: str, display_name: str, password: str) -> JoinRequest:
+        # go to the add page, fill in the fields, and submit
+        self.log(f"Creating join request for {username}, \"{display_name}\", {password}")
+        self.visit("/admin/user_management/joinrequest/add")
+        self.find_element_by_name("username").send_keys(username)
+        self.find_element_by_name("display_name").send_keys(display_name)
+        self.find_element_by_name("password").send_keys(password)
+        self.find_element_by_name("_save").click()
+        join_request = JoinRequest.objects.get(
+            username=username, display_name=display_name, password=password)
+        self.log(f"Created join request, uuid: {join_request.uuid}")
+        return join_request
+
+    def ui_joinrequest_approve(self, joinrequest: JoinRequest) -> None:
+        # go to the list page, select the join request, and approve it
+        # will break if you have pagination, but our tests should never have that many join requests
+        self.log(f"Approving join request with uuid: {joinrequest.uuid}")
+        self.visit("/admin/user_management/joinrequest/")
+        self.find_elements_by_value(str(joinrequest.uuid))[0].click()
+        self.adminpanel_set_action_to("Approve selected join requests")
+        self.find_element_by_name("index").click()
+        self.visit("/admin/user_management/joinrequest/")
+        self.log(f"Approved join request with uuid: {joinrequest.uuid}")

@@ -30,30 +30,12 @@ class TestUserStory44(AdminUITestCase):
         """Test adding an author"""
         self.login_as_admin()
         # create a join request
-        self.visit("/admin/user_management/joinrequest/add")
-        self.find_element_by_name("username").send_keys("new_author")
-        self.find_element_by_name("display_name").send_keys("New Author")
-        self.find_element_by_name("password").send_keys("pass")
-        self.find_element_by_name("_save").click()
+        join_request = self.ui_joinrequest_create("new_author", "New Author", "pass")
 
-        self.assertTrue(
-            JoinRequest.objects.filter(
-                username="new_author").exists()
-        )
-        join_request = JoinRequest.objects.get(username="new_author")
-
-        # approve the join request
-        self.visit("/admin/user_management/joinrequest/")
-        # select the join request
-        self.find_elements_by_value(str(join_request.uuid))[0].click()
-        # approve the join request
-        self.adminpanel_set_action_to("Approve selected join requests")
-        self.find_element_by_name("index").click()
-        self.visit("/admin/user_management/joinrequest/")  # wait for page refresh
+        self.ui_joinrequest_approve(join_request)
 
         self.assertFalse(
-            JoinRequest.objects.filter(
-                username="new_author").exists()
+            JoinRequest.objects.filter(uuid=join_request.uuid).exists()
         )
         self.assertTrue(
             Author.objects.filter(
@@ -66,49 +48,37 @@ class TestUserStory44(AdminUITestCase):
         """Test that you cannot add another author with the same username"""
         self.login_as_admin()
         # create a join request
-        self.visit("/admin/user_management/joinrequest/add")
-        self.find_element_by_name("username").send_keys("new_author")
-        self.find_element_by_name("display_name").send_keys("New Author")
-        self.find_element_by_name("password").send_keys("pass")
-        self.find_element_by_name("_save").click()
-        join_request = JoinRequest.objects.get(username="new_author")
+        join_request = self.ui_joinrequest_create("new_author", "New Author", "pass")
         # approve it
-        self.visit("/admin/user_management/joinrequest/")
-        self.find_elements_by_value(str(join_request.uuid))[0].click()
-        self.adminpanel_set_action_to("Approve selected join requests")
-        self.find_element_by_name("index").click()
+        self.ui_joinrequest_approve(join_request)
         # add another one with the same username
-        self.visit("/admin/user_management/joinrequest/add")
-        self.find_element_by_name("username").send_keys("new_author")
-        self.find_element_by_name("display_name").send_keys("New Author")
-        self.find_element_by_name("password").send_keys("pass")
-        self.find_element_by_name("_save").click()
-        join_request_2 = JoinRequest.objects.get(username="new_author")
-        # approve it
+        join_request_2 = self.ui_joinrequest_create("new_author", "New Author", "pass")
+        # try to approve it...
         self.visit("/admin/user_management/joinrequest/")
         self.find_elements_by_value(str(join_request_2.uuid))[0].click()
         self.adminpanel_set_action_to("Approve selected join requests")
         self.find_element_by_name("index").click()
+        # ...and make sure it fails
         messages = self.find_elements_by_selector("ul.messagelist")
         self.assertIn("is already taken", messages[0].element.text)
         self.assertEqual(JoinRequest.objects.filter(username="new_author").count(), 1)
-
         self.end_test()
 
-    @skip("Not implemented")
-    @tag("check-fast")
+    @tag("check-slow")
     def test_modify_author(self) -> None:
         """Test modifying the sample authors for success"""
+        self.login_as_admin()
 
         # list of updates to be made on the sample authors
-        # each update is (data, (property_name, new_value))
-        # ie. send `data` to the api, check if `author.property_name` == `new_value`
-        updates: list[tuple[dict[str, Any], tuple[str, str]]] = [
-            ({"username": "new_username"}, ("username", "new_username")),               # noqa
-            ({"display_name": "new_display_name"}, ("display_name", "new_display_name")),  # noqa
-            ({"profile_image": "new_url"}, ("profile_image", "new_url")),                # noqa
-            ({"bio": "new_bio"}, ("bio", "new_bio"))                                    # noqa
+        # each update is a tuple of the form ((field_name, new_value), (prop_name, expected_value))
+        updates: list[tuple[tuple[str, str], tuple[str, str]]] = [
+            (("username", "new_username"), ("username", "new_username")),                   # noqa
+            (("display_name", "new_display_name"), ("display_name", "new_display_name")),   # noqa
+            (("profile_image", "new_url"), ("profile_image", "new_url")),                   # noqa
+            (("bio", "new_bio"), ("bio", "new_bio"))                                        # noqa
         ]
+
+        # create new sample authors, one for each update to try
         self.initialize_sample_authors(len(updates))
 
         def getattr_nested(obj: Any, attr: str) -> Any:
@@ -116,23 +86,22 @@ class TestUserStory44(AdminUITestCase):
                 obj = getattr(obj, a)
             return obj
 
-        for (data, (prop_name, expected)), author in zip(updates, self.sample_authors):
-            url = reverse("socialnetwork:api_author_update",
-                          args=[author.uuid])
+        for ((field_name, new_value), (prop_name, expected_value)), author in zip(updates, self.sample_authors):
+            # for each update, try to edit that author in the UI, and make sure it worked
             self.assertNotEqual(
                 getattr_nested(author, prop_name),
-                expected,
-                f"Author {author.uuid} already has {prop_name} == {expected}"
+                expected_value,
+                f"Author {author.uuid} already has {prop_name} == {expected_value}"
             )
-            response = self.client.patch(
-                url, data, format="json")
-            self.assertEqual(response.status_code,
-                             status.HTTP_200_OK, response.data)
-            author = Author.objects.get(uuid=author.uuid)
+            self.visit(f"/admin/user_management/author/{author.uuid}/change/")
+            self.find_element_by_name(field_name).clear()
+            self.find_element_by_name(field_name).send_keys(new_value)
+            self.find_element_by_name("_save").click()
+
             self.assertEqual(
                 getattr_nested(author, prop_name),
-                expected,
-                f"Author {author.uuid} does not have {prop_name} == {expected} post-update"
+                expected_value,
+                f"Author {author.uuid} does not have {prop_name} == {expected_value} post-update"
             )
 
     @skip("Not implemented")
