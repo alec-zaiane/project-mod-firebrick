@@ -59,39 +59,41 @@ class TestUserStory44(AdminUITestCase):
             Author.objects.filter(
                 _user__username="new_author").exists()
         )
+        self.end_test()
 
-    @skip("Not implemented")
     @tag("check-slow")
     def test_fail_on_add_existing_username(self) -> None:
         """Test that you cannot add another author with the same username"""
-        sample_username = "double_author"
-        self.assertFalse(
-            Author.objects.filter(
-                _user__username=sample_username).exists()
-        )
-        url = reverse("adminpanel:api_author_create")
-        response = self.client.post(
-            url, {"username": sample_username, "password": "pass"})
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        response = self.client.post(
-            url, {"username": sample_username, "password": "pass"})
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.login_as_admin()
+        # create a join request
+        self.visit("/admin/user_management/joinrequest/add")
+        self.find_element_by_name("username").send_keys("new_author")
+        self.find_element_by_name("display_name").send_keys("New Author")
+        self.find_element_by_name("password").send_keys("pass")
+        self.find_element_by_name("_save").click()
+        join_request = JoinRequest.objects.get(username="new_author")
+        # approve it
+        self.visit("/admin/user_management/joinrequest/")
+        self.find_elements_by_value(str(join_request.uuid))[0].click()
+        self.adminpanel_set_action_to("Approve selected join requests")
+        self.find_element_by_name("index").click()
+        # add another one with the same username
+        self.visit("/admin/user_management/joinrequest/add")
+        self.find_element_by_name("username").send_keys("new_author")
+        self.find_element_by_name("display_name").send_keys("New Author")
+        self.find_element_by_name("password").send_keys("pass")
+        self.find_element_by_name("_save").click()
+        join_request_2 = JoinRequest.objects.get(username="new_author")
+        # approve it
+        self.visit("/admin/user_management/joinrequest/")
+        self.find_elements_by_value(str(join_request_2.uuid))[0].click()
+        self.adminpanel_set_action_to("Approve selected join requests")
+        self.find_element_by_name("index").click()
+        messages = self.find_elements_by_selector("ul.messagelist")
+        self.assertIn("is already taken", messages[0].element.text)
+        self.assertEqual(JoinRequest.objects.filter(username="new_author").count(), 1)
 
-    @skip("Not implemented")
-    @tag("check-slow")
-    def test_fail_on_no_username(self) -> None:
-        """Test that you cannot add an author without a username"""
-        url = reverse("adminpanel:api_author_create")
-        response = self.client.post(url, {"password": "pass"})
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    @skip("Not implemented")
-    @tag("check-slow")
-    def test_fail_on_no_password(self) -> None:
-        """Test that you cannot add an author without a password"""
-        url = reverse("adminpanel:api_author_create")
-        response = self.client.post(url, {"username": "new_author"})
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.end_test()
 
     @skip("Not implemented")
     @tag("check-fast")

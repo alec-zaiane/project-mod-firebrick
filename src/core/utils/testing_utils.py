@@ -5,7 +5,7 @@ import os
 import logging
 import traceback
 
-from django.test import LiveServerTestCase, tag, override_settings
+from django.test import LiveServerTestCase, tag
 from rest_framework.test import APITestCase
 
 from selenium import webdriver
@@ -94,6 +94,7 @@ class UITestCase(LiveServerTestCase):
         - interact using the public `self.*` methods, **Not `driver.* methods`!**
             - *Important: this is because these methods log the actions taken (printing them out on failure), and make debugging the tests orders of magnitude easier*
             - If what you need to do is not covered by the public methods, please add a new one, and follow the same pattern :)
+        - end your test with `self.end_test()` to close the browser
 
     Some functionality (_get_driver(), logging) was pulled from my 401 project, and modified to fit the proper standards of this project"""
 
@@ -101,6 +102,7 @@ class UITestCase(LiveServerTestCase):
         # https://stackoverflow.com/questions/73973332/check-if-were-in-a-github-action-travis-ci-circle-ci-etc-testing-environme
         is_actions_runner = os.getenv("GITHUB_ACTIONS")
         if is_actions_runner:
+            # grab the installded geckodriver version (will be installed on the runner by the django-tests.yml before this is run)
             geckodriver_root = "/opt/hostedtoolcache/geckodriver"
             geckodriver_version = os.listdir(geckodriver_root)[0]
             geckodriver_path = f"{geckodriver_root}/{geckodriver_version}/x64/geckodriver"
@@ -145,14 +147,8 @@ class UITestCase(LiveServerTestCase):
         self.driver = self._get_driver()
         self.logger = self._get_logger()
 
-    def tearDown(self) -> None:
-        # if there was no error, close the browser, otherwise leave it open and print the logs
-        any_failures = self._outcome.result.errors or self._outcome.result.failures  # type: ignore
-        if not any_failures:
-            self.driver.quit()
-        else:
-            self.log("Test failed, browser will remain open for debugging", level=logging.ERROR)
-            self.logger.handlers[0].flush()
+    def end_test(self) -> None:
+        self.driver.quit()
 
     # ======================= PUBLIC UTILITY METHODS START HERE =======================
 
