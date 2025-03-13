@@ -1,7 +1,7 @@
 """Utility classes/functions useful for testing throughout the project"""
 from __future__ import annotations
 import logging.handlers
-import platform
+import os
 import logging
 import traceback
 
@@ -98,7 +98,8 @@ class UITestCase(LiveServerTestCase):
     Some functionality (_get_driver(), logging) was pulled from my 401 project, and modified to fit the proper standards of this project"""
 
     def _get_driver(self) -> webdriver.Firefox:
-        is_actions_runner = platform.node() == "gh-actions-runner"
+        # https://stackoverflow.com/questions/73973332/check-if-were-in-a-github-action-travis-ci-circle-ci-etc-testing-environme
+        is_actions_runner = os.getenv("GITHUB_ACTIONS")
         if is_actions_runner:
             geckodriver_path = "/snap/bin/geckodriver"
 
