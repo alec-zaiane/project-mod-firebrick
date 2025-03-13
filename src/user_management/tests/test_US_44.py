@@ -9,7 +9,7 @@ from django.test import tag
 from rest_framework import status
 
 from user_management.models import Author
-from core.utils.testing_utils import GeneralUserStoryApiTest
+from core.utils.testing_utils import UITestCase
 
 
 from unittest import skip
@@ -17,7 +17,7 @@ from unittest import skip
 
 @skip("Not implemented")
 @tag("US-node-management")
-class TestUserStory44(GeneralUserStoryApiTest):
+class TestUserStory44(UITestCase):
     # TODO refactor into a UI test!
     """
     Tests for User Story 44

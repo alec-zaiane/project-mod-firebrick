@@ -49,18 +49,17 @@ class ApiObject(models.Model):
 
     def generate_fqid(self) -> str:
         # Ideally this would be an abstract method, but Django shenanigans
+        # MUST BE DETERMINISTIC
         raise NotImplementedError(
             f"generate_fqid must be implemented by subclasses (perhaps in `{self.__class__}`?)")
 
     def clean(self) -> None:
         super().clean()
         if not self.fqid:
-            raise ValidationError("fqid must be set")
+            self.fqid = self.generate_fqid()
         elif not self.fqid.startswith(self.host_node.host_url):
             raise ValidationError(f"fqid must start with the host node's host url, got {self.fqid}")
 
     def save(self, *args: Any, **kwargs: Any) -> None:
-        if not self.fqid:
-            self.fqid = self.generate_fqid()
         self.full_clean()
         super().save(*args, **kwargs)
