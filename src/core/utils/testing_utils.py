@@ -101,7 +101,9 @@ class UITestCase(LiveServerTestCase):
         # https://stackoverflow.com/questions/73973332/check-if-were-in-a-github-action-travis-ci-circle-ci-etc-testing-environme
         is_actions_runner = os.getenv("GITHUB_ACTIONS")
         if is_actions_runner:
-            geckodriver_path = "/opt/hostedtoolcache/geckodriver/latest/x64/geckodriver"
+            geckodriver_root = "/opt/hostedtoolcache/geckodriver"
+            geckodriver_version = os.listdir(geckodriver_root)[0]
+            geckodriver_path = f"{geckodriver_root}/{geckodriver_version}/x64/geckodriver"
 
             driver_service = webdriver.FirefoxService(
                 executable_path=geckodriver_path)

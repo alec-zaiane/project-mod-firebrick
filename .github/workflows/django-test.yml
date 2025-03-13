@@ -16,8 +16,6 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.13'
-    - name: Install firefox
-      uses: browser-actions/setup-firefox@v1
 
     - name: Install geckodriver
       uses: browser-actions/setup-geckodriver@latest
