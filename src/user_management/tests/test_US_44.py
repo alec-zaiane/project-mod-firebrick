@@ -3,12 +3,9 @@ from typing import Any
 import uuid
 
 from django.urls import reverse
-from django.contrib.auth.models import User
 from django.test import tag
 
-from rest_framework import status
-
-from user_management.models import Author, JoinRequest
+from user_management.models import Author, JoinRequest, User
 from core.utils.testing_utils import AdminUITestCase
 
 
@@ -72,10 +69,10 @@ class TestUserStory44(AdminUITestCase):
         # list of updates to be made on the sample authors
         # each update is a tuple of the form ((field_name, new_value), (prop_name, expected_value))
         updates: list[tuple[tuple[str, str], tuple[str, str]]] = [
-            (("username", "new_username"), ("username", "new_username")),                   # noqa
-            (("display_name", "new_display_name"), ("display_name", "new_display_name")),   # noqa
-            (("profile_image", "new_url"), ("profile_image", "new_url")),                   # noqa
-            (("bio", "new_bio"), ("bio", "new_bio"))                                        # noqa
+            (("username", "new_username"), ("username", "new_username")),                    # noqa
+            (("display_name", "new_display_name"), ("display_name", "new_display_name")),    # noqa
+            (("profile_image", "https://picsum.photos/200"), ("profile_image", "https://picsum.photos/200")),  # noqa
+            (("bio", "new_bio"), ("bio", "new_bio"))                                         # noqa
         ]
 
         # create new sample authors, one for each update to try
@@ -98,91 +95,64 @@ class TestUserStory44(AdminUITestCase):
             self.find_element_by_name(field_name).clear()
             self.find_element_by_name(field_name).send_keys(new_value)
             self.find_element_by_name("_save").click()
-
+            author.refresh_from_db()
             self.assertEqual(
                 getattr_nested(author, prop_name),
                 expected_value,
                 f"Author {author.uuid} does not have {prop_name} == {expected_value} post-update"
             )
+        self.end_test()
 
-    @skip("Not implemented")
-    @tag("check-slow", "security")
-    def test_modify_author_fail_on_unauthorized(self) -> None:
-        """Test that non-admins cannot modify authors that aren't themselves"""
-        self.initialize_sample_authors()
-        self.client.force_authenticate(user=self.sample_authors[0].user)
-        url = reverse("socialnetwork:api_author_update",
-                      args=[self.sample_authors[1].uuid])
-        response = self.client.patch(
-            url, {"username": "new_username"}, format="json"
-        )
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-    @skip("Not implemented")
     @tag("check-slow")
     def test_modify_author_fail_on_double_username(self) -> None:
         """Test if updating a user to have the same username as another fails as expected"""
-        self.initialize_sample_authors()
-        url = reverse("socialnetwork:api_author_update",
-                      args=[self.sample_authors[0].uuid])
-        new_name = self.sample_authors[1].username
+        self.initialize_sample_authors(2)
+        self.login_as_admin()
+        # try to update the first author to have the same username as the second
+        author_1 = self.sample_authors[0]
+        author_2 = self.sample_authors[1]
+        self.visit(f"/admin/user_management/author/{author_1.uuid}/change/")
+        self.find_element_by_name("username").clear()
+        self.find_element_by_name("username").send_keys(author_2.username)
+        self.find_element_by_name("_save").click()
+        self.assert_path(f"/admin/user_management/author/{author_1.uuid}/change/")
+        messages = self.find_elements_by_selector("ul.errorlist")
+        self.assertIn("is already taken", messages[0].element.text)
+        author_1.refresh_from_db()
+        self.assertNotEqual(author_1.username, author_2.username)
+        self.end_test()
 
-        response = self.client.patch(
-            url, {"username", new_name}, format="json"
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertNotEqual(
-            LocalAuthor.objects.get(
-                uuid=self.sample_authors[0].uuid).username,
-            LocalAuthor.objects.get(
-                uuid=self.sample_authors[1].uuid).username
-        )
-
-    @skip("Not implemented")
-    @tag("check-fast")
-    def test_delete_user(self) -> None:
-        """Test that deleting users works"""
-        self.initialize_sample_authors()
-        for user in self.sample_authors:
-            self.assertTrue(
-                LocalAuthor.objects.filter(
-                    uuid=user.uuid
-                ).exists()
-            )
-            authors_user = user.username
-
-            url = reverse("adminpanel:api_author_delete", args=[user.uuid])
-            response = self.client.post(url)
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-            self.assertFalse(
-                LocalAuthor.objects.filter(
-                    uuid=user.uuid
-                ).exists()
-            )
-            self.assertFalse(
-                User.objects.filter(username=authors_user).exists()
-            )
-
-    @skip("Not implemented")
     @tag("check-slow")
-    def test_delete_user_404(self) -> None:
-        """Test that failing to delete a nonexistant user doesn't delete any existing users"""
-        self.initialize_sample_authors()
-        all_uuids: list[uuid.UUID] = [a.uuid for a in self.sample_authors]
+    def test_delete_author(self) -> None:
+        """Test that deleting a single author works"""
+        self.login_as_admin()
+        self.log("Creating sample author")
+        self.initialize_sample_authors(1)
+        author = self.sample_authors[0]
+        self.log("Deleting sample author via UI")
+        self.visit(f"/admin/user_management/author/{author.uuid}/delete/")
+        self.find_elements_by_selector("input[type=submit]")[0].click()
+        self.assertFalse(Author.objects.filter(uuid=author.uuid).exists())
+        self.assertFalse(User.objects.filter(username=author.username).exists())
+        self.end_test()
 
-        bad_uuid = uuid.uuid4()
-        while bad_uuid in all_uuids:
-            # just in case we get incredibly unlucky
-            bad_uuid = uuid.uuid4()
-
-        url = reverse("adminpanel:api_author_delete", args=[bad_uuid])
-        response = self.client.post(url)
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-
-        # now make sure none of the previously existing authors were deleted accidentally
-        for existing_uuid in all_uuids:
-            self.assertTrue(
-                LocalAuthor.objects.filter(
-                    uuid=existing_uuid).exists()
-            )
+    @tag("check-slow")
+    def test_delete_multiple_authors(self) -> None:
+        """Test that deleting multiple authors works"""
+        self.login_as_admin()
+        self.log("Creating sample authors")
+        self.initialize_sample_authors(2)
+        authors = self.sample_authors
+        self.log("Deleting sample authors via UI")
+        self.visit("/admin/user_management/author/")
+        for author in authors:
+            self.find_elements_by_value(str(author.uuid))[0].click()
+        self.adminpanel_set_action_to("Delete selected authors")
+        self.find_element_by_name("index").click()
+        self.find_elements_by_selector("input[type=submit]")[0].click()  # confirm button
+        self.visit("/admin/user_management/author/")  # delay to let the deletion happen
+        self.assertFalse(Author.objects.filter(uuid=authors[0].uuid).exists())
+        self.assertFalse(User.objects.filter(username=authors[0].username).exists())
+        self.assertFalse(Author.objects.filter(uuid=authors[1].uuid).exists())
+        self.assertFalse(User.objects.filter(username=authors[1].username).exists())
+        self.end_test()

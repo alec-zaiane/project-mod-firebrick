@@ -25,6 +25,11 @@ class AuthorAdmin(admin.ModelAdmin[models.Author]):
     def is_local_author(self, obj: models.Author) -> bool:
         return obj.is_local
 
+    @admin.action(description="Delete selected authors")
+    def delete_queryset(self, request: HttpRequest, queryset: QuerySet[models.Author]) -> None:
+        for author in queryset:
+            author.delete()
+
 
 @admin.register(models.Node)
 class NodeAdmin(admin.ModelAdmin[models.Node]):

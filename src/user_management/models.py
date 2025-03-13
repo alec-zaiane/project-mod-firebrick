@@ -194,8 +194,16 @@ class Author(ApiObject):
             if self._user is None:
                 raise ValidationError("Local authors must have a user account")
             if self._user.username != self.username:
-                raise ValidationError(
-                    f"Author.username must match User.username, {self.username} != {self._user.username}")
+                if User.objects.filter(username=self.username).exists():
+                    raise ValidationError(
+                        f"Username {self.username} is already taken, cannot change it")
+                self._user.username = self.username
+                self._user.save()
+
+    def delete(self, using: Any = None, keep_parents: bool = False) -> tuple[int, dict[str, int]]:
+        if self._user is not None:
+            self._user.delete()
+        return super().delete(using, keep_parents)
 
     def __str__(self) -> str:
         location = "External" if self.is_external else "Local"
