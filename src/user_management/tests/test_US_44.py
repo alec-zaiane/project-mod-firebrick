@@ -79,6 +79,7 @@ class TestUserStory44(AdminUITestCase):
         ]
 
         # create new sample authors, one for each update to try
+        self.log(f"Creating {len(updates)} sample authors")
         self.initialize_sample_authors(len(updates))
 
         def getattr_nested(obj: Any, attr: str) -> Any:

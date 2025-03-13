@@ -147,6 +147,8 @@ class UITestCase(LiveServerTestCase, GeneralUserStoryApiTest):
         memory_handler.setLevel(logging.DEBUG)
         memory_handler.setFormatter(formatter)
         logger.addHandler(memory_handler)
+        # when the handler is flushed it doesn't put a newline at the beginning, so this makes it nicer to read
+        logger.info("Test Started")
         return logger
 
     def setUp(self) -> None:
@@ -166,10 +168,12 @@ class UITestCase(LiveServerTestCase, GeneralUserStoryApiTest):
 
     # --------- Action methods --------------
 
-    def log(self, message: str, level: int = logging.INFO) -> None:
-        """Log a message with a certain level, and an indentation level based on the *current stack depth*"""
+    def log(self, message: str, level: int = logging.INFO, indentation_offset: int = 0) -> None:
+        """Log a message with a certain level, and an indentation level based on the *current stack depth relative to the start* + `indentation_offset`"""
+        # you would want to use an indentation_offset=-1 if you're logging the start of a group of actions, and leave it at 0 otherwise
+        # eg: see the `login_as` method
         indentation_level = max(
-            len(traceback.extract_stack()) - self._logging_stack_start_depth, 0)
+            len(traceback.extract_stack()) + indentation_offset - self._logging_stack_start_depth, 0)
         indentation = " " + "---" * indentation_level + " "
         self.logger.log(level, f"{indentation}{message}")
 
@@ -186,39 +190,42 @@ class UITestCase(LiveServerTestCase, GeneralUserStoryApiTest):
         """
         if relative_url:
             url = self.live_server_url + url
-        self.log(f"Visiting {url}")
+        self.log(f"Visiting {url}", indentation_offset=-1)
         self.driver.get(url)
         if validate_html:
             self.validate_html()
 
     def validate_html(self) -> None:
         """Validate the HTML of the current page, raise an exception if it's invalid"""
+        self.log("Validating HTML", indentation_offset=-1)
         pass  # TODO
 
     def login_as(self, author: Author) -> None:
         """Log in as an author"""
-        raise NotImplementedError("This method has not been implemented yet")
+        self.log(f"Logging in as {author.username}", indentation_offset=-1)
+        raise NotImplementedError("This method has not been implemented yet")  # TODO
 
     def log_out(self) -> None:
         """Log out of the current session"""
-        raise NotImplementedError("This method has not been implemented yet")
+        self.log(f"Logging out", indentation_offset=-1)
+        raise NotImplementedError("This method has not been implemented yet")  # TODO
 
     # --------- Find element methods --------------
     def find_element_by_id(self, element_id: str) -> WebElementLoggingWrapper:
         """Find an element by its ID"""
-        self.log(f"Finding element by ID: {element_id}")
+        self.log(f"Finding element by ID: {element_id}", indentation_offset=-1)
         element = self.driver.find_element(by=By.ID, value=element_id)
         return WebElementLoggingWrapper(element, self)
 
     def find_element_by_name(self, element_name: str) -> WebElementLoggingWrapper:
         """Find an element by its name"""
-        self.log(f"Finding element by name: {element_name}")
+        self.log(f"Finding element by name: {element_name}", indentation_offset=-1)
         element = self.driver.find_element(by=By.NAME, value=element_name)
         return WebElementLoggingWrapper(element, self)
 
     def find_elements_by_name(self, element_name: str) -> list[WebElementLoggingWrapper]:
         """Find elements by their name"""
-        self.log(f"Finding elements by name: {element_name}")
+        self.log(f"Finding elements by name: {element_name}", indentation_offset=-1)
         elements = self.driver.find_elements(by=By.NAME, value=element_name)
         output: list[WebElementLoggingWrapper] = []
         for element in elements:
@@ -228,7 +235,7 @@ class UITestCase(LiveServerTestCase, GeneralUserStoryApiTest):
 
     def find_elements_by_selector(self, selector: str) -> list[WebElementLoggingWrapper]:
         """Find elements by a CSS selector, **Do not use unless absolutely necessary**"""
-        self.log(f"Finding elements by selector: {selector}")
+        self.log(f"Finding elements by selector: {selector}", indentation_offset=-1)
         elements = self.driver.find_elements(by=By.CSS_SELECTOR, value=selector)
         output: list[WebElementLoggingWrapper] = []
         for element in elements:
@@ -238,7 +245,7 @@ class UITestCase(LiveServerTestCase, GeneralUserStoryApiTest):
 
     def find_elements_by_value(self, value: str) -> list[WebElementLoggingWrapper]:
         """Find elements by their value"""
-        self.log(f"Finding elements by value: {value}")
+        self.log(f"Finding elements by value: {value}", indentation_offset=-1)
         elements = self.driver.find_elements(by=By.XPATH, value=f"//*[@value='{value}']")
         output: list[WebElementLoggingWrapper] = []
         for element in elements:
@@ -249,18 +256,18 @@ class UITestCase(LiveServerTestCase, GeneralUserStoryApiTest):
     # --------- Assertion methods --------------
     def assert_title(self, expected_title: str) -> None:
         """Assert that the title of the page is as expected"""
-        self.log(f"Asserting title is: {expected_title}")
+        self.log(f"Asserting title is: {expected_title}", indentation_offset=-1)
         self.assertEqual(self.driver.title, expected_title)
 
     def assert_path(self, expected_path: str) -> None:
         """Assert that the path of the page is as expected"""
-        self.log(f"Asserting path is: {expected_path}")
+        self.log(f"Asserting path is: {expected_path}", indentation_offset=-1)
         self.assertEqual(self.driver.current_url,
                          self.live_server_url + expected_path)
 
     def assert_id_exists(self, element_id: str) -> None:
         """Assert that an element with the given ID exists"""
-        self.log(f"Asserting element with ID exists: {element_id}")
+        self.log(f"Asserting element with ID exists: {element_id}", indentation_offset=-1)
         try:
             self.find_element_by_id(element_id)
         except NoSuchElementException:
@@ -268,7 +275,7 @@ class UITestCase(LiveServerTestCase, GeneralUserStoryApiTest):
 
     def assert_id_not_exists(self, element_id: str) -> None:
         """Assert that an element with the given ID does not exist"""
-        self.log(f"Asserting element with ID does not exist: {element_id}")
+        self.log(f"Asserting element with ID does not exist: {element_id}", indentation_offset=-1)
         with self.assertRaises(NoSuchElementException):
             self.find_element_by_id(element_id)
 
@@ -282,7 +289,7 @@ class AdminUITestCase(UITestCase):
         super().setUp()
 
     def login_as_admin(self) -> None:
-        self.log("Logging in as admin")
+        self.log("Logging in as admin", indentation_offset=-1)
         self.visit("/admin")
         if "Log in" in self.driver.title:
             self.find_element_by_name("username").send_keys("admin")
@@ -293,7 +300,7 @@ class AdminUITestCase(UITestCase):
             self.log("Already logged in")
 
     def adminpanel_set_action_to(self, action_name: str) -> None:
-        self.log(f"Setting action to: {action_name}")
+        self.log(f"Setting action to: {action_name}", indentation_offset=-1)
         try:
             action_dropdown = self.find_elements_by_selector("select[name=action]")[0]
         except IndexError:
@@ -306,7 +313,8 @@ class AdminUITestCase(UITestCase):
 
     def ui_joinrequest_create(self, username: str, display_name: str, password: str) -> JoinRequest:
         # go to the add page, fill in the fields, and submit
-        self.log(f"Creating join request for {username}, \"{display_name}\", {password}")
+        self.log(
+            f"Creating join request for {username}, \"{display_name}\", {password}", indentation_offset=-1)
         self.visit("/admin/user_management/joinrequest/add")
         self.find_element_by_name("username").send_keys(username)
         self.find_element_by_name("display_name").send_keys(display_name)
@@ -320,7 +328,7 @@ class AdminUITestCase(UITestCase):
     def ui_joinrequest_approve(self, joinrequest: JoinRequest) -> None:
         # go to the list page, select the join request, and approve it
         # will break if you have pagination, but our tests should never have that many join requests
-        self.log(f"Approving join request with uuid: {joinrequest.uuid}")
+        self.log(f"Approving join request with uuid: {joinrequest.uuid}", indentation_offset=-1)
         self.visit("/admin/user_management/joinrequest/")
         self.find_elements_by_value(str(joinrequest.uuid))[0].click()
         self.adminpanel_set_action_to("Approve selected join requests")

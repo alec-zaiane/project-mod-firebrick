@@ -2,3 +2,4 @@ mypy
 django-stubs[compatible-mypy]
 djangorestframework-stubs[compatible-mypy]
 selenium==4.29.0
+tblib==3.0.0
