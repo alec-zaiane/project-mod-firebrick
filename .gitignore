@@ -1,4 +1,5 @@
 src/media/hosted_images
+src/static/*
 
 # https://github.com/github/gitignore/blob/main/Python.gitignore
 # Byte-compiled / optimized / DLL files
@@ -185,4 +186,4 @@ jspm_packages/
 .npm
 
 # Esbuild output
-src/socialnetwork/static/*/*.min.*
+src/core/static/*/*.min.*

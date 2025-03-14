@@ -37,12 +37,17 @@
                 "editor.defaultFormatter": "ms-python.autopep8",
                 "files.insertFinalNewline": true,
                 "files.trimTrailingWhitespace": true,
+                "autopep8.args": [
+                    "--max-line-length=100"
+                ]
             },
             "extensions": [
                 "ms-python.python",
                 "njpwerner.autodocstring",
                 "matangover.mypy",
                 "ms-python.autopep8",
+                "github.vscode-github-actions",
+                "batisteo.vscode-django"
             ]
         }
     },
