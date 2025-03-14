@@ -1,18 +1,14 @@
 
 from typing import Any
-from collections.abc import Iterable
-
-
-from django.urls import reverse
 from rest_framework import serializers
+from rest_framework.serializers import ValidationError
 
-from core.utils import custom_validators
-
-from user_management.models import Author, Node, FollowRequest
+from user_management.models import Author, FollowRequest
 
 
-class AuthorSerializer(serializers.Serializer[Author]):
+class AuthorSerializer(serializers.ModelSerializer[Author]):
     """Author Serializer for node2node
+
     Example Author API object from the class docs:
     ```
     {
@@ -32,137 +28,50 @@ class AuthorSerializer(serializers.Serializer[Author]):
     }
     ```
     """
-    type = serializers.CharField(default="author", validators=[
-                                 custom_validators.ExactlyEqualTo("author")])
-    id = serializers.URLField()
-    host = serializers.URLField()
-    displayName = serializers.CharField(required=False)
-    profileImage = serializers.URLField()
-    page = serializers.URLField()
+    class Meta:
+        model = Author
+        fields = ["uuid", "display_name", "profile_image"]
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """Initialize an authorSerializer
-        Either initialize normally, or pass in an Author object as arg 0 to make it from an Author"""
-        author: Author | None = None
-        if args and isinstance(args[0], Author):
-            author = args[0]
-
-        if author is None:
-            super().__init__(*args, **kwargs)
-        else:
-            THIS_NODE_URL = Node.objects.get_local_node().host_url
-            type = "author"
-            id = f"{THIS_NODE_URL}{reverse("api:author", args=[author.uuid])}"
-            host = f"{THIS_NODE_URL}{reverse("api:root")}"
-            displayName = author.display_name
-            profileImage = author.profile_image
-            page = f"{THIS_NODE_URL}{reverse("socialnetwork:author_profile", args=[author.uuid])}"
-            super().__init__(data={
-                "type": type,
-                "id": id,
-                "host": host,
-                "displayName": displayName,
-                "profileImage": profileImage,
-                "page": page
-            })
-            self.is_valid()
-
-    def save(self, **kwargs: Any) -> Any:
-        pass  # TODO
-
-    def get_mentioned_author(self) -> Author:
-        """Get the Author object mentioned by this serializer
-        **Must be called after is_valid()**
-        raises Author.DoesNotExist if the author does not exist
-        """
-        full_url = self.validated_data["id"]
-        assert isinstance(full_url, str)  # for type checking
-        return Author.objects.get_by_fqid(full_url)
-
-    def check_author_exists(self) -> bool:
-        try:
-            self.get_mentioned_author()
-            return True
-        except Author.DoesNotExist:
-            return False
-
-
-class AuthorsSerializer(serializers.Serializer[Any]):
-    """Author list serializer for node2node
-    Example Authors API object from the class docs:
-    ```
-    {
-        "type": "authors",
-        "authors":[
-            {
-                "type":"author",
-                "id":"http://nodeaaaa/api/authors/111",
-                "host":"http://nodeaaaa/api/",
-                "displayName":"Greg Johnson",
-                "profileImage": "https://i.imgur.com/k7XVwpB.jpeg",
-                "page": "http://nodeaaaa/authors/greg"
-            },
-            {
-                // A second author object...
-            },
-            {
-                // A third author object...
-            }
-        ]
-    }
-    ```
-    """
-    type = serializers.CharField(default="authors", validators=[
-                                 custom_validators.ExactlyEqualTo("authors")])
-
-    authors = serializers.ListField(child=AuthorSerializer())
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """Initialize an AuthorsSerializer from an iterable of Authors"""
-        authors = []
-        authors_found = False
-        if args and isinstance(args[0], Iterable):
-            authors_found = True
-            for author in args[0]:
-                print("author:", author)
-                authors.append(AuthorSerializer(author).data)
-
-        if not authors_found:
-            super().__init__(*args, **kwargs)
-        else:
-            super().__init__(data={
-                "type": "authors",
-                "authors": authors
-            })
-            self.is_valid()
-
-
-class FollowRequestSerializer(serializers.Serializer[FollowRequest]):
-    """Follow request serializer for node2node
-    Example Follow Request API object from the class docs:
-    ```
-    {
-        "type": "follow",
-        "summary":"Greg wants to follow Lara",
-        "actor":{
-            /* Author object who is sending the request */
-        },
-        "object":{
-            /* Author object who is receiving the request */
+    def to_representation(self, instance: Author) -> dict[str, Any]:
+        author_node_url = instance.host_node.host_url
+        return {
+            "type": "author",
+            "id": instance.fqid,
+            "host": author_node_url,
+            "displayName": instance.display_name,
+            "profileImage": instance.profile_image,
+            "page": instance.page_url,
         }
-    }
-    ```
-    """
-    type = serializers.CharField(default="follow", validators=[
-                                 custom_validators.ExactlyEqualTo("follow")])
-    summary = serializers.CharField()
-    actor = AuthorSerializer()
-    object = AuthorSerializer()
 
-    def create(self, validated_data: dict[str, Any]) -> FollowRequest:
-        assert isinstance(self.validated_data["actor"], Author)
-        assert isinstance(self.validated_data["object"], Author)
-        return FollowRequest.objects.create_follow_request(
-            follower=self.validated_data["actor"],
-            followee=self.validated_data["object"]
-        )
+    def to_internal_value(self, data: dict[str, Any]) -> dict[str, Any]:
+        if data.get("type") != "author":
+            raise ValidationError("Author object must always have type author")
+        return {
+            "fqid": data["id"],
+            "host__host_url": data["host"],
+            "display_name": data["displayName"],
+            "profile_image": data["profileImage"],
+            "page_url": data["page"],
+        }
+
+
+class FollowRequestSerializer(serializers.ModelSerializer[FollowRequest]):
+    class Meta:
+        model = FollowRequest
+        fields = ["follower", "followee"]
+
+    def to_representation(self, instance: FollowRequest) -> dict[str, Any]:
+        return {
+            "type": "follow",
+            "summary": f"{instance.follower.display_name} wants to follow {instance.followee.display_name}",
+            "actor": AuthorSerializer(instance.follower).data,
+            "object": AuthorSerializer(instance.followee).data,
+        }
+
+    def to_internal_value(self, data: dict[str, Any]) -> dict[str, Any]:
+        if data.get("type") != "follow":
+            raise ValidationError("Follow request object must always have type follow")
+        return {
+            "follower": Author.objects.get_by_fqid(data["actor"]["id"]),
+            "followee": Author.objects.get_by_fqid(data["object"]["id"]),
+        }

@@ -159,6 +159,7 @@ class Author(ApiObject):
     following = models.ManyToManyField(
         'self', symmetrical=False, related_name='followers', blank=True)
 
+    page_url = models.URLField(_("Page URL"), blank=True)
     # external authors will not have a user account
     _user: models.OneToOneField[User, Optional[User]] = models.OneToOneField(
         User, on_delete=models.CASCADE, null=True, blank=True)
@@ -205,6 +206,8 @@ class Author(ApiObject):
                         f"Username {self.username} is already taken, cannot change it")
                 self._user.username = self.username
                 self._user.save()
+            if not self.page_url:
+                self.page_url = self.generate_page_url()  # might be a little hacky, but it'll work
 
     def delete(self, using: Any = None, keep_parents: bool = False) -> tuple[int, dict[str, int]]:
         if self._user is not None:
@@ -216,6 +219,10 @@ class Author(ApiObject):
         return f"{self.display_name} ({location})"
 
     def generate_fqid(self) -> str:
+        # TODO replace with reverse() call :)
+        return f"{self.host_node.host_url}/authors/{self.uuid}"
+
+    def generate_page_url(self) -> str:
         # TODO replace with reverse() call :)
         return f"{self.host_node.host_url}/authors/{self.uuid}"
 
@@ -275,9 +282,9 @@ class FollowRequestManager(ApiObjectManager["FollowRequest"]):
 
 class FollowRequest(ApiObject):
     """A request for author `follower` to follow author `followee`"""
-    follower: models.ForeignKey[Author] = models.ForeignKey(
+    follower: models.ForeignKey[Author, Author] = models.ForeignKey(
         Author, related_name="follow_requests_sent", on_delete=models.CASCADE)
-    followee: models.ForeignKey[Author] = models.ForeignKey(
+    followee: models.ForeignKey[Author, Author] = models.ForeignKey(
         Author, related_name="follow_requests_received", on_delete=models.CASCADE)
 
     objects: FollowRequestManager = FollowRequestManager()
