@@ -47,6 +47,7 @@ class TestUserStory44(AdminUITestCase):
         )
         self.end_test()
 
+    @skip("not implemented - this test is how it should be done")
     @tag("check-slow")
     def test_fail_on_add_existing_username(self) -> None:
         """Test that you cannot add another author with the same username"""

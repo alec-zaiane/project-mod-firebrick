@@ -29,10 +29,10 @@ class PostUnitTests(TestCase):
 
         self.assertEqual(Post.objects.count(), 4)
         self.assertEqual(Post.visible_posts.count(), 4)
-        self.assertEqual(get_typed_posts(PostTypes.PLAINTEXT), 1)
-        self.assertEqual(get_typed_posts(PostTypes.MARKDOWN), 1)
-        self.assertEqual(get_typed_posts(PostTypes.IMAGE), 1)
-        self.assertEqual(get_typed_posts(PostTypes.VIDEO), 1)
+        self.assertEqual(get_typed_posts(PostTypes.PLAINTEXT).count(), 1)
+        self.assertEqual(get_typed_posts(PostTypes.MARKDOWN).count(), 1)
+        self.assertEqual(get_typed_posts(PostTypes.IMAGE).count(), 1)
+        self.assertEqual(get_typed_posts(PostTypes.VIDEO).count(), 1)
 
         post_plain.soft_delete()
         self.assertEqual(Post.objects.count(), 4)
