@@ -311,27 +311,11 @@ class AdminUITestCase(UITestCase):
         except NoSuchElementException:
             self.fail(f"No action with name {action_name} found")
 
-    def ui_joinrequest_create(self, username: str, display_name: str, password: str) -> JoinRequest:
-        # go to the add page, fill in the fields, and submit
-        self.log(
-            f"Creating join request for {username}, \"{display_name}\", {password}", indentation_offset=-1)
-        self.visit("/admin/user_management/joinrequest/add")
-        self.find_element_by_name("username").send_keys(username)
-        self.find_element_by_name("display_name").send_keys(display_name)
-        self.find_element_by_name("password").send_keys(password)
-        self.find_element_by_name("_save").click()
-        join_request = JoinRequest.objects.get(
-            username=username, display_name=display_name, password=password)
-        self.log(f"Created join request, uuid: {join_request.uuid}")
-        return join_request
-
-    def ui_joinrequest_approve(self, joinrequest: JoinRequest) -> None:
-        # go to the list page, select the join request, and approve it
-        # will break if you have pagination, but our tests should never have that many join requests
-        self.log(f"Approving join request with uuid: {joinrequest.uuid}", indentation_offset=-1)
-        self.visit("/admin/user_management/joinrequest/")
-        self.find_elements_by_value(str(joinrequest.uuid))[0].click()
-        self.adminpanel_set_action_to("Approve selected join requests")
+    def adminpanel_do_action(self, action_name: str, confirm_needed: bool = False) -> None:
+        """Do an action in the adminpanel models view (eg: Delete selected [model]s)
+        If you are deleting, set confirm_needed=True so that it confirms the deletion"""
+        self.log(f"Doing action: {action_name}", indentation_offset=-1)
+        self.adminpanel_set_action_to(action_name)
         self.find_element_by_name("index").click()
-        self.visit("/admin/user_management/joinrequest/")
-        self.log(f"Approved join request with uuid: {joinrequest.uuid}")
+        if confirm_needed:
+            self.find_elements_by_selector("input[type=submit]")[0].click()

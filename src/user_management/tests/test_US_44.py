@@ -27,9 +27,16 @@ class TestUserStory44(AdminUITestCase):
         """Test adding an author"""
         self.login_as_admin()
         # create a join request
-        join_request = self.ui_joinrequest_create("new_author", "New Author", "pass")
+        self.log("Creating join request")
+        self.visit("/admin/user_management/joinrequest/add")
+        self.find_element_by_name("username").send_keys("new_author")
+        self.find_element_by_name("display_name").send_keys("New Author")
+        self.find_element_by_name("password").send_keys("passwordlong")
+        self.find_element_by_name("_save").click()
+        join_request = JoinRequest.objects.get_join_request("new_author")
+        self.log(f"Created join request, uuid: {join_request.uuid}")
 
-        self.ui_joinrequest_approve(join_request)
+        join_request.approve()
 
         self.assertFalse(
             JoinRequest.objects.filter(uuid=join_request.uuid).exists()
@@ -45,15 +52,22 @@ class TestUserStory44(AdminUITestCase):
         """Test that you cannot add another author with the same username"""
         self.login_as_admin()
         # create a join request
-        join_request = self.ui_joinrequest_create("new_author", "New Author", "pass")
+        join_request = JoinRequest.objects.create_join_request(
+            "new_author", display_name="New Author", password="passwordlong")
         # approve it
-        self.ui_joinrequest_approve(join_request)
-        # add another one with the same username
-        join_request_2 = self.ui_joinrequest_create("new_author", "New Author", "pass")
+        join_request.approve()
+        # add another one with the same username (via the UI)
+        self.log("Creating duplicate join request")
+        self.visit("/admin/user_management/joinrequest/add")
+        self.find_element_by_name("username").send_keys("new_author")
+        self.find_element_by_name("display_name").send_keys("New Author")
+        self.find_element_by_name("password").send_keys("passwordlong")
+        self.find_element_by_name("_save").click()
+        join_request_2 = JoinRequest.objects.get_join_request("new_author")
         # try to approve it...
         self.visit("/admin/user_management/joinrequest/")
         self.find_elements_by_value(str(join_request_2.uuid))[0].click()
-        self.adminpanel_set_action_to("Approve selected join requests")
+        self.adminpanel_do_action("Approve selected join requests")
         self.find_element_by_name("index").click()
         # ...and make sure it fails
         messages = self.find_elements_by_selector("ul.messagelist")
@@ -147,9 +161,7 @@ class TestUserStory44(AdminUITestCase):
         self.visit("/admin/user_management/author/")
         for author in authors:
             self.find_elements_by_value(str(author.uuid))[0].click()
-        self.adminpanel_set_action_to("Delete selected authors")
-        self.find_element_by_name("index").click()
-        self.find_elements_by_selector("input[type=submit]")[0].click()  # confirm button
+        self.adminpanel_do_action("Delete selected authors", confirm_needed=True)
         self.visit("/admin/user_management/author/")  # delay to let the deletion happen
         self.assertFalse(Author.objects.filter(uuid=authors[0].uuid).exists())
         self.assertFalse(User.objects.filter(username=authors[0].username).exists())

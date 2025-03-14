@@ -21,7 +21,12 @@ from core.utils.api_object import ApiObject, ApiObjectManager
 # =============================================================================
 
 
-class ExternalNodeUserManager(UserManager["User"]):
+class UserManagerBase(UserManager["User"]):
+    def get_user(self, username: str) -> User:
+        return self.get(username=username)
+
+
+class ExternalNodeUserManager(UserManagerBase):
     """This manager is for the django users that represent external nodes
     External nodes authenticate with the system using these users"""
 
@@ -35,7 +40,7 @@ class ExternalNodeUserManager(UserManager["User"]):
         raise ValidationError("Cannot create superuser for external node")
 
 
-class AuthorUserManager(UserManager["User"]):
+class AuthorUserManager(UserManagerBase):
     """Manages users that are linked to authors"""
 
     def get_queryset(self) -> models.QuerySet[User]:
@@ -88,7 +93,8 @@ class User(AbstractUser):
 # =============================================================================
 
 class AuthorManager(ApiObjectManager["Author"]):
-    pass
+    def find_authors(self, username: str) -> models.QuerySet[Author]:
+        return self.filter(username=username)
 
 
 class LocalAuthorManager(AuthorManager):
@@ -353,6 +359,9 @@ class JoinRequestManager(models.Manager["JoinRequest"]):
         if display_name is None:
             display_name = username
         return self.create(username=username, email=email, display_name=display_name, password=password)
+
+    def get_join_request(self, username: str) -> JoinRequest:
+        return self.get(username=username)
 
 
 class JoinRequest(models.Model):
