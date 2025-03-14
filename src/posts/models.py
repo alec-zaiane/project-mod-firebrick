@@ -130,3 +130,16 @@ class Post(ApiObject):
     def generate_fqid(self) -> str:
         # TODO replace with reverse() call :)
         return f"{self.host_node.host_url}/posts/{self.uuid}"
+
+    def check_can_be_seen_by(self, viewer: Author) -> bool:
+        """Check if this post is possible to be seen by the viewer (either in stream or via a direct link)
+
+        **Warning: this is a relatively expensive operation**
+
+        Args:
+            viewer (Author): The author who is trying to view the post
+
+        Returns:
+            bool: True if the viewer can see the post, False otherwise
+        """
+        return Post.visible_posts.get_posts_visible_to_author(viewer).filter(uuid=self.uuid).exists()
