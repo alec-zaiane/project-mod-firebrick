@@ -7,21 +7,6 @@ from user_management.models import Author
 from user_management.serializers import AuthorSerializer
 
 
-class AuthorViewSet(viewsets.ViewSet):
-    def list(self, request: Request) -> Response:
-        raise NotImplementedError()
-
-    def create(self, request: Request) -> Response:
-        raise NotImplementedError()
-
-    def retrieve(self, request: Request, pk: int) -> Response:
-        raise NotImplementedError()
-
-    def update(self, request: Request, pk: int) -> Response:
-        raise NotImplementedError()
-
-    def partial_update(self, request: Request, pk: int) -> Response:
-        raise NotImplementedError()
-
-    def destroy(self, request: Request, pk: int) -> Response:
-        raise NotImplementedError()
+class AuthorViewSet(viewsets.ModelViewSet[Author]):
+    queryset = Author.objects.all()
+    serializer_class = AuthorSerializer
