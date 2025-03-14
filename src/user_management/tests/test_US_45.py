@@ -162,3 +162,11 @@ class UITestUserStory45(AdminUITestCase):
         with self.assertRaises(JoinRequest.DoesNotExist):
             JoinRequest.objects.get_join_request("Mr-Delete")
         self.end_test()
+
+    @skip("Not implemented")
+    @tag("check-slow")
+    def test__can_send_join_request(self) -> None:
+        self.log_out()
+        # TODO: a logged out user should be able to fill in their details and send to the API
+        # then a JoinRequest should be created with the correct details
+        self.fail("Not implemented")
