@@ -32,7 +32,7 @@ class VisibilityTypes(models.TextChoices):
 
 
 class PostManager(ApiObjectManager["Post"]):
-    def get_typed_post(self, type: PostTypes, include_deleted: bool = False) -> models.QuerySet[Post]:
+    def get_typed_posts(self, type: PostTypes, include_deleted: bool = False) -> models.QuerySet[Post]:
         return self.get_queryset().filter(post_type=type)
 
     def create(self, *args: Any, **kwargs: Any) -> Post:
@@ -44,22 +44,6 @@ class PostManager(ApiObjectManager["Post"]):
 
     def create_post(self, author: Author, title: str, description: str, content: str, post_type: PostTypes, visibility_type: VisibilityTypes) -> Post:
         return self.create(host_node=author.host_node, author=author, title=title, description=description, content=content, post_type=post_type, visibility_type=visibility_type)
-
-    @property
-    def plaintext(self) -> models.QuerySet[Post]:
-        return self.get_typed_post(PostTypes.PLAINTEXT)
-
-    @property
-    def markdown(self) -> models.QuerySet[Post]:
-        return self.get_typed_post(PostTypes.MARKDOWN)
-
-    @property
-    def image(self) -> models.QuerySet[Post]:
-        return self.get_typed_post(PostTypes.IMAGE)
-
-    @property
-    def video(self) -> models.QuerySet[Post]:
-        return self.get_typed_post(PostTypes.VIDEO)
 
 
 class DeletedPostManager(PostManager):
@@ -78,6 +62,17 @@ class VisiblePostManager(PostManager):
 
     def get_queryset(self) -> models.QuerySet[Post]:
         return super().get_queryset().filter(is_soft_deleted=False)
+
+    def get_posts_visible_to_author(self, author: Author) -> models.QuerySet[Post]:
+        """Get all the posts that an author is allowed to see (either in stream or by a direct link)"""
+        raise NotImplementedError("Not implemented yet")
+
+    def get_posts_in_stream_of_author(self, author: Author) -> models.QuerySet[Post]:
+        """Get all the posts that are in the stream of an author"""
+        base_queryset = self.get_posts_visible_to_author(author)
+        # now filter them down to only the ones that are in the stream
+        ...
+        raise NotImplementedError("Not implemented yet")
 
 
 class Post(ApiObject):
