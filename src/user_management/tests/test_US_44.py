@@ -1,15 +1,9 @@
 from typing import Any
 
-import uuid
-
-from django.urls import reverse
 from django.test import tag
 
 from user_management.models import Author, JoinRequest, User
 from core.utils.testing_utils import AdminUITestCase
-
-
-from unittest import skip
 
 
 # @skip("Not implemented")
@@ -47,7 +41,6 @@ class TestUserStory44(AdminUITestCase):
         )
         self.end_test()
 
-    @skip("not implemented - this test is how it should be done")
     @tag("check-slow")
     def test_fail_on_add_existing_username(self) -> None:
         """Test that you cannot add another author with the same username"""
@@ -69,7 +62,6 @@ class TestUserStory44(AdminUITestCase):
         self.visit("/admin/user_management/joinrequest/")
         self.find_elements_by_value(str(join_request_2.uuid))[0].click()
         self.adminpanel_do_action("Approve selected join requests")
-        self.find_element_by_name("index").click()
         # ...and make sure it fails
         messages = self.find_elements_by_selector("ul.messagelist")
         self.assertIn("is already taken", messages[0].element.text)
