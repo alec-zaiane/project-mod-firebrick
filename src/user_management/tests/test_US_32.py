@@ -27,7 +27,6 @@ class TestUserStory32(GeneralUserStoryApiTest):
         # author0 tries to follow author1
         self.client.force_authenticate(user=author0.user)
         send_url = reverse("user_management:node2node_inbox", args=[str(author1.uuid)])
-        follow_request = FollowRequestSerializer()
         resp = self.client.post(send_url)
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
 
