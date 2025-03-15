@@ -30,6 +30,8 @@ class ApiObjectManager(models.Manager[ModelT], Generic[ModelT]):
 class ApiObject(models.Model):
     class Meta:
         abstract = True
+    # This is the LOCAL UUID (if node1.author1's uuid is 123, node2's copy of author1 will have a different uuid)
+    # Use the fqid to identify the object across nodes
     uuid: models.UUIDField[UUID, UUID] = models.UUIDField(
         _("UUID"), primary_key=True, default=uuid4, editable=False)
 

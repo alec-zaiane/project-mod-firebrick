@@ -150,15 +150,19 @@ class ExternalAuthorManager(AuthorManager):
 class Author(ApiObject):
     """Author model for both local and external authors"""
 
+    class Meta:
+        ordering = ["uuid"]
+
     # unique=False because we have external authors, which can have the same username as a local one (fqid is the unique identifier)
     username: models.CharField[str, str] = models.CharField(
-        _("Username"), max_length=255, unique=False)
+        _("Username"), max_length=255, unique=False, blank=True)
     display_name = models.CharField(_("Display Name"), max_length=255)
     bio = models.TextField(_("Bio"), blank=True)
     profile_image = models.URLField(_("Profile Image"), blank=True)
     following = models.ManyToManyField(
         'self', symmetrical=False, related_name='followers', blank=True)
 
+    page_url = models.URLField(_("Page URL"), blank=True)
     # external authors will not have a user account
     _user: models.OneToOneField[User, Optional[User]] = models.OneToOneField(
         User, on_delete=models.CASCADE, null=True, blank=True)
@@ -205,6 +209,8 @@ class Author(ApiObject):
                         f"Username {self.username} is already taken, cannot change it")
                 self._user.username = self.username
                 self._user.save()
+            if not self.page_url:
+                self.page_url = self.generate_page_url()  # might be a little hacky, but it'll work
 
     def delete(self, using: Any = None, keep_parents: bool = False) -> tuple[int, dict[str, int]]:
         if self._user is not None:
@@ -216,6 +222,10 @@ class Author(ApiObject):
         return f"{self.display_name} ({location})"
 
     def generate_fqid(self) -> str:
+        # TODO replace with reverse() call :)
+        return f"{self.host_node.host_url}/authors/{self.uuid}"
+
+    def generate_page_url(self) -> str:
         # TODO replace with reverse() call :)
         return f"{self.host_node.host_url}/authors/{self.uuid}"
 
@@ -275,9 +285,9 @@ class FollowRequestManager(ApiObjectManager["FollowRequest"]):
 
 class FollowRequest(ApiObject):
     """A request for author `follower` to follow author `followee`"""
-    follower: models.ForeignKey[Author] = models.ForeignKey(
+    follower: models.ForeignKey[Author, Author] = models.ForeignKey(
         Author, related_name="follow_requests_sent", on_delete=models.CASCADE)
-    followee: models.ForeignKey[Author] = models.ForeignKey(
+    followee: models.ForeignKey[Author, Author] = models.ForeignKey(
         Author, related_name="follow_requests_received", on_delete=models.CASCADE)
 
     objects: FollowRequestManager = FollowRequestManager()
@@ -293,7 +303,7 @@ class NodeManager(models.Manager["Node"]):
         Create a new node
         Raises ValidationError if is_local_node=True and there is already a local node
         """
-        if "is_local_node" in kwargs:
+        if "is_local_node" in kwargs and kwargs["is_local_node"]:
             if Node.objects.filter(is_local_node=True).exists():
                 raise ValidationError("There can only be one local node")
         return super().create(*args, **kwargs)
@@ -317,6 +327,12 @@ class ExternalNodeManager(NodeManager):
 
     def create(self, *args: Any, **kwargs: Any) -> Node:
         return super().create(*args, is_local_node=False, **kwargs)
+
+    def create_node(self, name: str, host_url: str) -> Node:
+        return self.create(name=name, host_url=host_url)
+
+    def find_node(self, host_url: str) -> Optional[Node]:
+        return self.filter(host_url=host_url).first()
 
 
 class Node(models.Model):
