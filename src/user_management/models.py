@@ -150,6 +150,9 @@ class ExternalAuthorManager(AuthorManager):
 class Author(ApiObject):
     """Author model for both local and external authors"""
 
+    class Meta:
+        ordering = ["uuid"]
+
     # unique=False because we have external authors, which can have the same username as a local one (fqid is the unique identifier)
     username: models.CharField[str, str] = models.CharField(
         _("Username"), max_length=255, unique=False)
