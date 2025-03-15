@@ -1,3 +1,6 @@
+{% endblock %}
+
+
 {% extends "base.html" %}
 
 {% load static %}
@@ -5,15 +8,30 @@
 {% block content %}
 <h2>Create a Post</h2>
 
-<!-- Existing Markdown Post Submission -->
-{% include 'components/post_submission_card.html' %}
+<!-- Form for Plain Text or Markdown Posts -->
+<form id="post-form" action="{% url 'api_textpost_create' %}" method="POST">
+    {% csrf_token %}
+
+    <label for="post_type">Post Type:</label>
+    <select name="post_type">
+        <option value="PT">Plain Text</option>
+        <option value="MD">Markdown</option>
+    </select>
+
+    <input type="text" name="title" placeholder="Title (optional)">
+    <textarea name="content" rows="5" placeholder="Write your post..."></textarea>
+
+    <button type="submit">Create Text Post</button>
+</form>
 
 <h3>Preview</h3>
 <div id="preview" class="post-card"></div>
 
-<!-- New Form for Image Upload -->
+<hr>
+
+<!-- Form for Image Upload -->
 <h2>Create an Image Post</h2>
-<form id="image-upload-form" action="{% url 'socialnetwork:api_imagepost_create' %}" method="POST" enctype="multipart/form-data">
+<form id="image-upload-form" action="{% url 'api_imagepost_create' %}" method="POST" enctype="multipart/form-data">
     {% csrf_token %}
 
     <label for="visibility">Visibility:</label>
