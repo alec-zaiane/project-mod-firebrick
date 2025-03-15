@@ -5,7 +5,7 @@ from django.urls import reverse
 
 from core.utils.testing_utils import GeneralUserStoryApiTest
 
-from user_management.models import FollowRequest, Author
+from user_management.models import FollowRequest, Author, Node
 
 
 @tag("node2node")
@@ -56,10 +56,10 @@ class TestNode2NodeAuthors(GeneralUserStoryApiTest):
         for author in Author.objects.all():
             author.delete()
         self.initialize_sample_authors(3)
-        result = self.client.get(reverse("user_management:author-list") + "?page=2")
-        self.assertEqual(result.status_code, 404)
-        result2 = self.client.get(reverse("user_management:author-list") + "?page=1&size=2")
-        self.assertEqual(result2.status_code, 200)
+        response = self.client.get(reverse("user_management:author-list") + "?page=2")
+        self.assertEqual(response.status_code, 404)
+        response2 = self.client.get(reverse("user_management:author-list") + "?page=1&size=2")
+        self.assertEqual(response2.status_code, 200)
         expected2 = {
             "type": "authors",
             "items": [
@@ -74,9 +74,9 @@ class TestNode2NodeAuthors(GeneralUserStoryApiTest):
                 for author in Author.objects.all()[:2]
             ]
         }
-        self.assertEqual(result2.json(), expected2)
-        result3 = self.client.get(reverse("user_management:author-list") + "?page=2&size=2")
-        self.assertEqual(result3.status_code, 200)
+        self.assertEqual(response2.json(), expected2)
+        response3 = self.client.get(reverse("user_management:author-list") + "?page=2&size=2")
+        self.assertEqual(response3.status_code, 200)
         expected3 = {
             "type": "authors",
             "items": [
@@ -91,4 +91,21 @@ class TestNode2NodeAuthors(GeneralUserStoryApiTest):
                 for author in Author.objects.all()[2:]
             ]
         }
-        self.assertEqual(result3.json(), expected3)
+        self.assertEqual(response3.json(), expected3)
+
+    def test_author_creation(self) -> None:
+        """Test creating an author via the API"""
+        data = {
+            "type": "author",
+            "id": "http://nodeaaaa.abc/api/authors/111",
+            "host": "http://nodeaaaa.abc/api/",
+            "displayName": "Greg Johnson",
+            "github": "http://github.com/gjohnson",
+            "profileImage": "https://i.imgur.com/k7XVwpB.jpeg",
+            "page": "http://nodeaaaa.abc/authors/greg"
+        }
+        Node.external_nodes.create_node("Node a", "http://nodeaaaa.abc/api/")
+        response = self.client.post(reverse("user_management:author-list"), data)
+        self.assertEqual(response.status_code, 201)
+        author = Author.objects.get_by_fqid(data["id"])
+        self.assertEqual(author.display_name, data["displayName"])

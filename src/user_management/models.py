@@ -155,7 +155,7 @@ class Author(ApiObject):
 
     # unique=False because we have external authors, which can have the same username as a local one (fqid is the unique identifier)
     username: models.CharField[str, str] = models.CharField(
-        _("Username"), max_length=255, unique=False)
+        _("Username"), max_length=255, unique=False, blank=True)
     display_name = models.CharField(_("Display Name"), max_length=255)
     bio = models.TextField(_("Bio"), blank=True)
     profile_image = models.URLField(_("Profile Image"), blank=True)
@@ -303,7 +303,7 @@ class NodeManager(models.Manager["Node"]):
         Create a new node
         Raises ValidationError if is_local_node=True and there is already a local node
         """
-        if "is_local_node" in kwargs:
+        if "is_local_node" in kwargs and kwargs["is_local_node"]:
             if Node.objects.filter(is_local_node=True).exists():
                 raise ValidationError("There can only be one local node")
         return super().create(*args, **kwargs)
@@ -327,6 +327,12 @@ class ExternalNodeManager(NodeManager):
 
     def create(self, *args: Any, **kwargs: Any) -> Node:
         return super().create(*args, is_local_node=False, **kwargs)
+
+    def create_node(self, name: str, host_url: str) -> Node:
+        return self.create(name=name, host_url=host_url)
+
+    def find_node(self, host_url: str) -> Optional[Node]:
+        return self.filter(host_url=host_url).first()
 
 
 class Node(models.Model):

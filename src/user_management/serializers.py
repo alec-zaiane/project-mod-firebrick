@@ -3,7 +3,7 @@ from typing import Any
 from rest_framework import serializers
 from rest_framework.serializers import ValidationError
 
-from user_management.models import Author, FollowRequest
+from user_management.models import Author, FollowRequest, Node
 
 
 class AuthorSerializer(serializers.ModelSerializer[Author]):
@@ -33,6 +33,8 @@ class AuthorSerializer(serializers.ModelSerializer[Author]):
         fields = ["uuid", "display_name", "profile_image"]
 
     def to_representation(self, instance: Author) -> dict[str, Any]:
+        if not isinstance(instance, Author):
+            raise ValueError(f"AuthorSerializer can only serialize Author objects, got {instance}")
         author_node_url = instance.host_node.host_url
         return {
             "type": "author",
@@ -53,6 +55,10 @@ class AuthorSerializer(serializers.ModelSerializer[Author]):
             "profile_image": data["profileImage"],
             "page_url": data["page"],
         }
+
+    def create(self, validated_data: dict[str, Any]) -> Author:
+        fqid = validated_data.pop("fqid")
+        return Author.objects.create(fqid=fqid, **validated_data)
 
 
 class FollowRequestSerializer(serializers.ModelSerializer[FollowRequest]):
