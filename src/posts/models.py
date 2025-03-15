@@ -163,7 +163,7 @@ class Post(ApiObject):
     description = models.CharField(max_length=255, blank=True)
     content = models.TextField()
 
-    post_type = models.CharField(
+    post_type: models.CharField[str, str] = models.CharField(
         max_length=4, choices=PostTypes.choices, default=PostTypes.PLAINTEXT
     )
 

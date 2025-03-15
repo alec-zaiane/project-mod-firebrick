@@ -3,9 +3,10 @@ from rest_framework import serializers
 from rest_framework.serializers import ValidationError
 from posts.models import Post, PostTypes
 from user_management.models import Author
-from api.serializers.author_serializers import AuthorSerializer
+from user_management.serializers import AuthorSerializer
 from api.serializers.comment_serializers import CommentsSerializer
 from api.serializers.like_serializers import LikesSerializer
+
 
 class PostSerializer(serializers.ModelSerializer[Post]):
     """
@@ -15,23 +16,25 @@ class PostSerializer(serializers.ModelSerializer[Post]):
 
     class Meta:
         model = Post
-        fields = ["uuid", "title", "description", "content", "post_type", "visibility_type", "author", "published"]
+        fields = ["uuid", "title", "description", "content",
+                  "post_type", "visibility_type", "author", "published"]
 
     def to_representation(self, instance: Post) -> dict[str, Any]:
         """Convert a Post instance into a dictionary following the expected schema."""
         if not isinstance(instance, Post):
-            raise ValueError(f"PostSerializer can only serialize Post objects, got {type(instance)}")
+            raise ValueError(
+                f"PostSerializer can only serialize Post objects, got {type(instance)}")
 
         # Determine the content type
-        content_type_map = {
+        content_type_map: dict[str, str] = {
             PostTypes.PLAINTEXT: "text/plain",
             PostTypes.MARKDOWN: "text/markdown",
-             # check back on this 
-            PostTypes.IMAGE: "image/png;base64", 
+            # check back on this
+            PostTypes.IMAGE: "image/png;base64",
             # this isn't implemented yet
-            PostTypes.VIDEO: "application/base64"  
+            PostTypes.VIDEO: "application/base64"
         }
-        content_type = content_type_map.get(instance.post_type, "text/plain")
+        content_type = content_type_map.get(instance.post_type)
 
         return {
             "type": "post",
