@@ -465,7 +465,7 @@ class JoinRequest(models.Model):
         """Delete the join request regardless of its status"""
         return super().delete()
 
-    def clean_fields(self, exclude: Optional[Collection[str]] = None) -> None:
+    def clean(self, exclude: Optional[Collection[str]] = None) -> None:
         if JoinRequest.objects.filter(username=self.username).exists():
             raise ValidationError(
                 {"username": _(f"Username '{self.username}' has already requested to join")})

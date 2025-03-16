@@ -22,3 +22,10 @@ class JoinRequestForm(forms.ModelForm[JoinRequest]):
     username = forms.CharField(widget=TextInput(
         attrs={'autofocus': True, 'placeholder': 'Username'}))
     password = forms.CharField(widget=PasswordInput(attrs={'placeholder': 'Password'}))
+
+    def save(self, commit: bool = True) -> JoinRequest:
+        join_request = JoinRequest.objects.create_join_request(
+            username=self.cleaned_data["username"],
+            password=self.cleaned_data["password"])
+
+        return join_request
