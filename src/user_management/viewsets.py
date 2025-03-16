@@ -3,6 +3,7 @@ from typing import Any
 from rest_framework import viewsets
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 
 from user_management.models import Author, Node
 from user_management.serializers import AuthorSerializer
@@ -13,7 +14,7 @@ from user_management.permissions import AuthorPermission
 class AuthorViewSet(viewsets.ModelViewSet[Author]):
     queryset = Author.objects.all()
     serializer_class = AuthorSerializer
-    permission_classes = [AuthorPermission]
+    permission_classes = [IsAuthenticated, AuthorPermission]
 
     def list(self, request: Request) -> Response:
         super_data = super().list(request).data

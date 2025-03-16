@@ -1,10 +1,13 @@
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
+from rest_framework.decorators import action
 from rest_framework import viewsets, status
+
+
 from posts.models import Post
 from posts.serializers import PostSerializer
-from rest_framework.decorators import action
+from posts.permissions import PostPermission
 
 
 class PostViewSet(viewsets.ModelViewSet[Post]):
@@ -20,7 +23,7 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
     """
     queryset = Post.visible_posts.all()
     serializer_class = PostSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PostPermission]
     parser_classes = (MultiPartParser, FormParser)
 
     def perform_create(self, serializer: PostSerializer) -> None:
