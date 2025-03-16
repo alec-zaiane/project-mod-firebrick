@@ -1,0 +1,30 @@
+{% extends "head.html" %}
+
+{% load static %}
+
+{% block body %}
+
+<main class="login-page" id="login">
+  <section class="left-panel">
+      <img class="logo" src="{% static 'images/firebrick.webp' %}" />
+      <h1 class="title">Firebrick</h1>
+  </section>
+  <section class="right-panel">
+      <h2 class="login-request">Log in</h2>
+      <form method="post">
+          {% csrf_token %}
+          {{ form.non_field_errors }}
+          <div class="field-wrapper">
+              {{ form.username.errors }}
+              {{ form.username }}
+          </div>
+          <div class="field-wrapper">
+              {{ form.password.errors }}
+              {{ form.password }}
+          </div>
+          <input type="submit" value="Log In">
+      </form>
+
+  </section>
+</main>
+{% endblock %}
