@@ -7,10 +7,13 @@ from rest_framework.response import Response
 from user_management.models import Author, Node
 from user_management.serializers import AuthorSerializer
 
+from user_management.permissions import AuthorPermission
+
 
 class AuthorViewSet(viewsets.ModelViewSet[Author]):
     queryset = Author.objects.all()
     serializer_class = AuthorSerializer
+    permission_classes = [AuthorPermission]
 
     def list(self, request: Request) -> Response:
         super_data = super().list(request).data
