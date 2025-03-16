@@ -19,9 +19,13 @@ class JoinRequestForm(forms.ModelForm[JoinRequest]):
         fields = ["username", "password"]
 
     # Greater specification to fields, mostly for placeholder text
-    username = forms.CharField(widget=TextInput(
+    username = forms.CharField(error_messages={
+        "required": "Please provide a username.",
+    }, widget=TextInput(
         attrs={'autofocus': True, 'placeholder': 'Username'}))
-    password = forms.CharField(widget=PasswordInput(attrs={'placeholder': 'Password'}))
+    password = forms.CharField(error_messages={
+        "required": "Please provide a password.",
+    }, widget=PasswordInput(attrs={'placeholder': 'Password'}))
 
     def save(self, commit: bool = True) -> JoinRequest:
         join_request = JoinRequest.objects.create_join_request(

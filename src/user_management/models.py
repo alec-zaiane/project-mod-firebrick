@@ -468,14 +468,12 @@ class JoinRequest(models.Model):
     def clean(self, exclude: Optional[Collection[str]] = None) -> None:
         if JoinRequest.objects.filter(username=self.username).exists():
             raise ValidationError(
-                {"username": _(f"Username '{self.username}' has already requested to join")})
+                {"username": _(f"Username '{self.username}' has already requested to join.")})
         if User.objects.filter(username=self.username).exists():
-            raise ValidationError({"username": _(f"Username '{self.username}' is already taken")})
+            raise ValidationError({"username": _(f"Username '{self.username}' is already taken.")})
         if self.email:
             if JoinRequest.objects.filter(email=self.email).exists():
                 raise ValidationError(
-                    {"username": _(f"Email '{self.email}' has already requested to join")})
+                    {"username": _(f"Email '{self.email}' has already requested to join.")})
             if User.objects.filter(email=self.email).exists():
-                raise ValidationError({"email": _(f"Email '{self.email}' is already taken")})
-        if self.password is None:
-            raise ValidationError({"password": _("Password is required")})
+                raise ValidationError({"email": _(f"Email '{self.email}' is already taken.")})
