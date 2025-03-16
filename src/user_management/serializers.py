@@ -56,10 +56,6 @@ class AuthorSerializer(serializers.ModelSerializer[Author]):
             "page_url": data["page"],
         }
 
-    def create(self, validated_data: dict[str, Any]) -> Author:
-        fqid = validated_data.pop("fqid")
-        return Author.objects.create(fqid=fqid, **validated_data)
-
 
 class FollowRequestSerializer(serializers.ModelSerializer[FollowRequest]):
     class Meta:

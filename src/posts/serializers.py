@@ -4,14 +4,60 @@ from rest_framework.serializers import ValidationError
 from posts.models import Post, PostTypes
 from user_management.models import Author
 from user_management.serializers import AuthorSerializer
-from api.serializers.comment_serializers import CommentsSerializer
-from api.serializers.like_serializers import LikesSerializer
+# from comments.serializers import CommentsSerializer
+# from likes.serializers import LikesSerializer
 
 
 class PostSerializer(serializers.ModelSerializer[Post]):
     """
     Post Serializer for node2node.
+
     Serializes Post objects into the expected API response format.
+
+    Example:
+    ```
+    {
+        "type":"post",
+        "title":"DID YOU READ MY POST YET?",
+        "id": "http://nodebbbb/api/authors/222/posts/293",
+        // The frontend URL of this post
+        "page": "http://nodebbbb/authors/222/posts/293",
+        "description":"Whatever",
+        "contentType":"text/plain",
+        "content":"Are you even reading my posts Arjun?",
+        "author":{
+            "type":"author",
+            "id":"http://nodebbbb/api/authors/222",
+            "host":"http://nodebbbb/api/",
+            "displayName":"Lara Croft",
+            "page":"http://nodebbbb/authors/222",
+            "github": "http://github.com/laracroft",
+            "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
+        },
+        "comments": {
+            "type": "comments",
+            "id": "http://nodebbbb/api/authors/222/posts/293/comments",
+            // in this example nodebbbb has a html page just for the comments
+            "page": "http://nodebbbb/authors/222/posts/293/comments",
+            "page_number": 1,
+            "size": 5,
+            "count": 0,
+            "src": [],
+        },
+        "likes": {
+            "type": "likes",
+            "id": "http://127.0.0.1:5454/api/authors/222/posts/293/likes",
+            // in this example nodebbbb has a html page just for the likes
+            "page": "http://nodebbbb/authors/222/posts/293/likes"
+            "page_number": 1,
+            "size": 50,
+            "count": 0,
+            "src": [],
+        },
+        "published":"2015-03-09T13:07:04+00:00",
+        "visibility":"FRIENDS"
+    }
+    ```
     """
 
     class Meta:
@@ -38,15 +84,15 @@ class PostSerializer(serializers.ModelSerializer[Post]):
 
         return {
             "type": "post",
-            "id": instance.fqid,
             "title": instance.title,
+            "id": instance.fqid,
             "description": instance.description,
             "contentType": content_type,
             "content": instance.content,
             "author": AuthorSerializer(instance.author).data,
-            "comments": CommentsSerializer(instance.comments.all(), many=True).data,
-            "likes": LikesSerializer(instance.likes.all(), many=True).data,
-            "published": instance.published.isoformat(),
+            # "comments": CommentsSerializer(instance.comments.all(), many=True).data,
+            # "likes": LikesSerializer(instance.likes.all(), many=True).data,
+            "published": instance.created_at.isoformat(),
             "visibility": instance.visibility_type,
         }
 
@@ -63,21 +109,16 @@ class PostSerializer(serializers.ModelSerializer[Post]):
             "application/base64": PostTypes.VIDEO,
         }
 
-        post_type = content_type_map.get(data["contentType"])
+        post_type = content_type_map.get(data["contentType"], None)
         if post_type is None:
             raise ValidationError(f"Invalid contentType: {data['contentType']}")
 
         return {
-            "fqid": data["id"],
             "title": data["title"],
+            "fqid": data["id"],
             "description": data["description"],
+            "post_type": post_type,  # contentType
             "content": data["content"],
-            "post_type": post_type,
-            "visibility_type": data["visibility"],
             "author": Author.objects.get_by_fqid(data["author"]["id"]),
+            "visibility_type": data["visibility"],
         }
-
-    def create(self, validated_data: dict[str, Any]) -> Post:
-        """Create a new Post object from validated data."""
-        fqid = validated_data.pop("fqid")
-        return Post.objects.create(fqid=fqid, **validated_data)
