@@ -11,7 +11,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from user_management.models import Author
-from core.utils.api_object import ApiObject, ApiObjectManager
+from core.utils.api_object import ApiObjectManager, AuthoredApiObject
 
 from django.db.models import Q
 
@@ -54,7 +54,7 @@ class PostManager(ApiObjectManager["Post"]):
 
     def get_queryset(self) -> models.QuerySet[Post]:
         """Fetch only non-deleted posts by default."""
-        return super().get_queryset().filter(is_soft_deleted=False)
+        return super().get_queryset()  # don't filter these, use post.visible_posts to get only visible posts
 
     # filtering by post type
     @property
@@ -151,7 +151,7 @@ class VisiblePostManager(PostManager):
         raise NotImplementedError("Not implemented yet")
 
 
-class Post(ApiObject):
+class Post(AuthoredApiObject):
     """
     A post is either a text post or a media post. Don't use this model directly, but use TextPost or MediaPost instead (proxy models).
     Text posts' content is the text of the post

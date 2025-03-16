@@ -7,7 +7,7 @@ from django.db import models
 
 from django.utils.translation import gettext_lazy as _
 
-from core.utils.api_object import ApiObject, ApiObjectManager
+from core.utils.api_object import AuthoredApiObject, ApiObjectManager
 from user_management.models import Author
 from posts.models import Post
 
@@ -19,7 +19,7 @@ class CommentManager(ApiObjectManager["Comment"]):
         return self.create(host_node=author.host_node, author=author, post=post, content=content)
 
 
-class Comment(ApiObject):
+class Comment(AuthoredApiObject):
     author: models.ForeignKey[Author, Author] = models.ForeignKey(
         Author, on_delete=models.CASCADE, related_name="comments")
     post: models.ForeignKey[Post, Post] = models.ForeignKey(
