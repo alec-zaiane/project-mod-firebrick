@@ -2,10 +2,12 @@ from typing import Any
 from rest_framework import serializers
 from rest_framework.serializers import ValidationError
 from posts.models import Post, CONTENT_TYPE_WEB_MAP, CONTENT_TYPE_WEB_MAP_REVERSE
+from comments.models import Comment
 from user_management.models import Author
 from user_management.serializers import AuthorSerializer
-# from comments.serializers import CommentsSerializer
-# from likes.serializers import LikesSerializer
+from comments.serializers import CommentSerializer
+from likes.models import Like
+from likes.serializers import LikeSerializer
 
 
 class PostSerializer(serializers.ModelSerializer[Post]):
@@ -82,8 +84,8 @@ class PostSerializer(serializers.ModelSerializer[Post]):
             "contentType": content_type,
             "content": instance.content,
             "author": AuthorSerializer(instance.author).data,
-            # "comments": CommentsSerializer(instance.comments.all(), many=True).data,
-            # "likes": LikesSerializer(instance.likes.all(), many=True).data,
+            "comments": CommentSerializer(instance.comments.all(), many=True).data,
+            "likes": LikeSerializer(instance.likes.all(), many=True).data,
             "published": instance.created_at.isoformat(),
             "visibility": instance.visibility_type,
         }
@@ -96,6 +98,17 @@ class PostSerializer(serializers.ModelSerializer[Post]):
         post_type = CONTENT_TYPE_WEB_MAP_REVERSE.get(data["contentType"], None)
         if post_type is None:
             raise ValidationError(f"Invalid contentType: {data['contentType']}")
+
+        # before returning, make sure that all `likes` and `comments` are copied into our database if they don't exist
+        # TODO verify that this is the correct way to handle this
+        if "comments" in data:
+            for comment in data["comments"]:
+                comment_dict = CommentSerializer().to_internal_value(comment)
+                Comment.objects.get_or_create(**comment_dict)
+        if "likes" in data:
+            for like in data["likes"]:
+                like_dict = LikeSerializer().to_internal_value(like)
+                Like.objects.get_or_create(**like_dict)
 
         return {
             "title": data["title"],

@@ -4,7 +4,8 @@ from rest_framework import serializers
 from rest_framework.serializers import ValidationError
 
 from comments.models import Comment
-from posts.models import CONTENT_TYPE_WEB_MAP_REVERSE
+from likes.models import Like
+from posts.models import Post, CONTENT_TYPE_WEB_MAP_REVERSE
 from user_management.serializers import AuthorSerializer
 from likes.serializers import LikeSerializer
 
@@ -102,6 +103,15 @@ class CommentSerializer(serializers.ModelSerializer[Comment]):
         if comment_type is None:
             raise ValidationError(
                 f"Unsupported content type {data['contentType']}, expected one of {list(CONTENT_TYPE_WEB_MAP_REVERSE.keys())}")
+        if Post.visible_posts.find_by_fqid(data["post"]) is None:
+            raise ValidationError(f"Could not find post with id {data['post']}")
+
+        # before returning, make sure all `likes` are accounted for in our database
+        if data.get("likes"):
+            for like in data["likes"]:
+                like_dict = LikeSerializer().to_internal_value(like)
+                Like.objects.get_or_create(**like_dict)
+
         return {
             "author": data["author"],
             "content": data["comment"],
@@ -109,5 +119,4 @@ class CommentSerializer(serializers.ModelSerializer[Comment]):
             "created_at": data["published"],
             "post": data["post"],
             "fqid": data["id"],
-            "likes": data["likes"]
         }
