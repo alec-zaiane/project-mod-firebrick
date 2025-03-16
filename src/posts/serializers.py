@@ -1,7 +1,7 @@
 from typing import Any
 from rest_framework import serializers
 from rest_framework.serializers import ValidationError
-from posts.models import Post, PostTypes
+from posts.models import Post, CONTENT_TYPE_WEB_MAP, CONTENT_TYPE_WEB_MAP_REVERSE
 from user_management.models import Author
 from user_management.serializers import AuthorSerializer
 # from comments.serializers import CommentsSerializer
@@ -72,15 +72,7 @@ class PostSerializer(serializers.ModelSerializer[Post]):
                 f"PostSerializer can only serialize Post objects, got {type(instance)}")
 
         # Determine the content type
-        content_type_map: dict[str, str] = {
-            PostTypes.PLAINTEXT: "text/plain",
-            PostTypes.MARKDOWN: "text/markdown",
-            # check back on this
-            PostTypes.IMAGE: "image/png;base64",
-            # this isn't implemented yet
-            PostTypes.VIDEO: "application/base64"
-        }
-        content_type = content_type_map.get(instance.post_type)
+        content_type = CONTENT_TYPE_WEB_MAP.get(instance.post_type)
 
         return {
             "type": "post",
@@ -101,15 +93,7 @@ class PostSerializer(serializers.ModelSerializer[Post]):
         if data.get("type") != "post":
             raise ValidationError("Post object must always have type 'post'")
 
-        content_type_map = {
-            "text/plain": PostTypes.PLAINTEXT,
-            "text/markdown": PostTypes.MARKDOWN,
-            "image/png;base64": PostTypes.IMAGE,
-            "image/jpeg;base64": PostTypes.IMAGE,
-            "application/base64": PostTypes.VIDEO,
-        }
-
-        post_type = content_type_map.get(data["contentType"], None)
+        post_type = CONTENT_TYPE_WEB_MAP_REVERSE.get(data["contentType"], None)
         if post_type is None:
             raise ValidationError(f"Invalid contentType: {data['contentType']}")
 

@@ -2,7 +2,7 @@
 
 Gives the model a UUID, host node, and FQID (fully qualified ID)"""
 
-from typing import TYPE_CHECKING, Any, TypeVar, Generic
+from typing import TYPE_CHECKING, Any, TypeVar, Generic, Optional
 from datetime import datetime
 
 if TYPE_CHECKING:
@@ -25,6 +25,9 @@ class ApiObjectManager(models.Manager[ModelT], Generic[ModelT]):
 
     def get_by_fqid(self, fqid: str) -> ModelT:
         return self.get(fqid=fqid)
+
+    def find_by_fqid(self, fqid: str) -> Optional[ModelT]:
+        return self.filter(fqid=fqid).first()
 
 
 class ApiObject(models.Model):

@@ -25,6 +25,25 @@ class PostTypes(models.TextChoices):
     VIDEO = "VID", _("Video")
 
 
+# These are for mapping from the web content type to the post type
+CONTENT_TYPE_WEB_MAP: dict[str, str] = {
+    PostTypes.PLAINTEXT: "text/plain",
+    PostTypes.MARKDOWN: "text/markdown",
+    # check back on this
+    PostTypes.IMAGE: "image/png;base64",
+    # this isn't implemented yet
+    PostTypes.VIDEO: "application/base64"
+}
+
+CONTENT_TYPE_WEB_MAP_REVERSE: dict[str, str] = {
+    "text/plain": PostTypes.PLAINTEXT,
+    "text/markdown": PostTypes.MARKDOWN,
+    "image/png;base64": PostTypes.IMAGE,
+    "image/jpeg;base64": PostTypes.IMAGE,
+    "application/base64": PostTypes.VIDEO,
+}
+
+
 class VisibilityTypes(models.TextChoices):
     PUBLIC = "PB", _("Public")
     FRIENDS_ONLY = "FO", _("Friends Only")

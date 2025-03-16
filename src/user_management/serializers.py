@@ -3,7 +3,7 @@ from typing import Any
 from rest_framework import serializers
 from rest_framework.serializers import ValidationError
 
-from user_management.models import Author, FollowRequest, Node
+from user_management.models import Author, FollowRequest
 
 
 class AuthorSerializer(serializers.ModelSerializer[Author]):
