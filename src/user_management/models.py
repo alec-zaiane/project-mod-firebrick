@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional, TYPE_CHECKING, cast
+from typing import Any, Collection, Optional, TYPE_CHECKING, cast
 if TYPE_CHECKING:
     from django.db.models import QuerySet
     from posts.models import Post
@@ -464,3 +464,18 @@ class JoinRequest(models.Model):
     def force_delete(self) -> tuple[int, dict[str, int]]:
         """Delete the join request regardless of its status"""
         return super().delete()
+
+    def clean_fields(self, exclude: Optional[Collection[str]] = None) -> None:
+        if JoinRequest.objects.filter(username=self.username).exists():
+            raise ValidationError(
+                {"username": _(f"Username '{self.username}' has already requested to join")})
+        if User.objects.filter(username=self.username).exists():
+            raise ValidationError({"username": _(f"Username '{self.username}' is already taken")})
+        if self.email:
+            if JoinRequest.objects.filter(email=self.email).exists():
+                raise ValidationError(
+                    {"username": _(f"Email '{self.email}' has already requested to join")})
+            if User.objects.filter(email=self.email).exists():
+                raise ValidationError({"email": _(f"Email '{self.email}' is already taken")})
+        if self.password is None:
+            raise ValidationError({"password": _("Password is required")})

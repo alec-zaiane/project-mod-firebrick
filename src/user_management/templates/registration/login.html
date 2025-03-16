@@ -1,0 +1,11 @@
+{% extends "registration/registration.html" %}
+
+{% load static %}
+
+{% block title %}Login{% endblock %}
+
+{% block id %}login{% endblock %}
+{% block registration_title %}Log In{% endblock %}
+{% block registration_contents%}
+    {% include "registration/registration_form.html" %}
+{% endblock%}
