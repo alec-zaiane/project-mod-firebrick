@@ -18,12 +18,12 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
        - Soft Delete: performs soft delete instead of a hard delete
 
     """
-    queryset = Post.objects.all()
+    queryset = Post.visible_posts.all()
     serializer_class = PostSerializer
     permission_classes = [IsAuthenticated]
     parser_classes = (MultiPartParser, FormParser)
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer: PostSerializer) -> None:
         """Attach current user's author instance during post creation"""
         serializer.save(author=self.request.user.author)
 
