@@ -9,7 +9,7 @@ from user_management.models import Author
 from posts.models import Post
 from comments.models import Comment
 
-from core.utils.api_object import ApiObject, ApiObjectManager
+from core.utils.api_object import AuthoredApiObject, ApiObjectManager
 
 
 class LikeManager(ApiObjectManager["Like"]):
@@ -46,7 +46,7 @@ class CommentLikeManager(LikeManager):
         return cast(models.QuerySet[CommentLike], super().get_queryset().filter(_target_comment__isnull=False))
 
 
-class Like(ApiObject):
+class Like(AuthoredApiObject):
     author: models.ForeignKey[Author, Author] = models.ForeignKey(
         Author, on_delete=models.CASCADE, related_name="likes")
 
