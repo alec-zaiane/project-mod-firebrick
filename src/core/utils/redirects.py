@@ -1,6 +1,6 @@
 from typing import Optional
 from django.http import HttpResponseRedirect, HttpRequest
-from core.settings import LOGIN_REDIRECT_URL
+from core.settings import LOGIN_URL
 # useful redirects
 
 
@@ -8,4 +8,4 @@ def REDIRECT_TO_LOGIN(original_request: Optional[HttpRequest] = None) -> HttpRes
     query_params = ""
     if original_request is not None:
         query_params = "?next=" + original_request.path
-    return HttpResponseRedirect(LOGIN_REDIRECT_URL + query_params)
+    return HttpResponseRedirect(LOGIN_URL + query_params)
