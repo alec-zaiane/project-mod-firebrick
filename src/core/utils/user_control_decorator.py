@@ -14,7 +14,6 @@ from rest_framework.response import Response
 
 
 # Useful fail responses:
-REDIRECT_TO_LOGIN = HttpResponseRedirect(reverse("user_management:login"))
 
 
 class UserControlException(Exception):
