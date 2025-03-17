@@ -67,7 +67,7 @@ class VisiblePostManager(PostManager):
         """Get all the posts that an author is allowed to see (either in stream or by a direct link)"""
         raise NotImplementedError("Not implemented yet")
 
-    def get_posts_in_stream_of_author(self, author: Author) -> models.QuerySet[Post]:
+    def get_posts_in_stream_of_author(self, author: Author, paginate_start: int, paginate_count: int) -> models.QuerySet[Post]:
         """Get all the posts that are in the stream of an author"""
         base_queryset = self.get_posts_visible_to_author(author)
         # now filter them down to only the ones that are in the stream

@@ -127,6 +127,10 @@ class LocalAuthorManager(AuthorManager):
             author.user.save()
         return author
 
+    def find_author_with_user(self, user: User) -> Optional[LocalAuthor]:
+        """Find a local author with the given user (may be none)"""
+        return self.get_queryset().filter(_user=user).first()
+
 
 class ExternalAuthorManager(AuthorManager):
     """Custom manager for External Author model"""
@@ -229,14 +233,14 @@ class Author(ApiObject):
         # TODO replace with reverse() call :)
         return f"{self.host_node.host_url}/authors/{self.uuid}"
 
-    def get_stream(self) -> QuerySet[Post]:
+    def get_stream(self, paginate_start: int, paginate_count: int) -> QuerySet[Post]:
         """Get the stream of posts for this author
 
         Returns:
             QuerySet[Post]: All posts in this author's stream
         """
         # Do not modify this function, modify the get_posts_in_stream_of_author method instead
-        return Post.visible_posts.get_posts_in_stream_of_author(self)
+        return Post.visible_posts.get_posts_in_stream_of_author(self, paginate_start=paginate_start, paginate_count=paginate_count)
 
 # === Proxy Classes for Authors ===
 
