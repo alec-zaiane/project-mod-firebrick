@@ -1,5 +1,4 @@
 src/media/hosted_images
-src/static/*
 
 # https://github.com/github/gitignore/blob/main/Python.gitignore
 # Byte-compiled / optimized / DLL files
