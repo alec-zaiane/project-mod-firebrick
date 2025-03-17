@@ -9,6 +9,12 @@ from user_management.viewsets import AuthorViewSet
 
 app_name = "user_management"
 urlpatterns: list[URLPattern | URLResolver] = [
+    path('login/',
+         auth_views.LoginView.as_view(authentication_form=LoginForm),
+         name='login'),
+    path('join/',
+         join_view,
+         name='join')
 
 ]
 
@@ -17,13 +23,3 @@ router = routers.SimpleRouter()
 router.register(r"authors", AuthorViewSet)
 
 urlpatterns += router.urls
-
-urlpatterns.append(
-    path('login/',
-         auth_views.LoginView.as_view(authentication_form=LoginForm), name='login')
-)
-
-urlpatterns.append(
-    path('join/',
-         join_view, name='join')
-)
