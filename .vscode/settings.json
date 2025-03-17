@@ -34,5 +34,12 @@
         {
             "file": "docs/testing-conventions.md"
         }
-    ]
+    ],
+    "python.testing.unittestEnabled": true,
+    "python.testing.cwd": "./src",
+    "python.testing.unittestArgs": [
+        "-p",
+        "*test*.py"
+    ],
+    "python.testing.pytestEnabled": false
 }

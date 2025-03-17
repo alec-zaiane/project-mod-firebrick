@@ -1,0 +1,13 @@
+<form method="post">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <div class="field-wrapper">
+        {{ form.username.errors }}
+        {{ form.username }}
+    </div>
+    <div class="field-wrapper">
+        {{ form.password.errors }}
+        {{ form.password }}
+    </div>
+    <input type="submit" value="Create Join Request">
+</form>

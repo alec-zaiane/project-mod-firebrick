@@ -57,15 +57,9 @@ class TestUserStory44(AdminUITestCase):
         self.find_element_by_name("display_name").send_keys("New Author")
         self.find_element_by_name("password").send_keys("passwordlong")
         self.find_element_by_name("_save").click()
-        join_request_2 = JoinRequest.objects.get_join_request("new_author")
-        # try to approve it...
-        self.visit("/admin/user_management/joinrequest/")
-        self.find_elements_by_value(str(join_request_2.uuid))[0].click()
-        self.adminpanel_do_action("Approve selected join requests")
-        # ...and make sure it fails
-        messages = self.find_elements_by_selector("ul.messagelist")
-        self.assertIn("is already taken", messages[0].element.text)
-        self.assertEqual(JoinRequest.objects.filter(username="new_author").count(), 1)
+        # make sure it fails
+        error_message = self.find_elements_by_selector("ul.errorlist")
+        self.assertIn("is already taken", error_message[0].element.text)
         self.end_test()
 
     @tag("check-slow")
