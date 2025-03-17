@@ -1,4 +1,5 @@
 from typing import Callable, Any, Optional
+from warnings import deprecated
 import inspect
 
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
@@ -22,6 +23,7 @@ class UserControlException(Exception):
         self.response = response
 
 
+@deprecated("user_control is deprecated, use @login_required or other built-in decorators instead, paired with request_viewer.get_request_viewer() if needed")
 def user_control(request: HttpRequest | Request, must_be_logged_in: bool = False, must_be_author: bool = False, must_be_superuser: bool = False, fail_response: Optional[HttpResponse | Response] = None, verify_true: bool = True) -> None:
     """Control what kind of user can access a view
     **Important: use only inside a function wrapped with `@user_controller`**
@@ -104,6 +106,7 @@ def user_control(request: HttpRequest | Request, must_be_logged_in: bool = False
     # all done :) don't raise an exception
 
 
+@deprecated("user_controller is deprecated, use @login_required or other built-in decorators instead, paired with request_viewer.get_request_viewer() if needed")
 def user_controller(must_be_logged_in: bool = False, must_be_author: bool = False, must_be_superuser: bool = False, fail_response: Optional[HttpResponse | Response] = None) -> Callable[[Callable[..., HttpResponse]], Callable[..., HttpResponse]]:
     """Decorator for any views that require user control
     **Important: see user_control for argument information, they are the same**
