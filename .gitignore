@@ -186,4 +186,4 @@ jspm_packages/
 .npm
 
 # Esbuild output
-src/core/static/*/*.min.*
+src/static/*/*.min.*
