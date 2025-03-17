@@ -14,6 +14,9 @@ from rest_framework.response import Response
 # https://www.artima.com/weblogs/viewpost.jsp?thread=240845#decorator-functions-with-decorator-arguments, accessed 2025-02-15
 
 
+# Useful fail responses:
+
+
 class UserControlException(Exception):
     def __init__(self, response: HttpResponse | Response):
         super().__init__("User control custom exception, if you see this, you probably want to use the @user_controller decorator on the containing view")

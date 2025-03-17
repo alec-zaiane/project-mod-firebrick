@@ -28,6 +28,23 @@ class VisibilityTypes(models.TextChoices):
     FRIENDS_ONLY = "FO", _("Friends Only")
     UNLISTED = "UL", _("Unlisted")
 
+
+class VisibilityTypeResolver:
+    """Modified an existing Q object with a visibility type"""
+    @staticmethod
+    def modify_q(existing_q: Q, visibility_type: VisibilityTypes, author: Author) -> Q:
+        match visibility_type:
+            case VisibilityTypes.PUBLIC:
+                return existing_q | Q(visibility_type=VisibilityTypes.PUBLIC)
+            case VisibilityTypes.FRIENDS_ONLY:
+                return existing_q | (Q(visibility_type=VisibilityTypes.FRIENDS_ONLY) & Q(
+                    author__followers__in=[author]) & Q(author__following__in=[author]))
+            case VisibilityTypes.UNLISTED:
+                return existing_q | Q(visibility_type=VisibilityTypes.UNLISTED)
+            case _:
+                raise ValueError("Invalid visibility type")
+
+
 # === These are actual models ===
 
 
@@ -70,9 +87,17 @@ class VisiblePostManager(PostManager):
     def get_posts_in_stream_of_author(self, author: Author) -> models.QuerySet[Post]:
         """Get all the posts that are in the stream of an author"""
         base_queryset = self.get_posts_visible_to_author(author)
+        query_filter = Q()
         # now filter them down to only the ones that are in the stream
-        ...
-        raise NotImplementedError("Not implemented yet")
+        # unlisted posts should only be in the stream of followers
+        remove_unlisted_nonfollowing = Q(visibility_type=VisibilityTypes.UNLISTED) & ~Q(
+            author__followers__in=[author]) & ~Q(author=author)
+        query_filter = query_filter | ~remove_unlisted_nonfollowing
+
+        # still, your own posts are always in your stream
+        query_filter = query_filter | Q(author=author)
+        # slicing an un-fetched queryset reduces the database load :)
+        return base_queryset.filter(query_filter).order_by('-created_at')[paginate_start:paginate_start + paginate_count]
 
 
 class Post(ApiObject):

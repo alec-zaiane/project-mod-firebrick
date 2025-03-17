@@ -236,7 +236,8 @@ class Author(ApiObject):
             QuerySet[Post]: All posts in this author's stream
         """
         # Do not modify this function, modify the get_posts_in_stream_of_author method instead
-        return Post.visible_posts.get_posts_in_stream_of_author(self)
+        from posts.models import Post  # some jankiness to avoid circular imports
+        return Post.visible_posts.get_posts_in_stream_of_author(self, paginate_start=paginate_start, paginate_count=paginate_count)
 
 # === Proxy Classes for Authors ===
 
