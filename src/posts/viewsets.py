@@ -8,6 +8,7 @@ from rest_framework import viewsets, status
 from posts.models import Post
 from posts.serializers import PostSerializer
 from posts.permissions import PostPermission
+from user_management.models import Author
 
 
 class PostViewSet(viewsets.ModelViewSet[Post]):
@@ -31,7 +32,17 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
            This ensures all posts are linked correctly while allowing proper validation.
         """
         data = request.data.copy()
-        data["author"] = request.user.author
+
+        # auth is pulled fore JSON if provided
+        if "author" in data:
+            author = Author.objects.filter(fqid=data["author"]).first()
+            if not author:
+                return Response({"error": "Invalid author FQID"}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            # default to the authenticated users author
+            author = request.user.author
+
+        data["author"] = author
 
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
