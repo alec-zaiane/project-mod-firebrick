@@ -28,26 +28,21 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
     parser_classes = (MultiPartParser, FormParser)
 
     def create(self, request, *args, **kwargs):
-        """Override create to attach the current user as the author.
-           This ensures all posts are linked correctly while allowing proper validation.
-        """
-        data = request.data.copy()
-
-        # auth is pulled fore JSON if provided
-        if "author" in data:
-            author = Author.objects.filter(fqid=data["author"]).first()
-            if not author:
-                return Response({"error": "Invalid author FQID"}, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            # default to the authenticated users author
-            author = request.user.author
-
-        data["author"] = author
-
-        serializer = self.get_serializer(data=data)
+        """Override create to correctly attach author while allowing external nodes to create posts."""
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        post = serializer.save()
 
+        author = serializer.validated_data["author"]
+        requester_author = request.user.author
+
+        # the requester is either the author themselves or a valid host node
+        if requester_author != author and requester_author.host_node != author.host_node:
+            return Response(
+                {"error": "You do not have permission to create a post for this author."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        post = serializer.save()
         return Response(self.get_serializer(post).data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
