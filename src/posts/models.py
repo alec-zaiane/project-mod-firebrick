@@ -11,7 +11,9 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from user_management.models import Author
-from core.utils.api_object import ApiObject, ApiObjectManager
+from core.utils.api_object import ApiObjectManager, AuthoredApiObject
+
+from django.db.models import Q
 
 # === These are enums for the types of posts ===
 
@@ -23,10 +25,46 @@ class PostTypes(models.TextChoices):
     VIDEO = "VID", _("Video")
 
 
+# These are for mapping from the web content type to the post type
+CONTENT_TYPE_WEB_MAP: dict[str, str] = {
+    PostTypes.PLAINTEXT: "text/plain",
+    PostTypes.MARKDOWN: "text/markdown",
+    # check back on this
+    PostTypes.IMAGE: "image/png;base64",
+    # this isn't implemented yet
+    PostTypes.VIDEO: "application/base64"
+}
+
+CONTENT_TYPE_WEB_MAP_REVERSE: dict[str, str] = {
+    "text/plain": PostTypes.PLAINTEXT,
+    "text/markdown": PostTypes.MARKDOWN,
+    "image/png;base64": PostTypes.IMAGE,
+    "image/jpeg;base64": PostTypes.IMAGE,
+    "application/base64": PostTypes.VIDEO,
+}
+
+
 class VisibilityTypes(models.TextChoices):
     PUBLIC = "PB", _("Public")
     FRIENDS_ONLY = "FO", _("Friends Only")
     UNLISTED = "UL", _("Unlisted")
+
+
+class VisibilityTypeResolver:
+    """Modified an existing Q object with a visibility type"""
+    @staticmethod
+    def modify_q(existing_q: Q, visibility_type: VisibilityTypes, author: Author) -> Q:
+        match visibility_type:
+            case VisibilityTypes.PUBLIC:
+                return existing_q | Q(visibility_type=VisibilityTypes.PUBLIC)
+            case VisibilityTypes.FRIENDS_ONLY:
+                return existing_q | (Q(visibility_type=VisibilityTypes.FRIENDS_ONLY) & Q(
+                    author__followers__contains=author) & Q(author__following__contains=author))
+            case VisibilityTypes.UNLISTED:
+                return existing_q | Q(visibility_type=VisibilityTypes.UNLISTED)
+            case _:
+                raise ValueError("Invalid visibility type")
+
 
 # === These are actual models ===
 
@@ -35,8 +73,8 @@ class PostManager(ApiObjectManager["Post"]):
 
     def get_queryset(self) -> models.QuerySet[Post]:
         """Fetch only non-deleted posts by default."""
-        return super().get_queryset().filter(is_soft_deleted=False)
-    
+        return super().get_queryset()  # don't filter these, use post.visible_posts to get only visible posts
+
     # filtering by post type
     @property
     def plaintext(self) -> models.QuerySet[Post]:
@@ -57,7 +95,7 @@ class PostManager(ApiObjectManager["Post"]):
     def video(self) -> models.QuerySet[Post]:
         """Retrieve all video posts"""
         return self.get_queryset().filter(post_type=PostTypes.VIDEO)
-    
+
     def get_typed_posts(self, type: PostTypes, include_deleted: bool = False) -> models.QuerySet[Post]:
         return self.get_queryset().filter(post_type=type)
 
@@ -69,24 +107,25 @@ class PostManager(ApiObjectManager["Post"]):
         return super().create(*args, **kwargs)
 
     def create_post(
-        self, 
-        author: Author, 
-        title: str, 
-        description: str, 
-        content: str, 
-        post_type: PostTypes, 
+        self,
+        author: Author,
+        title: str,
+        description: str,
+        content: str,
+        post_type: PostTypes,
         visibility_type: VisibilityTypes
     ) -> Post:
         """Creates a post using validated arguments."""
         return self.create(
-            host_node=author.host_node, 
-            author=author, 
-            title=title, 
-            description=description, 
-            content=content, 
-            post_type=post_type, 
+            host_node=author.host_node,
+            author=author,
+            title=title,
+            description=description,
+            content=content,
+            post_type=post_type,
             visibility_type=visibility_type
         )
+
 
 class DeletedPostManager(PostManager):
     """Deleted posts are posts that are soft-deleted, only an admin should be able to see these"""
@@ -107,26 +146,31 @@ class VisiblePostManager(PostManager):
 
     def get_posts_visible_to_author(self, author: Author) -> models.QuerySet[Post]:
         """Get all the posts that an author is allowed to see (either in stream or by a direct link)"""
-        public_posts = self.get_queryset().filter(visibility_type=VisibilityTypes.PUBLIC)
-        # Friends-only posts (only visible to mutual followers)
-        friends_posts = self.get_queryset().filter(
-            visibility_type=VisibilityTypes.FRIENDS_ONLY,
-            author__followers=author
-        )
-        # Posts in the author's private inbox
-        private_inbox_posts = self.get_queryset().filter(is_in_private_inbox_of=author)
+        # we don't have to worry about deleted posts because of self.get_queryset()
+        # see the visibility User stories: https://uofa-cmput404.github.io/general/project.html#user-stories
+        query = Q()  # start with an empty query
+        for visibility_type in VisibilityTypes:  # add up every visibility type's query
+            query = VisibilityTypeResolver.modify_q(query, visibility_type, author)
 
-        return public_posts | friends_posts | private_inbox_posts
+        # also, always show your own posts
+        query = query | Q(author=author)
+
+        return self.get_queryset().filter(query)
 
     def get_posts_in_stream_of_author(self, author: Author) -> models.QuerySet[Post]:
         """Get all the posts that are in the stream of an author"""
         base_queryset = self.get_posts_visible_to_author(author)
         # now filter them down to only the ones that are in the stream
-        ...
+        # unlisted posts should only be in the stream of followers
+        query_filter = Q(author__followers__contains=author)
+
+        # still, your own posts are always in your stream
+        query_filter = query_filter | Q(author=author)
+
         raise NotImplementedError("Not implemented yet")
 
 
-class Post(ApiObject):
+class Post(AuthoredApiObject):
     """
     A post is either a text post or a media post. Don't use this model directly, but use TextPost or MediaPost instead (proxy models).
     Text posts' content is the text of the post
@@ -138,7 +182,7 @@ class Post(ApiObject):
     description = models.CharField(max_length=255, blank=True)
     content = models.TextField()
 
-    post_type = models.CharField(
+    post_type: models.CharField[str, str] = models.CharField(
         max_length=4, choices=PostTypes.choices, default=PostTypes.PLAINTEXT
     )
 

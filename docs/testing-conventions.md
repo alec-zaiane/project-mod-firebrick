@@ -23,6 +23,7 @@ We'll have a few different tagging schemes:
     - `bugfix` for if you fix a bug and want to make sure it cant re-occur
     - `security` for security related tests (eg access control)
     - `ui` for UI related tests (these are often slowww)
+    - `node2node` for tests on functionality between nodes
     - ...
 
 - User story categories

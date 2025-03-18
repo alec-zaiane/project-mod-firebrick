@@ -2,11 +2,11 @@
 
 Gives the model a UUID, host node, and FQID (fully qualified ID)"""
 
-from typing import TYPE_CHECKING, Any, TypeVar, Generic
+from typing import TYPE_CHECKING, Any, TypeVar, Generic, Optional
 from datetime import datetime
 
 if TYPE_CHECKING:
-    from user_management.models import Node
+    from user_management.models import Node, Author
 
 from uuid import UUID, uuid4
 
@@ -26,10 +26,15 @@ class ApiObjectManager(models.Manager[ModelT], Generic[ModelT]):
     def get_by_fqid(self, fqid: str) -> ModelT:
         return self.get(fqid=fqid)
 
+    def find_by_fqid(self, fqid: str) -> Optional[ModelT]:
+        return self.filter(fqid=fqid).first()
+
 
 class ApiObject(models.Model):
     class Meta:
         abstract = True
+    # This is the LOCAL UUID (if node1.author1's uuid is 123, node2's copy of author1 will have a different uuid)
+    # Use the fqid to identify the object across nodes
     uuid: models.UUIDField[UUID, UUID] = models.UUIDField(
         _("UUID"), primary_key=True, default=uuid4, editable=False)
 
@@ -63,3 +68,14 @@ class ApiObject(models.Model):
     def save(self, *args: Any, **kwargs: Any) -> None:
         self.full_clean()
         super().save(*args, **kwargs)
+
+
+class AuthoredApiObject(ApiObject):
+    """An API object with an author attribute
+    This class does not define the author attribute, it is up to subclasses to define it (because of reverse relation naming)
+    """
+    class Meta:
+        abstract = True
+
+    if TYPE_CHECKING:
+        author: models.ForeignKey["Author", "Author"]

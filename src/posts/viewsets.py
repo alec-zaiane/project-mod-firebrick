@@ -1,12 +1,16 @@
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework.response import Response, viewsets, status
-from posts.models import Post
-from posts.serializers import PostSerializer 
+from rest_framework.response import Response
 from rest_framework.decorators import action
+from rest_framework import viewsets, status
 
 
-class PostViewSet(viewsets.ModelViewSet):
+from posts.models import Post
+from posts.serializers import PostSerializer
+from posts.permissions import PostPermission
+
+
+class PostViewSet(viewsets.ModelViewSet[Post]):
     """ViewSet for handling posts (text & image)
        This viewset supports standard CRUD (read is auto handles by REST btw) Operations:
        The issue I got was that the default delete wasn't soft delete,
@@ -14,28 +18,21 @@ class PostViewSet(viewsets.ModelViewSet):
 
        - Create: attaches the current user's author instance w perform_create
        - Update: only allows authors to modify their own post
-       - Soft Delete: performs soft delete instead of a hard delete 
-    
+       - Soft Delete: performs soft delete instead of a hard delete
     """
-    queryset = Post.objects.all()
-    serializer_class = PostSerializer
-    permission_classes = [IsAuthenticated]  
-    parser_classes = (MultiPartParser, FormParser)  
 
     def create(self, request, *args, **kwargs):
+        """Override create to attach the current user as the author.
+           This ensures all posts are linked correctly while allowing proper validation.
         """
-        Override create to attach the current user as the author.
-        This ensures all posts are linked correctly while allowing proper validation.
-        """
-        data = request.data.copy()  
-        data["author"] = request.user.author  
-        
+        data = request.data.copy()
+        data["author"] = request.user.author
+
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
-        post = serializer.save() 
-        
-        return Response(self.get_serializer(post).data, status=status.HTTP_201_CREATED)
+        post = serializer.save()
 
+        return Response(self.get_serializer(post).data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
         """Override update to ensure only authors can modify their posts"""
@@ -43,7 +40,6 @@ class PostViewSet(viewsets.ModelViewSet):
         if post.author != request.user.author:
             return Response({"error": "You cannot edit someone else's post"}, status=403)
         return super().update(request, *args, **kwargs)
-
 
     @action(detail=True, methods=["post"], url_path="soft-delete")
     def soft_delete(self, request, pk=None):
