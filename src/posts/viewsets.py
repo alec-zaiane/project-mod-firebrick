@@ -3,12 +3,16 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework import viewsets, status
+from rest_framework.request import Request
+from django.contrib.auth.models import AnonymousUser, User
 
 
 from posts.models import Post
 from posts.serializers import PostSerializer
 from posts.permissions import PostPermission
 from user_management.models import Author
+from typing import Any, Optional
+
 
 
 class PostViewSet(viewsets.ModelViewSet[Post]):
@@ -24,11 +28,19 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
 
     queryset = Post.visible_posts.all()
     serializer_class = PostSerializer
-    Permission_classes = [IsAuthenticated, PostPermission]
+    permission_classes = [IsAuthenticated, PostPermission]
     parser_classes = (MultiPartParser, FormParser)
 
-    def create(self, request, *args, **kwargs):
+    def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """Override create to correctly attach author while allowing external nodes to create posts."""
+        if isinstance(request.user, AnonymousUser) or not hasattr(request.user, "author"):
+            return Response(
+                {"error": "Authentication required."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        requester_author = request.user.author
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -45,26 +57,44 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
         post = serializer.save()
         return Response(self.get_serializer(post).data, status=status.HTTP_201_CREATED)
 
-    def update(self, request, *args, **kwargs):
+    def update(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """Override update to ensure only authors can modify their posts"""
-        post = self.get_object()
-        if post.author != request.user.author:
-            return Response({"error": "You cannot edit someone else's post"}, status=403)
+
+        if isinstance(request.user, AnonymousUser) or not hasattr(request.user, "author"):
+            return Response(
+                {"error": "Authentication required."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        requester_author = request.user.author
+        post: Post = self.get_object()
+
+        if post.author != requester_author:
+            return Response({"error": "You cannot edit someone else's post"}, status=status.HTTP_403_FORBIDDEN)
         return super().update(request, *args, **kwargs)
 
     @action(detail=True, methods=["post"], url_path="soft-delete")
-    def soft_delete(self, request, pk=None):
+    def soft_delete(self, request: Request, pk: Optional[str] = None) -> Response:
         """
         Soft delete the specified post.
 
         Instead of permanently deleting the post, this action marks the post as soft-deleted.
-        Only the author of the post is allowed to di this.
+        Only the author of the post is allowed to do this.
         """
-        post = self.get_object()
-        if post.author != request.user.author:
+        if isinstance(request.user, AnonymousUser) or not hasattr(request.user, "author"):
+            return Response(
+                {"error": "Authentication required."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        requester_author = request.user.author
+        post: Post = self.get_object()
+
+        if post.author != requester_author:
             return Response(
                 {"error": "You cannot delete someone else's post"},
                 status=status.HTTP_403_FORBIDDEN
             )
+
         post.soft_delete()
         return Response({"detail": "Post soft deleted"}, status=status.HTTP_204_NO_CONTENT)
