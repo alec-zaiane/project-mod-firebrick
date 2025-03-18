@@ -119,3 +119,16 @@ class PostSerializer(serializers.ModelSerializer[Post]):
             "author": Author.objects.get_by_fqid(data["author"]["id"]),
             "visibility_type": data["visibility"],
         }
+
+    def validate(self, data: dict[str, Any]) -> dict[str, Any]:
+        """Perform additional validation on incoming data."""
+        if data["visibility_type"] not in {"PUBLIC", "FRIENDS", "UNLISTED"}:
+            raise ValidationError("Invalid visibility type")
+        return data
+
+    def create(self, validated_data: dict[str, Any]) -> Post:
+        """Create a new Post object from validated data."""
+        fqid = validated_data.pop("fqid")
+        if not fqid:
+            raise ValidationError("Post must have a valid FQID.")
+        return Post.objects.create(fqid=fqid, **validated_data)
