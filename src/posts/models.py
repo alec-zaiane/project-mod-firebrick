@@ -13,6 +13,8 @@ from django.utils.translation import gettext_lazy as _
 from user_management.models import Author
 from core.utils.api_object import ApiObject, ApiObjectManager
 
+from django.db.models import Q
+
 # === These are enums for the types of posts ===
 
 
