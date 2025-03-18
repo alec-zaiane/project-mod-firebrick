@@ -8,7 +8,7 @@ from core.utils.redirects import REDIRECT_TO_LOGIN
 from core.utils.request_viewer import get_request_viewer
 
 
-# Create your views here.
+# # Create your views here.
 
 @login_required
 def create_post_view(request: HttpRequest) -> HttpResponse:

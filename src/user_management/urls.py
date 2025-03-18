@@ -20,6 +20,6 @@ urlpatterns: list[URLPattern | URLResolver] = [
 
 router = routers.SimpleRouter()
 # creates names: author-list, author-detail, author-create, author-update, author-delete
-router.register(r"authors", AuthorViewSet)
+router.register(r"api/authors", AuthorViewSet)
 
 urlpatterns += router.urls
