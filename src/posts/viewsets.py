@@ -21,6 +21,11 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
        - Soft Delete: performs soft delete instead of a hard delete
     """
 
+    queryset = Post.visible_posts.all()
+    serializer_class = PostSerializer
+    Permission_classes = [IsAuthenticated, PostPermission]
+    parser_classes = (MultiPartParser, FormParser)
+
     def create(self, request, *args, **kwargs):
         """Override create to attach the current user as the author.
            This ensures all posts are linked correctly while allowing proper validation.
