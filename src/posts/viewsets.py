@@ -22,9 +22,20 @@ class PostViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]  
     parser_classes = (MultiPartParser, FormParser)  
 
-    def perform_create(self, serializer):
-        """Attach current user's author instance during post creation"""
-        serializer.save(author=self.request.user.author)
+    def create(self, request, *args, **kwargs):
+        """
+        Override create to attach the current user as the author.
+        This ensures all posts are linked correctly while allowing proper validation.
+        """
+        data = request.data.copy()  
+        data["author"] = request.user.author  
+        
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        post = serializer.save() 
+        
+        return Response(self.get_serializer(post).data, status=status.HTTP_201_CREATED)
+
 
     def update(self, request, *args, **kwargs):
         """Override update to ensure only authors can modify their posts"""
