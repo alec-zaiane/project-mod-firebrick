@@ -46,6 +46,7 @@ class PostSerializer(serializers.ModelSerializer[Post]):
             "published": instance.published.isoformat(),
             "visibility": instance.visibility_type,
         }
+        
 
     def to_internal_value(self, data: dict[str, Any]) -> dict[str, Any]:
         """Convert JSON data into a dictionary compatible with Post model."""
@@ -61,8 +62,12 @@ class PostSerializer(serializers.ModelSerializer[Post]):
         }
 
         post_type = content_type_map.get(data["contentType"])
-        if post_type is None:
-            raise ValidationError(f"Invalid contentType: {data['contentType']}")
+
+        # Check the author
+        author = Author.objects.filter(fqid=data["author"]["id"]).first()
+        if not author:
+            raise ValidationError("Author does not exist")        
+        author = Author.objects.filer(fqid=data)
 
         return {
             "fqid": data["id"],
@@ -73,8 +78,16 @@ class PostSerializer(serializers.ModelSerializer[Post]):
             "visibility_type": data["visibility"],
             "author": Author.objects.get_by_fqid(data["author"]["id"]),
         }
+    
+    def validate(self, data: dict[str, Any]) -> dict[str, Any]:
+        """Perform additional validation on incoming data."""
+        if data["visibility_type"] not in {"PUBLIC", "FRIENDS", "UNLISTED"}:
+            raise ValidationError("Invalid visibility type")
+        return data
 
     def create(self, validated_data: dict[str, Any]) -> Post:
         """Create a new Post object from validated data."""
         fqid = validated_data.pop("fqid")
+        if not fqid:
+            raise ValidationError("Post must have a valid FQID.")
         return Post.objects.create(fqid=fqid, **validated_data)
