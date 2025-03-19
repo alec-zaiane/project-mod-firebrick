@@ -299,6 +299,10 @@ class FollowRequest(ApiObject):
 
     objects: FollowRequestManager = FollowRequestManager()
 
+    def generate_fqid(self) -> str:
+        """Generate a unique FQID for the follow request"""
+        return f"{self.host_node.host_url}/authors/{self.follower.uuid}/followers/{self.followee.uuid}"
+    
 # =============================================================================
 # External Nodes
 # =============================================================================

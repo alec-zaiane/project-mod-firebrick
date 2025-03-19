@@ -4,7 +4,7 @@ from django.contrib.auth import views as auth_views
 from django.urls import path
 from user_management.forms import LoginForm
 
-from user_management.views import JoinView
+from user_management.views import JoinView, FollowRequestCreateView
 from user_management.viewsets import AuthorViewSet
 
 app_name = "user_management"
@@ -14,8 +14,8 @@ urlpatterns: list[URLPattern | URLResolver] = [
          name='login'),
     path('join/',
          JoinView.as_view(),
-         name='join')
-
+         name='join'),
+    path('follow/', FollowRequestCreateView.as_view(), name='follow_request_create'),
 ]
 
 router = routers.SimpleRouter()
