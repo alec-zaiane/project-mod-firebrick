@@ -323,7 +323,7 @@ class NodeManager(models.Manager["Node"]):
             from core.settings import SITE_URL
             return self.create(
                 name="self",
-                host_url=f"{SITE_URL}/api/",
+                host_url=f"{SITE_URL}/api",
                 is_local_node=True
             )
 
