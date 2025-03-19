@@ -72,10 +72,10 @@
         <div class="likes-comments">
             <div class="comments-box">
                 <img class="comments-icon" src="{% static 'svg/comment.svg' %}" />
-                <span class="comments-count">{{post.comments|length}}</span>
+                <span class="comments-count">{{post.comments.all|length}}</span>
             </div>
             <div class="likes-box">
-                <form name="generic-form" action="{#{% url 'likes:like_post_internal' post.uuid %}"#}">
+                <form name="generic-form" action="{% url 'likes:like_by_viewer' post.fqid|urlencode:"" %}">
                     {% csrf_token %}
                     {{ viewer.uuid|json_script:"viewer" }}
                     {{ post.get_likes_author_uuid_strings|json_script:"like_authors" }}
@@ -86,7 +86,7 @@
                         <img class="like-icon liked" src="{% static 'svg/liked.svg' %}" />
                     </button>
                 </form>
-                <span class="likes-count">{{ post.likes|length }}</span>
+                <span class="likes-count">{{ post.likes.all|length }}</span>
             </div>
         </div>
     </footer>

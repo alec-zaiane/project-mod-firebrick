@@ -71,7 +71,7 @@ class Like(AuthoredApiObject):
         super().clean()
 
     def generate_fqid(self) -> str:
-        return f"{self.host_node.host_url}/likes/{self.uuid}"  # TODO replace with reverse() call :)
+        return f"{self.host_node.host_url}likes/{self.uuid}"  # TODO replace with reverse() call :)
 
 
 class PostLike(Like):
