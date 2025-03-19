@@ -23,12 +23,10 @@ from core.utils.redirects import API_UNAUTHORIZED
 class PostViewSet(viewsets.ModelViewSet[Post]):
     """ViewSet for handling posts (text & image)
        This viewset supports standard CRUD (read is auto handles by REST btw) Operations:
-       The issue I got was that the default delete wasn't soft delete,
-       instead we're using a custom decorator to soft delete
 
        - Create: attaches the current user's author instance w perform_create
        - Update: only allows authors to modify their own post
-       - Soft Delete: performs soft delete instead of a hard delete
+       - Destroy: performs soft delete instead of a hard delete
     """
 
     queryset = Post.visible_posts.all()
