@@ -293,22 +293,26 @@ a:link:active, a:visited:active  {
     text-decoration: underline;
 }
 
-.navbar-contents .logout-container {
+.navbar-contents .logout-signup-container {
     margin-top: auto;
     margin-bottom: 50px;
 }
 
-.navbar-contents .logout {
+.navbar-contents .logout-signup {
     background: firebrick;
     color: var(--color);
     padding: 6px 12px;
     border-radius: 20px;
-    font-style: bold;
+    font-weight: bold;
     border: 0;
     cursor: pointer;
 }
 
-.navbar-contents .logout:hover {
+.navbar-contents .logout {
+    height: 30px;
+}
+
+.navbar-contents .logout-signup:hover {
     background: rgb(117, 16, 23);
 }
 

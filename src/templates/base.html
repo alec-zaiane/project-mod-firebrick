@@ -1,9 +1,54 @@
-{# Janky base.html just for testing. **feel free to completely overwrite this** #}
-
 {% extends "head.html" %}
 
 {% load static %}
-{% block body%}
-{% block content %}
-{% endblock %}
+{% block body %}
+<body>
+    <section class="main">
+        <div class="navbar">
+            <section class="navbar-contents">
+                <img class="logo" src="{% static 'images/firebrick.webp' %}" />
+
+                {% if user.is_authenticated %}
+                    <a href="{% url 'user_management:author_profile' user.author.uuid %}" class="names">
+                        {% if user.author.profile_image %}
+                        <img class="profile-image" src="{{ user.author.profile_image }}"/>
+                        {% endif %}
+                        <span class="text-names"><h3 class="display-name">{{ user.author.display_name }}</h3>
+                        <h5 class="username">{{ user.author.username }}</h5></span>
+                    </a>
+                    {% if user.is_superuser %}
+                        <a class="navbar-category" href="{% url 'admin:index' %}"><img class="navbar-icon" src="{% static 'svg/admin.svg' %}"/> <span class="navbar-title">Admin Panel</span></a>
+                    {% endif %}
+                {% endif %}
+                <a class="navbar-category" href=""><img class="navbar-icon" src="{% static 'svg/home.svg' %}"/> <span class="navbar-title">Home</span></a>
+                {% if viewer %}
+                    <a class="navbar-category" href="">
+                        <img class="navbar-icon" src="{% static 'svg/followrequests.svg' %}"/>
+                        <span class="navbar-title">
+                            <!-- When follow requests are implemented, use a template instead of JS -->
+                            Follow Requests<span id="follow-request-count"></span>
+                        </span>
+                    </a>
+                {% endif %}
+                {% if user.is_authenticated %}
+                <form class="logout-signup-container" action="{% url 'user_management:logout' %}" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <button class="logout-signup logout" type="submit">Log Out</button>
+                </form>
+                {% else %}
+                <a class="logout-signup-container" href="{% url 'user_management:join' %}">
+                    <div class="logout-signup">Request to Join</div>
+                </a>
+                {% endif %}
+            </section>
+        </div>
+
+        <div class="content">
+            {% block content %}{% endblock %}
+        </div>
+
+        {% block right_panel %} {% endblock %}
+    </section>
+</body>
 {% endblock %}
