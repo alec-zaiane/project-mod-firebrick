@@ -1,0 +1,100 @@
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.response import Response
+from rest_framework.decorators import action
+from rest_framework import viewsets, status
+from rest_framework.request import Request
+from django.contrib.auth.models import AnonymousUser, User
+
+
+from posts.models import Post
+from posts.serializers import PostSerializer
+from posts.permissions import PostPermission
+from user_management.models import Author
+from typing import Any, Optional
+
+
+
+class PostViewSet(viewsets.ModelViewSet[Post]):
+    """ViewSet for handling posts (text & image)
+       This viewset supports standard CRUD (read is auto handles by REST btw) Operations:
+       The issue I got was that the default delete wasn't soft delete,
+       instead we're using a custom decorator to soft delete
+
+       - Create: attaches the current user's author instance w perform_create
+       - Update: only allows authors to modify their own post
+       - Soft Delete: performs soft delete instead of a hard delete
+    """
+
+    queryset = Post.visible_posts.all()
+    serializer_class = PostSerializer
+    permission_classes = [IsAuthenticated, PostPermission]
+    parser_classes = (MultiPartParser, FormParser)
+
+    def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Override create to correctly attach author while allowing external nodes to create posts."""
+        if isinstance(request.user, AnonymousUser) or not hasattr(request.user, "author"):
+            return Response(
+                {"error": "Authentication required."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        requester_author = request.user.author
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        author = serializer.validated_data["author"]
+        requester_author = request.user.author
+
+        # the requester is either the author themselves or a valid host node
+        if requester_author != author and requester_author.host_node != author.host_node:
+            return Response(
+                {"error": "You do not have permission to create a post for this author."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        post = serializer.save()
+        return Response(self.get_serializer(post).data, status=status.HTTP_201_CREATED)
+
+    def update(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Override update to ensure only authors can modify their posts"""
+
+        if isinstance(request.user, AnonymousUser) or not hasattr(request.user, "author"):
+            return Response(
+                {"error": "Authentication required."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        requester_author = request.user.author
+        post: Post = self.get_object()
+
+        if post.author != requester_author:
+            return Response({"error": "You cannot edit someone else's post"}, status=status.HTTP_403_FORBIDDEN)
+        return super().update(request, *args, **kwargs)
+
+    @action(detail=True, methods=["post"], url_path="soft-delete")
+    def soft_delete(self, request: Request, pk: Optional[str] = None) -> Response:
+        """
+        Soft delete the specified post.
+
+        Instead of permanently deleting the post, this action marks the post as soft-deleted.
+        Only the author of the post is allowed to do this.
+        """
+        if isinstance(request.user, AnonymousUser) or not hasattr(request.user, "author"):
+            return Response(
+                {"error": "Authentication required."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        requester_author = request.user.author
+        post: Post = self.get_object()
+
+        if post.author != requester_author:
+            return Response(
+                {"error": "You cannot delete someone else's post"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        post.soft_delete()
+        return Response({"detail": "Post soft deleted"}, status=status.HTTP_204_NO_CONTENT)
