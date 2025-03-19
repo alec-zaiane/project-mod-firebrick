@@ -1,10 +1,10 @@
 from typing import Callable, Any, Optional
+from warnings import deprecated
 import inspect
 
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
-from socialnetwork.models import LocalAuthor
+from user_management.models import Author
 from django.urls import reverse
-from django.contrib.auth.models import User
 
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -13,12 +13,16 @@ from rest_framework.response import Response
 # https://www.artima.com/weblogs/viewpost.jsp?thread=240845#decorator-functions-with-decorator-arguments, accessed 2025-02-15
 
 
+# Useful fail responses:
+
+
 class UserControlException(Exception):
     def __init__(self, response: HttpResponse | Response):
         super().__init__("User control custom exception, if you see this, you probably want to use the @user_controller decorator on the containing view")
         self.response = response
 
 
+@deprecated("user_control is deprecated, use @login_required or other built-in decorators instead, paired with request_viewer.get_request_viewer() if needed")
 def user_control(request: HttpRequest | Request, must_be_logged_in: bool = False, must_be_author: bool = False, must_be_superuser: bool = False, fail_response: Optional[HttpResponse | Response] = None, verify_true: bool = True) -> None:
     """Control what kind of user can access a view
     **Important: use only inside a function wrapped with `@user_controller`**
@@ -85,9 +89,8 @@ def user_control(request: HttpRequest | Request, must_be_logged_in: bool = False
         raise UserControlException(fail_response)
 
     # fetch author information for future checks
-    viewer_query = LocalAuthor.objects.filter(
-        user=request.user) if isinstance(request.user, User) else None
-    viewer = viewer_query.first() if viewer_query is not None and viewer_query.exists() else None
+    viewer = Author.local_authors.find_author_with_user(
+        request.user) if request.user.is_authenticated else None
     viewer_is_author = viewer is not None
     viewer_is_superuser = request.user.is_superuser
 
@@ -102,6 +105,7 @@ def user_control(request: HttpRequest | Request, must_be_logged_in: bool = False
     # all done :) don't raise an exception
 
 
+@deprecated("user_controller is deprecated, use @login_required or other built-in decorators instead, paired with request_viewer.get_request_viewer() if needed")
 def user_controller(must_be_logged_in: bool = False, must_be_author: bool = False, must_be_superuser: bool = False, fail_response: Optional[HttpResponse | Response] = None) -> Callable[[Callable[..., HttpResponse]], Callable[..., HttpResponse]]:
     """Decorator for any views that require user control
     **Important: see user_control for argument information, they are the same**
@@ -122,12 +126,8 @@ def user_controller(must_be_logged_in: bool = False, must_be_author: bool = Fals
     """
     def wrap(func: Callable[..., HttpResponse]) -> Callable[..., HttpResponse]:
         def wrapped_f(request: HttpRequest | Request, *args: list[Any], **kwargs: dict[str, Any]) -> HttpResponse | Response:
-            found_viewer = None
-            if hasattr(request, "user") and request.user.is_authenticated:
-                viewer_query = LocalAuthor.objects.filter(
-                    user=request.user)
-                if viewer_query.exists():
-                    found_viewer = viewer_query.first()
+            found_viewer = Author.local_authors.find_author_with_user(
+                request.user) if request.user.is_authenticated else None
 
             signature = inspect.signature(func)
             expects_viewer = "viewer" in signature.parameters

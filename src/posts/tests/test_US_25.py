@@ -43,7 +43,7 @@ class TestUserStory25(GeneralUserStoryApiTest):
     def test_non_friend_cannot_see_friends_only_posts(self) -> None:
         """Test that non-friends cannot see friends-only posts in their stream"""
         # Get non-friend's stream
-        stream = self.non_friend.get_stream()
+        stream = self.non_friend.get_stream(paginate_start=0, paginate_count=10)
 
         # Verify friends-only post is not visible
         self.assertNotIn(
