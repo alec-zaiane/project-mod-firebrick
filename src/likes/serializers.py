@@ -63,3 +63,8 @@ class LikeSerializer(serializers.ModelSerializer[Like]):
             "_target_post": maybe_post,
             "_target_comment": maybe_comment,
         }
+
+    def get_target(self) -> Post | Comment:
+        if self.validated_data.get("_target_post") is not None:
+            return self.validated_data["_target_post"]
+        return self.validated_data["_target_comment"]

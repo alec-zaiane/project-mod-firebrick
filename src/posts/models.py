@@ -14,6 +14,7 @@ from django.core.validators import URLValidator
 
 from user_management.models import Author
 from core.utils.api_object import ApiObjectManager, AuthoredApiObject
+from core.utils.validators import validate_url_returns_image
 
 
 # === These are enums for the types of posts ===
@@ -228,7 +229,7 @@ class Post(AuthoredApiObject):
 
     def generate_fqid(self) -> str:
         # TODO replace with reverse() call :)
-        return f"{self.host_node.host_url}/posts/{self.uuid}"
+        return f"{self.host_node.host_url}posts/{self.uuid}"
 
     def check_can_be_seen_by(self, viewer: Author) -> bool:
         """Check if this post is possible to be seen by the viewer (either in stream or via a direct link)
@@ -247,6 +248,9 @@ class Post(AuthoredApiObject):
         if self.post_type in [PostTypes.IMAGE, PostTypes.VIDEO]:
             # if the post type is an image or video, the content must be a URL
             URLValidator()(self.content)
+            if self.post_type == PostTypes.IMAGE:
+                validate_url_returns_image(self.content)
+
         super().clean()
 
     def get_template_name(self) -> str:

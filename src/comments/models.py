@@ -37,9 +37,13 @@ class Comment(AuthoredApiObject):
 
     def generate_fqid(self) -> str:
         # TODO replace with reverse() call :)
-        return f"{self.host_node.host_url}/comments/{self.uuid}"
+        return f"{self.host_node.host_url}comments/{self.uuid}"
 
     def clean(self) -> None:
         super().clean()
         if self.content_type not in SUPPORTED_COMMENT_TYPES:
             raise ValidationError(f"Unsupported content type {self.content_type}")
+
+    def check_can_be_seen_by(self, viewer: Author) -> bool:
+        # TODO align with "As an author, comments on my friends-only posts are visible only to my friends and the comment's author."
+        return self.post.check_can_be_seen_by(viewer)

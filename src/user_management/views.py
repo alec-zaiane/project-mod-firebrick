@@ -6,7 +6,7 @@ from user_management.forms import AuthorModifyForm, JoinRequestForm
 from user_management.models import LocalAuthor
 
 from core.utils.request_viewer import get_request_viewer
-# Create your views here.
+# ========= Frontend Views only! =========
 
 
 class JoinView(View):
