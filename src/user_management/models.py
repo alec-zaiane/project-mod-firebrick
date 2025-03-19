@@ -17,6 +17,7 @@ from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import AbstractUser, UserManager
 
 from core.utils.api_object import ApiObject, ApiObjectManager
+from core.utils.validators import validate_url_returns_image
 
 # =============================================================================
 # Users
@@ -222,16 +223,7 @@ class Author(ApiObject):
 
         # Validate that profile image is actually an image
         if self.profile_image != "":
-            try:
-                response = requests.head(self.profile_image, timeout=5)
-            except requests.RequestException as e:
-                # Doesn't come up in practice because the form catches this
-                raise ValidationError(f"Profile Image URL '{self.profile_image}' is invalid.")
-
-            content_type = response.headers.get("Content-Type", "")
-            if not content_type.startswith("image/"):
-                raise ValidationError(
-                    f"Profile Image URL '{self.profile_image}' is not a valid image.")
+            validate_url_returns_image(self.profile_image, "Profile Image URL")
 
     def delete(self, using: Any = None, keep_parents: bool = False) -> tuple[int, dict[str, int]]:
         if self._user is not None:
