@@ -63,8 +63,10 @@ class AuthorModifyView(View):
                 "author": target_author,
             })
 
+        form = AuthorModifyForm(instance=target_author)
         return render(request, "author_modify.html", {
-            "author": target_author
+            "author": target_author,
+            "form": form
         })
 
     def post(self, request: HttpRequest, target_author_uuid: str) -> HttpResponse:
@@ -82,11 +84,12 @@ class AuthorModifyView(View):
                 "author": target_author,
             })
 
-        form = AuthorModifyForm(request.POST)
+        form = AuthorModifyForm(request.POST, instance=target_author)
         if form.is_valid():
             form.save()
             return render(request, "author_modify_success.html", {
-                "author": target_author
+                "author": target_author,
+                "form": form
             })
         return render(request, "author_modify.html", {
             "author": target_author,
