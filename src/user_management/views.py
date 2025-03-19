@@ -2,7 +2,7 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.generic import View
 
-from user_management.forms import JoinRequestForm
+from user_management.forms import AuthorModifyForm, JoinRequestForm
 from user_management.models import LocalAuthor
 
 from core.utils.request_viewer import get_request_viewer
@@ -44,4 +44,51 @@ class AuthorView(View):
         return render(request, "author_profile.html", {
             "author": target_author,
             "viewer": viewer
+        })
+
+
+class AuthorModifyView(View):
+    def get(self, request: HttpRequest, target_author_uuid: str) -> HttpResponse:
+        """
+        The view for modifying an author's profile. It can be linked to from any author's
+        UUID, and will allow the viewer, if valid, to modify the author's profile.
+        """
+        target_author = get_object_or_404(
+            LocalAuthor, uuid=target_author_uuid)
+
+        viewer = get_request_viewer(request)
+        if viewer is None or (viewer != target_author and not viewer.user.is_superuser):
+            # Send the user back to the author's profile if they are not the author or an admin
+            return render(request, "author_profile.html", {
+                "author": target_author,
+            })
+
+        return render(request, "author_modify.html", {
+            "author": target_author
+        })
+
+    def post(self, request: HttpRequest, target_author_uuid: str) -> HttpResponse:
+        """
+        The view for modifying an author's profile. It can be linked to from any author's
+        UUID, and will display information about the author.
+        """
+        target_author = get_object_or_404(
+            LocalAuthor, uuid=target_author_uuid)
+
+        viewer = get_request_viewer(request)
+        if viewer is None or (viewer != target_author and not viewer.user.is_superuser):
+            # Send the user back to the author's profile if they are not the author or an admin
+            return render(request, "author_profile.html", {
+                "author": target_author,
+            })
+
+        form = AuthorModifyForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return render(request, "author_modify_success.html", {
+                "author": target_author
+            })
+        return render(request, "author_modify.html", {
+            "author": target_author,
+            "form": form
         })

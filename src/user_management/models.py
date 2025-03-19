@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from typing import Any, Collection, Optional, TYPE_CHECKING, cast
+
+import requests
 if TYPE_CHECKING:
     from django.db.models import QuerySet
     from posts.models import Post
@@ -208,15 +210,28 @@ class Author(ApiObject):
                 f"FQID must start with the host, ({self.fqid} does not start with {self.host_node})")
         if self.is_local:
             if self._user is None:
-                raise ValidationError("Local authors must have a user account")
+                raise ValidationError("Local authors must have a user account.")
             if self._user.username != self.username:
                 if User.objects.filter(username=self.username).exists():
                     raise ValidationError(
-                        f"Username {self.username} is already taken, cannot change it")
+                        f"Username {self.username} is already taken, cannot change it.")
                 self._user.username = self.username
                 self._user.save()
             if not self.page_url:
                 self.page_url = self.generate_page_url()  # might be a little hacky, but it'll work
+
+        # Validate that profile image is actually an image
+        if self.profile_image != "":
+            try:
+                response = requests.head(self.profile_image, timeout=5)
+            except requests.RequestException as e:
+                # Doesn't come up in practice because the form catches this
+                raise ValidationError(f"Profile Image URL '{self.profile_image}' is invalid.")
+
+            content_type = response.headers.get("Content-Type", "")
+            if not content_type.startswith("image/"):
+                raise ValidationError(
+                    f"Profile Image URL '{self.profile_image}' is not a valid image.")
 
     def delete(self, using: Any = None, keep_parents: bool = False) -> tuple[int, dict[str, int]]:
         if self._user is not None:

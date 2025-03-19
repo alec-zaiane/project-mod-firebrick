@@ -3,7 +3,7 @@ from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.forms.widgets import PasswordInput, TextInput
 from django.utils.translation import gettext_lazy as _
 
-from user_management.models import JoinRequest
+from user_management.models import Author, JoinRequest
 
 
 class LoginForm(AuthenticationForm):
@@ -33,3 +33,24 @@ class JoinRequestForm(forms.ModelForm[JoinRequest]):
             password=self.cleaned_data["password"])
 
         return join_request
+
+
+class AuthorModifyForm(forms.ModelForm[Author]):
+    class Meta:
+        model = Author
+        fields = ["username", "display_name", "profile_image", "bio"]
+
+    username = forms.CharField(error_messages={
+        "required": "Please provide a username.",
+    }, widget=TextInput(
+        attrs={'autofocus': True, 'placeholder': 'Username'}))
+    display_name = forms.CharField(error_messages={
+        "required": "Please provide a display name.",
+    }, widget=TextInput(
+        attrs={'autofocus': True, 'placeholder': 'Display Name'}))
+    profile_image = forms.URLField(required=False, error_messages={
+        "invalid": "Please provide a valid Profile Image URL.",
+    }, widget=TextInput(
+        attrs={'placeholder': 'Profile Image URL'}))
+    bio = forms.CharField(required=False, widget=forms.Textarea(
+        attrs={'placeholder': 'Author Bio'}))

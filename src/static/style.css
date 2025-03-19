@@ -273,7 +273,7 @@ a:link:active, a:visited:active  {
     display: flex;
     flex-direction: column;
     position: fixed;
-    width: fit-content;
+    width: 170px;
     gap: 40px;
     height: 100%;
 }
@@ -288,6 +288,8 @@ a:link:active, a:visited:active  {
     font-weight: bold;
     color: var(--color);
     text-decoration: none;
+    text-overflow: ellipsis;
+    overflow: hidden;
 }
 
 .navbar-contents a:hover {

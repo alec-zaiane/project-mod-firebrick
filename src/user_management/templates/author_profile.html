@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'navbar-base.html' %}
 
 {% load static %}
 
@@ -42,7 +42,7 @@
                         {% endif %}
                     {% endif %}
                 {% else %}
-                    <a class="profile-button" href="">Modify Profile</a>
+                    <a class="profile-button" href="{% url 'user_management:author_modify' author.uuid %}">Modify Profile</a>
                 {% endif %}
             {% endif %}
         </div>
