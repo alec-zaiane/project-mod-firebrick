@@ -50,7 +50,8 @@ class ApiObject(models.Model):
     @property
     def is_updated(self) -> bool:
         """Whether or not this object has been updated since it was created"""
-        return self.created_at != self.updated_at
+        # so long as the times are within 1ms of each other, consider them equal
+        return abs(self.updated_at.timestamp() - self.created_at.timestamp()) > 1e-3
 
     def generate_fqid(self) -> str:
         # Ideally this would be an abstract method, but Django shenanigans

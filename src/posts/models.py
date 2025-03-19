@@ -8,12 +8,13 @@ if TYPE_CHECKING:
 
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
+from django.core.validators import URLValidator
 
 from user_management.models import Author
 from core.utils.api_object import ApiObjectManager, AuthoredApiObject
 
-from django.db.models import Q
 
 # === These are enums for the types of posts ===
 
@@ -241,3 +242,15 @@ class Post(AuthoredApiObject):
             bool: True if the viewer can see the post, False otherwise
         """
         return Post.visible_posts.get_posts_visible_to_author(viewer).filter(uuid=self.uuid).exists()
+
+    def clean(self) -> None:
+        if self.post_type in [PostTypes.IMAGE, PostTypes.VIDEO]:
+            # if the post type is an image or video, the content must be a URL
+            URLValidator()(self.content)
+        super().clean()
+
+    def get_template_name(self) -> str:
+        """Get the template name for this post's inner-content"""
+        # will return, for example "components/post_inner_content/PT.html" for a plaintext post
+        # each inner-content template can be customized based on what kind of content it is
+        return f"components/post_inner_content/{self.post_type}.html"
