@@ -83,7 +83,9 @@ class User(AbstractUser):
         _("User Type"), max_length=6, choices=Types.choices, blank=False, null=False)
     email = models.EmailField(_("Email Address"), blank=True)
 
-    # managers, `objects` might not be available, but it shouldn't be used anyway
+    # manager
+    # since we're overriding parent class' `objects`, have to type ignore
+    objects: UserManagerBase = UserManagerBase()  # type: ignore
     authors = AuthorUserManager()
     nodes = ExternalNodeUserManager()
 
@@ -321,7 +323,7 @@ class NodeManager(models.Manager["Node"]):
             from core.settings import SITE_URL
             return self.create(
                 name="self",
-                host_url=f"{SITE_URL}/",
+                host_url=f"{SITE_URL}/api/",
                 is_local_node=True
             )
 

@@ -3,7 +3,7 @@ from typing import Any
 from rest_framework import serializers
 from rest_framework.serializers import ValidationError
 
-from user_management.models import Author, FollowRequest, Node
+from user_management.models import Author, FollowRequest
 
 
 class AuthorSerializer(serializers.ModelSerializer[Author]):
@@ -55,10 +55,6 @@ class AuthorSerializer(serializers.ModelSerializer[Author]):
             "profile_image": data["profileImage"],
             "page_url": data["page"],
         }
-
-    def create(self, validated_data: dict[str, Any]) -> Author:
-        fqid = validated_data.pop("fqid")
-        return Author.objects.create(fqid=fqid, **validated_data)
 
 
 class FollowRequestSerializer(serializers.ModelSerializer[FollowRequest]):
