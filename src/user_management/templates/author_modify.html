@@ -1,0 +1,55 @@
+{% extends 'return-base.html' %}
+
+{% load static %}
+
+{% block title %}Modfying {{ author.display_name }}'s Profile{% endblock %}
+
+{% block return_href %}{% url 'user_management:author_profile' author.uuid %}{% endblock %}
+{% block return_title %}Return to {{author.display_name}}{% endblock %}
+
+{% block content %}
+{% block success %}{% endblock %}
+<div class="author-modify profile">
+    <form id="author-modification-form" method="post">
+        {% csrf_token %}
+        <section class="profile-info">
+            <div class="profile-top-bar">
+                <h2>Edit Profile</h2>
+                <input id="author-modification-submit" type="submit" value="Save">
+            </div>
+        </section>
+        <section class="author-modify-content">
+            {{ form.non_field_errors }}
+            <div class="field-wrapper">
+                <label for="id_display_name">Display Name</label>
+                {{ form.display_name.errors }}
+                {{ form.display_name }}
+            </div>
+            <div class="field-wrapper">
+                <label for="id_username">Username</label>
+                {{ form.username.errors }}
+                {{ form.username }}
+            </div>
+            <div class="field-wrapper url">
+                <div class="profile-image-and-name">
+                    {% if author.profile_image %}
+                    <img src="{{ author.profile_image }}" class="profile-image"/>
+                    {% else %}
+                    <div class="profile-image" ></div>
+                    {% endif %}
+                    <label for="id_display_name">Profile Image</label>
+                </div>
+                {{ form.profile_image.errors }}
+                {{ form.profile_image }}
+            </div>
+            <div class="field-wrapper">
+                <label for="id_bio">Bio</label>
+                {{ form.bio.errors }}
+                {{ form.bio }}
+            </div>
+        </section>
+    </form>
+</div>
+
+<script src="{% static 'scripts/textarea-expand.min.js' %}"></script>
+{% endblock %}
