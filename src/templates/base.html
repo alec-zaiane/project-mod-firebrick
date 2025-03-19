@@ -9,20 +9,20 @@
                 <img class="logo" src="{% static 'images/firebrick.webp' %}" />
 
                 {% if user.is_authenticated %}
-                    <a href="{% url 'user_management:author_profile' user.author.uuid %}" class="names">
+                    <a id="navbar-own-profile" href="{% url 'user_management:author_profile' user.author.uuid %}" class="names">
                         {% if user.author.profile_image %}
-                        <img class="profile-image" src="{{ user.author.profile_image }}"/>
+                        <img id="navbar-profile-image" class="profile-image" src="{{ user.author.profile_image }}"/>
                         {% endif %}
-                        <span class="text-names"><h3 class="display-name">{{ user.author.display_name }}</h3>
-                        <h5 class="username">{{ user.author.username }}</h5></span>
+                        <span id="navbar-display-name" class="text-names"><h3 class="display-name">{{ user.author.display_name }}</h3>
+                        <h5 id="navbar-username" class="username">{{ user.author.username }}</h5></span>
                     </a>
                     {% if user.is_superuser %}
-                        <a class="navbar-category" href="{% url 'admin:index' %}"><img class="navbar-icon" src="{% static 'svg/admin.svg' %}"/> <span class="navbar-title">Admin Panel</span></a>
+                        <a id="navbar-admin-panel" class="navbar-category" href="{% url 'admin:index' %}"><img class="navbar-icon" src="{% static 'svg/admin.svg' %}"/> <span class="navbar-title">Admin Panel</span></a>
                     {% endif %}
                 {% endif %}
-                <a class="navbar-category" href=""><img class="navbar-icon" src="{% static 'svg/home.svg' %}"/> <span class="navbar-title">Home</span></a>
+                <a id="navbar-home" class="navbar-category" href=""><img class="navbar-icon" src="{% static 'svg/home.svg' %}"/> <span class="navbar-title">Home</span></a>
                 {% if viewer %}
-                    <a class="navbar-category" href="">
+                    <a id="navbar-follow-requests" class="navbar-category" href="">
                         <img class="navbar-icon" src="{% static 'svg/followrequests.svg' %}"/>
                         <span class="navbar-title">
                             <!-- When follow requests are implemented, use a template instead of JS -->
@@ -31,13 +31,13 @@
                     </a>
                 {% endif %}
                 {% if user.is_authenticated %}
-                <form class="logout-signup-container" action="{% url 'user_management:logout' %}" method="post">
+                <form id="navbar-logout" class="logout-signup-container" action="{% url 'user_management:logout' %}" method="post">
                     {% csrf_token %}
                     <input type="hidden" name="next" value="{{ request.get_full_path }}">
                     <button class="logout-signup logout" type="submit">Log Out</button>
                 </form>
                 {% else %}
-                <a class="logout-signup-container" href="{% url 'user_management:join' %}">
+                <a id="navbar-request-join" class="logout-signup-container" href="{% url 'user_management:join' %}">
                     <div class="logout-signup">Request to Join</div>
                 </a>
                 {% endif %}

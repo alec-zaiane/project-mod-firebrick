@@ -204,6 +204,7 @@ a:link:active, a:visited:active  {
 
 .main {
     display: flex;
+    min-height: 100%;
 }
 
 /*
@@ -324,6 +325,7 @@ a:link:active, a:visited:active  {
 .content {
     margin-left: calc((100% - 600px) / 2);
     width: 600px;
+    display: flex;
 }
 
 .stream-container, .profile .post-list {
@@ -334,8 +336,9 @@ a:link:active, a:visited:active  {
     gap: 10px;
     border-left: 1px solid #242729;
     border-right: 1px solid #242729;
-    border-bottom: 1px solid #242729;
     padding: 0 20px;
+    flex-grow: 1;
+    margin-bottom: 0;
 }
 
 .stream-container .stream-title {
@@ -710,6 +713,12 @@ a:link:active, a:visited:active  {
   PROFILE
  ===========
 */
+.profile {
+    flex-direction: column;
+    flex-grow: 1;
+    display: flex;
+}
+
 .profile-image {
     width: 40px;
     height: 40px;
@@ -727,6 +736,11 @@ a:link:active, a:visited:active  {
     display: flex;
     align-items: center;
     gap: 10px;
+}
+
+.profile .profile-image-and-name #author-profile-username {
+    color: #7b7b7b;
+    font-size: 14px;
 }
 
 .profile .profile-info {
