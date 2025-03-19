@@ -10,6 +10,7 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path('stream/',
          views.stream_view,
          name='stream'),
+    path("posts/<uuid:post_uuid>/", views.view_post, name="view_post"),
 ]
 
 # DRF Router to automatically generate CRUD API endpoints
