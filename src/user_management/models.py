@@ -327,6 +327,14 @@ class NodeManager(models.Manager["Node"]):
                 is_local_node=True
             )
 
+    def find_by_user(self, user: User) -> Optional[Node]:
+        """Find the node that the Node typed user is associated with
+        Returns None if the user is not a `Node` typed user
+        """
+        if user.type == User.Types.NODE:
+            return self.filter(internal_user=user).first()
+        return None
+
 
 class ExternalNodeManager(NodeManager):
     def get_queryset(self) -> models.QuerySet[Node]:

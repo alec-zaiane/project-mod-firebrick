@@ -14,6 +14,6 @@ urlpatterns: list[URLPattern | URLResolver] = [
 
 # DRF Router to automatically generate CRUD API endpoints
 router = routers.SimpleRouter()
-router.register(r"posts", PostViewSet)  # Registers /posts/ as an API route
+router.register(r"api/posts", PostViewSet)  # Registers /posts/ as an API route
 
 urlpatterns += router.urls  # Add all generated routes
