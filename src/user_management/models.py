@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Any, Collection, Optional, TYPE_CHECKING, cast
 
-import requests
 if TYPE_CHECKING:
     from django.db.models import QuerySet
     from posts.models import Post
@@ -28,6 +27,28 @@ class UserManagerBase(UserManager["User"]):
     def get_user(self, username: str) -> User:
         return self.get(username=username)
 
+    def create_superuser(self, username: str, email: Optional[str] = None, password: Optional[str] = None, **extra_fields: Any) -> User:
+        """Create a superuser with attached `Author`"""
+        # do it via a join request
+        if User.objects.filter(username=username).exists() or JoinRequest.objects.filter(username=username).exists():
+            raise ValidationError(f"Username {username} is already taken")
+        if User.objects.filter(email=email).exists() or JoinRequest.objects.filter(email=email).exists():
+            raise ValidationError(f"Email {email} is already taken")
+        if password is None:
+            raise ValidationError("Password is required")
+        request = JoinRequest.objects.create(
+            username=username,
+            email=email,
+            display_name=username,
+            password=password
+        )
+        author = request.approve()
+        assert author._user is not None
+        author._user.is_superuser = True
+        author._user.is_staff = True
+        author._user.save()
+        return author._user
+
 
 class ExternalNodeUserManager(UserManagerBase):
     """This manager is for the django users that represent external nodes
@@ -51,27 +72,6 @@ class AuthorUserManager(UserManagerBase):
 
     def create_user(self, username: str, email: Optional[str] = None, password: Optional[str] = None, **extra_fields: Any) -> User:
         return super().create_user(username, email, password, type=User.Types.AUTHOR, **extra_fields)
-
-    def create_superuser(self, username: str, email: Optional[str] = None, password: Optional[str] = None, **extra_fields: Any) -> User:
-        # do it via a join request
-        if User.objects.filter(username=username).exists() or JoinRequest.objects.filter(username=username).exists():
-            raise ValidationError(f"Username {username} is already taken")
-        if User.objects.filter(email=email).exists() or JoinRequest.objects.filter(email=email).exists():
-            raise ValidationError(f"Email {email} is already taken")
-        if password is None:
-            raise ValidationError("Password is required")
-        request = JoinRequest.objects.create(
-            username=username,
-            email=email,
-            display_name=username,
-            password=password
-        )
-        author = request.approve()
-        assert author._user is not None
-        author._user.is_superuser = True
-        author._user.is_staff = True
-        author._user.save()
-        return author._user
 
 
 class User(AbstractUser):
@@ -365,6 +365,9 @@ class Node(models.Model):
 
     # if true, this `Node` is the local node. This can only be true for one node (upheld in the manager)
     is_local_node = models.BooleanField(_("Is Local Node"), default=False)
+
+    # whether the node is disabled (for US 136)
+    is_disabled = models.BooleanField(_("Is Disabled"), default=False)
 
     # managers
     objects: NodeManager = NodeManager()
