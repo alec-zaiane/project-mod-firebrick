@@ -1,0 +1,27 @@
+{% load static %}
+{% if user.is_authenticated %}
+    {% if user.is_superuser %}
+        <a id="navbar-admin-panel" class="navbar-category" href="{% url 'admin:index' %}"><img class="navbar-icon" src="{% static 'svg/admin.svg' %}"/> <span class="navbar-title">Admin Panel</span></a>
+    {% endif %}
+{% endif %}
+<a id="navbar-home" class="navbar-category" href=""><img class="navbar-icon" src="{% static 'svg/home.svg' %}"/> <span class="navbar-title">Home</span></a>
+{% if user.author %}
+    <a id="navbar-follow-requests" class="navbar-category" href="">
+        <img class="navbar-icon" src="{% static 'svg/followrequests.svg' %}"/>
+        <span class="navbar-title">
+            <!-- When follow requests are implemented, use a template instead of JS -->
+            Follow Requests<span id="follow-request-count"></span>
+        </span>
+    </a>
+{% endif %}
+{% if user.is_authenticated %}
+<form id="navbar-logout" class="logout-signup-container" action="{% url 'user_management:logout' %}" method="post">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <button class="logout-signup logout" type="submit">Log Out</button>
+</form>
+{% else %}
+<a id="navbar-request-join" class="logout-signup-container" href="{% url 'user_management:join' %}">
+    <div class="logout-signup">Request to Join</div>
+</a>
+{% endif %}
