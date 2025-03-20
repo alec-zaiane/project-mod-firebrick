@@ -1,9 +1,21 @@
-{# Janky base.html just for testing. **feel free to completely overwrite this** #}
-
 {% extends "head.html" %}
 
 {% load static %}
-{% block body%}
-{% block content %}
-{% endblock %}
+{% block body %}
+<body>
+    <section class="main">
+        <div class="navbar">
+            <section class="navbar-contents">
+                <img class="logo" src="{% static 'images/firebrick.webp' %}" />
+                {% block navbar %}{% endblock %}
+            </section>
+        </div>
+
+        <div class="content">
+            {% block content %}{% endblock %}
+        </div>
+
+        {% block right_panel %} {% endblock %}
+    </section>
+</body>
 {% endblock %}
