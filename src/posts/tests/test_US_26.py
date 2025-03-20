@@ -3,7 +3,7 @@ from django.urls import reverse
 from core.utils.testing_utils import GeneralUserStoryApiTest, AdminUITestCase
 
 
-@tag("US-Visibility")
+@tag("US-visibility")
 class TestUserStory26(GeneralUserStoryApiTest):
     """
     Tests for User Story 26
@@ -25,11 +25,12 @@ class TestUserStory26(GeneralUserStoryApiTest):
         self.assertIn("do not have permission", response.content.decode())
 
 
+@tag("US-visibility")
 class TestUserStory26AdminUI(AdminUITestCase):
     """
     UI tests for User Story 26
     """
-
+    @tag("check-slow")
     def test_admin_can_see_deleted_post(self) -> None:
         # create a post
         self.initialize_sample_authors(1)
