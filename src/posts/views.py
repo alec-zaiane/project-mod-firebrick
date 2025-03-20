@@ -40,9 +40,7 @@ def view_post(request: HttpRequest, post_uuid: str) -> HttpResponse:
         return REDIRECT_TO_LOGIN(request)
     post = get_object_or_404(Post, uuid=post_uuid)
 
-    # if not Post.visible_posts.get_posts_visible_to_author(viewer).filter(uuid=post_uuid).exists():
-    #     return HttpResponse("You do not have permission to view this post.", status=403)
-    if post.is_soft_deleted and not request.user.is_superuser:
+    if not Post.visible_posts.get_posts_visible_to_author(viewer).filter(uuid=post_uuid).exists():
         return HttpResponse("You do not have permission to view this post.", status=403)
 
     return render(request, "posts/view_post.html", {"post": post, "viewer": viewer})
