@@ -3,9 +3,9 @@
 {% load static %}
 
 <article class="post-card">
-    <a class="post-view" href="{% url 'socialnetwork:view_post' post.uuid %}"></a>
+    <a class="post-view" href="{% url 'posts:view_post' post.uuid %}"></a>
     <header>
-        <a href="{% url 'socialnetwork:author_profile' post.author.uuid %}" class="names">
+        <a href="{% url 'user_management:author_profile' post.author.uuid %}" class="names">
             {% if post.author.profile_image %}
             <img class="profile-image" src="{{ post.author.profile_image }}"/>
             {% endif %}
@@ -14,9 +14,9 @@
         </a>
         ·
         <span class="post-meta">
-            <div class="posted"><time title="{{ post.date_created|date:'g:i a · F j, Y' }}" datetime="{{ post.date_created|date:'Y-m-d H:i:s' }}">{{ post.date_created|date:"M jS" }}</time></div>
-            {% if post.date_edited %}
-            <img class="edit-pencil" title="Edited {{ post.date_edited|date:'g:i a · F j, Y' }}" src="{% static 'svg/edit.svg' %}" />
+            <div class="posted"><time title="{{ post.created_at|date:'g:i a · F j, Y' }}" datetime="{{ post.created_at|date:'Y-m-d H:i:s' }}">{{ post.created_at|date:"M jS" }}</time></div>
+            {% if post.is_updated %}
+            <img class="edit-pencil" title="Edited {{ post.updated_at|date:'g:i a · F j, Y' }}" src="{% static 'svg/edit.svg' %}" />
             {% endif %}
         </span>
 
@@ -34,13 +34,13 @@
         <div class="settings">
             <img class="settings-dropdown" src="{% static 'svg/dots.svg' %}"/>
             <div class="settings-dropdown-content">
-                <a href="{% url 'socialnetwork:edit_post' post.uuid %}" class="edit-button">
+                <a href="{% url 'posts:edit_post' post.uuid %}" class="edit-button">
                     <div class="setting">
                         <img class="edit-icon" title="Edit Post" src="{% static 'svg/editpost.svg' %}" />
                         Edit Post
                     </div>
                 </a>
-                <form name="generic-form" action="{% url 'socialnetwork:api_post_delete' post.uuid %}">
+                <form name="generic-form" action="{% url 'posts:api_posts-soft-delete' post.uuid %}">
                     {% csrf_token %}
                     <input type="hidden" name="_method" value="POST">
                     <input type="hidden" name="_after_action" value="reload confirm">
@@ -58,30 +58,24 @@
         {% endif %}
     </header>
 
-    <div class="post-content {{ post.css_class }}">
-        {% if post.image %}
-            <img src="{{ post.image.url }}" alt="Image Post" class="post-image">
-
-            <!-- Display Markdown Link Below Image -->
-            <div class="markdown-container">
-                <p><strong>Markdown for this image:</strong></p>
-                <textarea class="markdown-box" readonly>[![{{ post.image.url|cut:"/media/hosted_images/" }}]({{ post.image.url }})]</textarea>
-            </div>
-        {% else %}
-            <div class="text">
-                {{ post.content }}
-            </div>
+    <div class="post-content">
+        {% if post.title %}
+        <h2 class="post-title">{{ post.title }}</h2>
         {% endif %}
+        {% if post.description %}
+        <p class="post-description">{{ post.description }}</p>
+        {% endif %}
+        {% include post.get_template_name %} {# see posts.models.Post.get_template_name #}
     </div>
 
     <footer>
         <div class="likes-comments">
             <div class="comments-box">
                 <img class="comments-icon" src="{% static 'svg/comment.svg' %}" />
-                <span class="comments-count">{{post.comments|length}}</span>
+                <span class="comments-count">{{post.comments.all|length}}</span>
             </div>
             <div class="likes-box">
-                <form name="generic-form" action="{% url 'api:like_post_internal' post.uuid %}">
+                <form name="generic-form" action="{% url 'likes:like_by_viewer' post.fqid|urlencode:"" %}">
                     {% csrf_token %}
                     {{ viewer.uuid|json_script:"viewer" }}
                     {{ post.get_likes_author_uuid_strings|json_script:"like_authors" }}
@@ -92,7 +86,7 @@
                         <img class="like-icon liked" src="{% static 'svg/liked.svg' %}" />
                     </button>
                 </form>
-                <span class="likes-count">{{ post.like_count }}</span>
+                <span class="likes-count">{{ post.likes.all|length }}</span>
             </div>
         </div>
     </footer>
