@@ -4,11 +4,13 @@ from rest_framework import viewsets
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
 
-from user_management.models import Author, Node
-from user_management.serializers import AuthorSerializer
+from user_management.models import Author, Node, FollowRequest
+from user_management.serializers import AuthorSerializer, FollowRequestSerializer
 
 from user_management.permissions import AuthorPermission
+from core.utils.request_viewer import get_request_viewer
 
 
 class AuthorViewSet(viewsets.ModelViewSet[Author]):
@@ -43,3 +45,25 @@ class AuthorViewSet(viewsets.ModelViewSet[Author]):
         # create the author
         author = serializer.create(validated_data)
         return Response(serializer.to_representation(author), status=201)
+
+
+class FollowRequestViewSet(viewsets.ModelViewSet[FollowRequest]):
+    queryset = FollowRequest.objects.all()
+    serializer_class = FollowRequestSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        viewer = get_request_viewer(request)
+        if request.user.is_anonymous or viewer is None:
+            return Response({"error": "User must be authenticated."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        # deserialize and validate the incoming follow request data
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        # check that the actor in the request matches the logged-in user
+        input_actor = request.data.get("actor", {})
+        if input_actor.get("id") and viewer.fqid != input_actor["id"]:
+            return Response({"error": "Logged in user does not match actor in request."}, status=status.HTTP_403_FORBIDDEN)
+
+        follow_request = serializer.save()
+        return Response(self.get_serializer(follow_request).data, status=status.HTTP_201_CREATED)

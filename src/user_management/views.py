@@ -4,11 +4,10 @@ from django.views.generic import View
 
 from user_management.forms import AuthorModifyForm, JoinRequestForm
 from user_management.models import LocalAuthor
-
 from core.utils.request_viewer import get_request_viewer
 from posts.models import Post, VisibilityTypes
-# ========= Frontend Views only! =========
 
+# ========= Frontend Views only! =========
 
 class JoinView(View):
     def get(self, request: HttpRequest) -> HttpResponse:
