@@ -7,5 +7,7 @@
 {% block id %}login{% endblock %}
 {% block registration_title %}Log In{% endblock %}
 {% block registration_contents%}
+    {% with submit_button='Log In' %}
     {% include "registration/registration_form.html" %}
+    {% endwith %}
 {% endblock%}

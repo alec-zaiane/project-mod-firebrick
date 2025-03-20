@@ -1,6 +1,7 @@
 :root {
     --bg: rgb(18, 17, 20);
     --color: rgb(247, 247, 247);
+    --color-sub: #7b7b7b;
 }
 
 body {
@@ -22,6 +23,60 @@ a:visited {
 
 a:link:active, a:visited:active  {
     color: rgb(254, 206, 248);
+}
+
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    border-left: 2px solid transparent;
+    border-right: 2px solid transparent;
+    background: #313131;
+    border-radius: 10px;
+    background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb {
+    background: firebrick;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgb(143, 22, 22);
+}
+
+.success-message {
+    position: absolute;
+    background: firebrick;
+    color: var(--color);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: lighter;
+    border: 0;
+    cursor: pointer;
+    text-decoration: none;
+    left: calc(50% - 230px / 2);
+    top: 35px;
+    width: 230px;
+    font-size: 12px;
+}
+
+.errorlist {
+    padding: 0;
+    text-align: center;
+    color: rgb(199, 40, 40);
+    font-size: 12px;
+}
+
+.errorlist li {
+    list-style: none;
+}
+
+.errorlist li::before {
+  content: "*";
+  padding-right: 8px;
+  color: rgb(199, 40, 40);
 }
 
 /*
@@ -193,17 +248,9 @@ a:link:active, a:visited:active  {
     flex-direction: column;
 }
 
-.login-page .errorlist {
-    padding: 0;
-    text-align: center;
-}
-
-.login-page .errorlist li {
-    list-style: none;
-}
-
 .main {
     display: flex;
+    min-height: 100%;
 }
 
 /*
@@ -272,7 +319,7 @@ a:link:active, a:visited:active  {
     display: flex;
     flex-direction: column;
     position: fixed;
-    width: fit-content;
+    width: 170px;
     gap: 40px;
     height: 100%;
 }
@@ -287,28 +334,34 @@ a:link:active, a:visited:active  {
     font-weight: bold;
     color: var(--color);
     text-decoration: none;
+    text-overflow: ellipsis;
+    overflow: hidden;
 }
 
 .navbar-contents a:hover {
     text-decoration: underline;
 }
 
-.navbar-contents .logout-container {
+.navbar-contents .logout-signup-container {
     margin-top: auto;
     margin-bottom: 50px;
 }
 
-.navbar-contents .logout {
+.navbar-contents .logout-signup {
     background: firebrick;
     color: var(--color);
     padding: 6px 12px;
     border-radius: 20px;
-    font-style: bold;
+    font-weight: bold;
     border: 0;
     cursor: pointer;
 }
 
-.navbar-contents .logout:hover {
+.navbar-contents .logout {
+    height: 30px;
+}
+
+.navbar-contents .logout-signup:hover {
     background: rgb(117, 16, 23);
 }
 
@@ -320,6 +373,8 @@ a:link:active, a:visited:active  {
 .content {
     margin-left: calc((100% - 600px) / 2);
     width: 600px;
+    display: flex;
+    position: relative;
 }
 
 .stream-container, .profile .post-list {
@@ -330,8 +385,9 @@ a:link:active, a:visited:active  {
     gap: 10px;
     border-left: 1px solid #242729;
     border-right: 1px solid #242729;
-    border-bottom: 1px solid #242729;
     padding: 0 20px;
+    flex-grow: 1;
+    margin-bottom: 0;
 }
 
 .stream-container .stream-title {
@@ -383,7 +439,7 @@ a:link:active, a:visited:active  {
     display: flex;
     align-items: center;
     gap: 8px;
-    color: #7b7b7b;
+    color: var(--color-sub);
     position: relative;
     z-index: 2;
     pointer-events: none;
@@ -402,7 +458,7 @@ a:link:active, a:visited:active  {
 }
 
 .names .username {
-    color: #7b7b7b;
+    color: var(--color-sub);
 }
 
 .post-card .post-meta {
@@ -410,7 +466,7 @@ a:link:active, a:visited:active  {
     gap: 8px;
     pointer-events: all;
     align-items: center;
-    color: #7b7b7b;
+    color: var(--color-sub);
     font-size: 14px;
 }
 
@@ -426,7 +482,7 @@ a:link:active, a:visited:active  {
     align-items: center;
     white-space: nowrap;
     gap: 6px;
-    color: #7b7b7b;
+    color: var(--color-sub);
     font-size: 14px;
 }
 
@@ -692,7 +748,7 @@ a:link:active, a:visited:active  {
     color: var(--color);
     padding: 6px 12px;
     border-radius: 20px;
-    font-style: bold;
+    font-weight: bold;
     border: 0;
     cursor: pointer;
 }
@@ -706,6 +762,12 @@ a:link:active, a:visited:active  {
   PROFILE
  ===========
 */
+.profile {
+    flex-direction: column;
+    flex-grow: 1;
+    display: flex;
+}
+
 .profile-image {
     width: 40px;
     height: 40px;
@@ -725,6 +787,11 @@ a:link:active, a:visited:active  {
     gap: 10px;
 }
 
+.profile .profile-image-and-name #author-profile-username {
+    color: var(--color-sub);
+    font-size: 14px;
+}
+
 .profile .profile-info {
     border-left: 1px solid #242729;
     border-right: 1px solid #242729;
@@ -736,7 +803,7 @@ a:link:active, a:visited:active  {
     color: var(--color);
     padding: 6px 12px;
     border-radius: 20px;
-    font-style: bold;
+    font-weight: bold;
     border: 0;
     cursor: pointer;
     text-decoration: none;
@@ -756,6 +823,11 @@ a:link:active, a:visited:active  {
     justify-content: space-around;
     border-bottom: 1px solid #242729;
     margin: 0 -20px;
+}
+
+.profile .bio {
+    max-height: 8em;
+    overflow-y: auto;
 }
 
 .profile .followers-list a {
@@ -790,6 +862,99 @@ a:link:active, a:visited:active  {
 
 .profile .post-list {
     margin-top: 0;
+}
+
+/*
+ ===========
+  MODIFY AUTHOR
+ ===========
+*/
+
+#author-modification-form {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+#author-modification-form .author-modify-content {
+    flex-grow: 1;
+    border-left: 1px solid #242729;
+    border-right: 1px solid #242729;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    padding-top: 20px;
+}
+
+#author-modification-form .field-wrapper {
+    display: flex;
+    align-items: stretch;
+    flex-direction: column;
+    border: 1px solid #686868;
+    border-radius: 10px;
+    margin: 0 10px;
+    background: #222222;
+    padding: 14px 16px;
+}
+
+#author-modification-form label {
+    color: var(--color-sub);
+}
+
+#author-modification-form input, #author-modification-form textarea {
+    height: 22px;
+    padding: 10px 0 0 0;
+    border: 0;
+    background: none;
+    color: var(--color);
+    caret-color: var(--color);
+    resize: none;
+    overflow-y: hidden;
+    font-size: 16px;
+    font-family: sans-serif;
+}
+
+#author-modification-form input:focus, #author-modification-form textarea:focus {
+    outline: 0;
+}
+
+#author-modification-form .field-wrapper:focus-within {
+    border-color: firebrick;
+}
+
+#author-modification-form .field-wrapper:focus-within label {
+    color: firebrick;
+}
+
+#author-modification-form .field-wrapper.url input {
+    font-family: monospace;
+    font-size: 14px;
+}
+
+#author-modification-form input[type="submit"] {
+    background: firebrick;
+    border-radius: 20px;
+    padding: 6px 12px;
+    border: 0;
+    height: 30px;
+    cursor: pointer;
+}
+
+#author-modification-form input[type="submit"]:hover {
+    background: rgb(159, 30, 30);
+}
+
+#author-modification-form input[type="submit"]:focus {
+    background: rgb(199, 69, 69);
+}
+
+#author-modification-form input:-webkit-autofill{
+    -webkit-text-fill-color: var(--color);
+}
+
+#author-modification-form .profile-image {
+    outline: solid firebrick;
+    background: firebrick;
 }
 
 /*
