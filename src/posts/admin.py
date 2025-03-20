@@ -13,7 +13,7 @@ class PostAdmin(admin.ModelAdmin[models.Post]):
     list_display = ("uuid", "author", "title", "description",
                     "created_at", "updated_at", "is_soft_deleted")
     search_fields = ("title", "author__username", "uuid")
-    list_filter = ("created_at", "updated_at")
+    list_filter = ("created_at", "updated_at", "is_soft_deleted")
     actions = ("soft_delete", "restore")
 
     @admin.action(description="Soft delete selected posts")
