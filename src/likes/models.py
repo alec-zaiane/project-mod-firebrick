@@ -57,7 +57,11 @@ class Like(AuthoredApiObject):
 
     @property
     def target(self) -> Post | Comment:
-        raise NotImplementedError("Like must be a PostLike or CommentLike")
+        if self._target_post:
+            return self._target_post
+        if self._target_comment:
+            return self._target_comment
+        raise ValueError("Like must have a target post or comment")
 
     objects: LikeManager = LikeManager()
     post_likes = PostLikeManager()
@@ -71,7 +75,7 @@ class Like(AuthoredApiObject):
         super().clean()
 
     def generate_fqid(self) -> str:
-        return f"{self.host_node.host_url}/likes/{self.uuid}"  # TODO replace with reverse() call :)
+        return f"{self.host_node.host_url}likes/{self.uuid}"  # TODO replace with reverse() call :)
 
 
 class PostLike(Like):

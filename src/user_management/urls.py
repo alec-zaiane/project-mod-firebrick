@@ -6,6 +6,7 @@ from user_management.forms import LoginForm
 
 from user_management.views import AuthorModifyView, AuthorView, JoinView
 from user_management.viewsets import AuthorViewSet
+from user_management.views_api import InboxView
 
 app_name = "user_management"
 urlpatterns: list[URLPattern | URLResolver] = [
@@ -25,6 +26,12 @@ urlpatterns: list[URLPattern | URLResolver] = [
          AuthorModifyView.as_view(),
          name="author_modify"),
 
+
+
+    path("api/authors/<uuid:target_author_uuid>/inbox",
+         InboxView.as_view(),
+         name="node2node_inbox"
+         )
 ]
 
 router = routers.SimpleRouter()

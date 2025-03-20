@@ -20,8 +20,10 @@ class PostUnitTests(TestCase):
         post_plain = create_dummy_post(self.local_node, self.author, post_type=PostTypes.PLAINTEXT)
         post_markdown = create_dummy_post(
             self.local_node, self.author, post_type=PostTypes.MARKDOWN)
-        post_image = create_dummy_post(self.local_node, self.author, post_type=PostTypes.IMAGE)
-        post_video = create_dummy_post(self.local_node, self.author, post_type=PostTypes.VIDEO)
+        post_image = create_dummy_post(self.local_node, self.author, post_type=PostTypes.IMAGE,
+                                       content="https://fastly.picsum.photos/id/331/200/300.jpg?hmac=p5C3371_uSYqznhNsddJ6h1t3gMS35ijqJoWBTuBRIQ")
+        post_video = create_dummy_post(self.local_node, self.author, post_type=PostTypes.VIDEO,
+                                       content="https://fastly.picsum.photos/id/331/200/300.jpg?hmac=p5C3371_uSYqznhNsddJ6h1t3gMS35ijqJoWBTuBRIQ")
 
         # just to make the rest more readable
         def get_typed_posts(type: PostTypes) -> QuerySet[Post]:

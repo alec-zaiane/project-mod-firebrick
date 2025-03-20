@@ -45,6 +45,8 @@
 - https://www.artima.com/weblogs/viewpost.jsp?thread=240845#decorator-functions-with-decorator-arguments
 - https://stackoverflow.com/questions/53847404/how-to-check-uuid-validity-in-python
 - https://www.django-rest-framework.org/api-guide/
+- https://stackoverflow.com/questions/14547491/url-encoding-on-django-template
+- https://stackoverflow.com/questions/16566069/url-decode-utf-8-in-python
 
 ##GPT/Copilot Documentation:
 1. Copilot auto-complete was used in VS Code

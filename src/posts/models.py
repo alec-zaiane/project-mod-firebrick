@@ -8,12 +8,14 @@ if TYPE_CHECKING:
 
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
+from django.core.validators import URLValidator
 
 from user_management.models import Author
 from core.utils.api_object import ApiObjectManager, AuthoredApiObject
+from core.utils.validators import validate_url_returns_image
 
-from django.db.models import Q
 
 # === These are enums for the types of posts ===
 
@@ -227,7 +229,7 @@ class Post(AuthoredApiObject):
 
     def generate_fqid(self) -> str:
         # TODO replace with reverse() call :)
-        return f"{self.host_node.host_url}/posts/{self.uuid}"
+        return f"{self.host_node.host_url}posts/{self.uuid}"
 
     def check_can_be_seen_by(self, viewer: Author) -> bool:
         """Check if this post is possible to be seen by the viewer (either in stream or via a direct link)
@@ -241,3 +243,18 @@ class Post(AuthoredApiObject):
             bool: True if the viewer can see the post, False otherwise
         """
         return Post.visible_posts.get_posts_visible_to_author(viewer).filter(uuid=self.uuid).exists()
+
+    def clean(self) -> None:
+        if self.post_type in [PostTypes.IMAGE, PostTypes.VIDEO]:
+            # if the post type is an image or video, the content must be a URL
+            URLValidator()(self.content)
+            if self.post_type == PostTypes.IMAGE:
+                validate_url_returns_image(self.content)
+
+        super().clean()
+
+    def get_template_name(self) -> str:
+        """Get the template name for this post's inner-content"""
+        # will return, for example "components/post_inner_content/PT.html" for a plaintext post
+        # each inner-content template can be customized based on what kind of content it is
+        return f"components/post_inner_content/{self.post_type}.html"
