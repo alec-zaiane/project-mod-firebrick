@@ -311,6 +311,10 @@ class FollowRequest(ApiObject):
 
     objects: FollowRequestManager = FollowRequestManager()
 
+    def generate_fqid(self) -> str:
+        """Generate a unique FQID for the follow request"""
+        return f"{self.host_node.host_url}/authors/{self.follower.uuid}/followers/{self.followee.uuid}"
+
 # =============================================================================
 # External Nodes
 # =============================================================================
@@ -335,9 +339,17 @@ class NodeManager(models.Manager["Node"]):
             from core.settings import SITE_URL
             return self.create(
                 name="self",
-                host_url=f"{SITE_URL}/api/",
+                host_url=f"{SITE_URL}/api",
                 is_local_node=True
             )
+
+    def find_by_user(self, user: User) -> Optional[Node]:
+        """Find the node that the Node typed user is associated with
+        Returns None if the user is not a `Node` typed user
+        """
+        if user.type == User.Types.NODE:
+            return self.filter(internal_user=user).first()
+        return None
 
 
 class ExternalNodeManager(NodeManager):
