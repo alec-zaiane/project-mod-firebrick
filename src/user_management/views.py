@@ -6,6 +6,7 @@ from user_management.forms import AuthorModifyForm, JoinRequestForm
 from user_management.models import LocalAuthor
 
 from core.utils.request_viewer import get_request_viewer
+from posts.models import Post, VisibilityTypes
 # ========= Frontend Views only! =========
 
 
@@ -41,10 +42,19 @@ class AuthorView(View):
 
         viewer = get_request_viewer(request)
 
-        return render(request, "author_profile.html", {
-            "author": target_author,
-            "viewer": viewer
-        })
+        public_posts = Post.visible_posts.filter(
+            author=target_author, visibility_type=VisibilityTypes.PUBLIC
+        ).order_by("-created_at")
+
+        return render(
+            request,
+            "author_profile.html",
+            {
+                "author": target_author,
+                "viewer": viewer,
+                "posts": public_posts,
+            },
+        )
 
 
 class AuthorModifyView(View):
