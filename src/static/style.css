@@ -659,18 +659,6 @@ a:link:active, a:visited:active  {
     width: 20px;
 }
 
-.post-card .liked {
-    display: none;
-}
-
-.post-card .like-button:disabled .like {
-    display: none;
-}
-
-.post-card .like-button:disabled .liked {
-    display: block;
-}
-
 .post-card .markdown-container {
     text-align: center;
     width: 100%;

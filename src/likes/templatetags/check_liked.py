@@ -1,0 +1,13 @@
+from django import template
+
+from likes.models import Like
+from user_management.models import Author
+from posts.models import Post
+from comments.models import Comment
+
+register = template.Library()
+
+
+@register.simple_tag
+def check_liked(author: Author, target: Post | Comment) -> bool:
+    return Like.objects.check_liked(author, target)

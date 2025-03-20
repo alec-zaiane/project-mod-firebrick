@@ -39,8 +39,6 @@ class ViewPostView(View):
     def get(self, request: HttpRequest, post_uuid: str) -> HttpResponse:
         """View a post based on its UUID."""
         viewer = get_request_viewer(request)
-        if viewer is None:
-            return REDIRECT_TO_LOGIN(request)
 
         post = get_object_or_404(Post, uuid=post_uuid)
 
@@ -54,8 +52,10 @@ class StreamView(View):
     def get(self, request: HttpRequest) -> HttpResponse:
         """Stream view for an author"""
         viewer = get_request_viewer(request)
+        # TODO: this should work if the viewer is not an author
         if viewer is None:
             return REDIRECT_TO_LOGIN(request)
+
         page = int(request.GET.get('page', '1'))
         size = int(request.GET.get('size', '10'))
         start = (page - 1) * size

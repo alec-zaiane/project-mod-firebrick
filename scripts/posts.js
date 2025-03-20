@@ -6,15 +6,6 @@ window.addEventListener('load', () => {
         `)[1];
     });
 
-    document.querySelectorAll(".likes-box").forEach(el => {
-        let viewer = JSON.parse(el.querySelector('#viewer').textContent);
-        let like_authors = JSON.parse(el.querySelector('#like_authors').textContent);
-        if (like_authors.includes(viewer)) {
-            // Eventually, unliking should exist
-            el.querySelector(".like-button").disabled = true;
-        }
-    })
-
     var comment_textarea = document.querySelector(".add-comment-text");
     if (comment_textarea) {
         comment_textarea.style.height = comment_textarea.scrollHeight + "px";

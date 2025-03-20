@@ -36,7 +36,8 @@ class LikeByViewer(APIView):
         if target is None:
             return Response({"error": f"Could not find post or comment with id {target_fqid}"}, status=404)
         if target.likes.filter(author=viewer).exists():
-            return Response({"error": "You have already liked this post or comment"}, status=400)
+            Like.objects.remove_like(viewer, target, target.likes.get(author=viewer))
+            return Response(status=201)
         Like.objects.create_like(viewer, target)
         return Response(status=201)
 

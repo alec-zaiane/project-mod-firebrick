@@ -1,6 +1,7 @@
 {# expects a post object as a models.Post subclass instance #}
 
 {% load static %}
+{% load check_liked %}
 
 <article class="post-card">
     <a class="post-view" href="{% url 'posts:view_post' post.uuid %}"></a>
@@ -77,13 +78,15 @@
             <div class="likes-box">
                 <form name="generic-form" action="{% url 'likes:like_by_viewer' post.fqid|urlencode:"" %}">
                     {% csrf_token %}
-                    {{ viewer.uuid|json_script:"viewer" }}
-                    {{ post.get_likes_author_uuid_strings|json_script:"like_authors" }}
                     <input type="hidden" name="_method" value="POST">
                     <input type="hidden" name="_after_action" value="reload">
-                    <button class="like-button" type="submit">
-                        <img class="like-icon like" src="{% static 'svg/like.svg' %}" />
-                        <img class="like-icon liked" src="{% static 'svg/liked.svg' %}" />
+                    <button class="like-button" type="submit" {% if not viewer %}disabled{% endif %}>
+                        {% check_liked viewer post as liked %}
+                        {% if liked %}
+                            <img class="like-icon liked" src="{% static 'svg/liked.svg' %}" />
+                        {% else %}
+                            <img class="like-icon like" src="{% static 'svg/like.svg' %}" />
+                        {% endif %}
                     </button>
                 </form>
                 <span class="likes-count">{{ post.likes.all|length }}</span>
