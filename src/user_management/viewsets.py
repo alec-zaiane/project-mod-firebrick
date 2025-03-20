@@ -4,9 +4,10 @@ from rest_framework import viewsets
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
 
-from user_management.models import Author, Node
-from user_management.serializers import AuthorSerializer
+from user_management.models import Author, Node, FollowRequest
+from user_management.serializers import AuthorSerializer, FollowRequestSerializer
 
 from user_management.permissions import AuthorPermission
 
@@ -43,3 +44,34 @@ class AuthorViewSet(viewsets.ModelViewSet[Author]):
         # create the author
         author = serializer.create(validated_data)
         return Response(serializer.to_representation(author), status=201)
+
+
+class FollowRequestViewSet(viewsets.ModelViewSet[FollowRequest]):
+    queryset = FollowRequest.objects.all()
+    serializer_class = FollowRequestSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        if request.user.is_anonymous:
+            return Response({"error": "User must be authenticated."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        try:
+            follower = request.user.author
+        except AttributeError:
+            return Response({"error": "User is not linked to an author."}, status=status.HTTP_400_BAD_REQUEST)
+
+        followee_id = request.data.get("followee_id")
+        if not followee_id:
+            return Response({"error": "Field 'followee_id' is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            followee = Author.objects.get(uuid=followee_id)
+        except Author.DoesNotExist:
+            return Response({"error": "Target author not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if not followee.is_local:
+            return Response({"error": "Target author is not local."}, status=status.HTTP_400_BAD_REQUEST)
+
+        follow_request = FollowRequest.objects.create_follow_request(follower, followee)
+        serializer = FollowRequestSerializer(follow_request)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)

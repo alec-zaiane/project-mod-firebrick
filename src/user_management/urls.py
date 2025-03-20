@@ -4,8 +4,8 @@ from django.contrib.auth import views as auth_views
 from django.urls import path
 from user_management.forms import LoginForm
 
-from user_management.views import JoinView, FollowRequestCreateView
-from user_management.viewsets import AuthorViewSet
+from user_management.views import JoinView
+from user_management.viewsets import AuthorViewSet, FollowRequestViewSet
 
 app_name = "user_management"
 urlpatterns: list[URLPattern | URLResolver] = [
@@ -15,11 +15,11 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path('join/',
          JoinView.as_view(),
          name='join'),
-    path('follow/', FollowRequestCreateView.as_view(), name='follow_request_create'),
 ]
 
 router = routers.SimpleRouter()
 # creates names: author-list, author-detail, author-create, author-update, author-delete
 router.register(r"api/authors", AuthorViewSet)
+router.register(r"api/follow-requests", FollowRequestViewSet, basename="follow-requests")
 
 urlpatterns += router.urls
