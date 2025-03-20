@@ -12,12 +12,15 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path('stream/',
          views.stream_view,
          name='stream'),
-    path('post/<uuid:post_uuid>/',  # TODO please completely overwrite this! it's only here for name=view_post to exist while it's not set up yet
-         generic.TemplateView.as_view(template_name="components/post_card.html"),
+
+    path("posts/<uuid:post_uuid>/", 
+         views.view_post, 
          name="view_post"),
+
     path('post/<uuid:post_uuid>/',  # TODO please completely overwrite this! it's only here for name=edit_post to exist while it's not set up yet
          generic.TemplateView.as_view(template_name="components/post_card.html"),
          name="edit_post"),
+
 ]
 
 # DRF Router to automatically generate CRUD API endpoints
