@@ -85,7 +85,7 @@ class InboxView(views.APIView):
         responses={200: OpenApiResponse(description="Success, inbox item sent"),
                    400: OpenApiResponse(description="Bad request")},
     )
-    def post(self, request: Request, author_uuid: str) -> Response:
+    def post(self, request: Request, target_author_uuid: str) -> Response:
         """Send an inbox item to this author's inbox"""
         type = request.data.get("type")
         if type is None:
@@ -131,3 +131,6 @@ class LikesInboxHandler(InboxHandler):
                 "error": "Invalid Like",
                 "like": serializer.errors
             }, status.HTTP_400_BAD_REQUEST)
+
+
+register_inbox_handler(LikesInboxHandler())

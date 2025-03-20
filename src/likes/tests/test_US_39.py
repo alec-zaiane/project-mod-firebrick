@@ -7,7 +7,7 @@ from rest_framework import status
 from core.utils.testing_utils import GeneralUserStoryApiTest
 
 from comments.models import Comment
-from posts.models import Post
+from posts.models import PostTypes, VisibilityTypes
 from likes.models import Like
 
 from user_management.serializers import AuthorSerializer
@@ -45,10 +45,9 @@ class TestUserStory39(GeneralUserStoryApiTest):
             url, like_json, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        new_post_ref = Post.objects.get(
-            uuid=self.sample_posts[1][0].uuid)
-        self.assertEqual(new_post_ref.likes.count(), 1)
-        first_like = new_post_ref.likes.first()
+        self.sample_posts[0][0].refresh_from_db()
+        self.assertEqual(self.sample_posts[0][0].likes.count(), 1)
+        first_like = self.sample_posts[0][0].likes.first()
         assert first_like is not None  # for mypy
         assert first_like.author is not None  # for mypy
         self.assertEqual(first_like.author.uuid, self.sample_authors[0].uuid)
@@ -56,24 +55,27 @@ class TestUserStory39(GeneralUserStoryApiTest):
     @tag("check-slow", "security")
     def test_cannot_like_inaccessible_post(self) -> None:
         """Test that an author cannot like a post they cannot access"""
-        self.fail("not implemented")
-        # self.initialize_sample_authors(2)
-        # self.initialize_sample_text_posts(
-        #     posts_per_author=1, visibility_type=models.PostTextBased.VisibilityTypes.FRIENDS_ONLY)
+        self.initialize_sample_authors(2)
+        self.initialize_sample_text_posts(
+            posts_per_author=1, visibility_type=VisibilityTypes.FRIENDS_ONLY)
 
-        # self.client.force_authenticate(user=self.sample_authors[0].user)
-        # url = reverse("user_management:node2node_inbox", args=[self.sample_authors[1].uuid])
-        # like_json = JsonGenerator.generate_like(
-        #     self.sample_authors[0], self.sample_posts[1][0])
-        # response = self.client.post(
-        #     url, like_json, format="json")
+        self.client.force_authenticate(user=self.sample_authors[1].user)
+        url = reverse("user_management:node2node_inbox", args=[self.sample_authors[1].uuid])
+        like_json = {
+            "type": "like",
+            "author": AuthorSerializer().to_representation(self.sample_authors[0]),
+            "published": "2021-10-10T10:00:00Z",
+            "id": "http://nodeaaaa.com/api/authors/111/liked/166",
+            "object": quote(self.sample_posts[0][0].fqid, safe="")
+        }
 
-        # self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        # self.assertEqual(models.Like.objects.count(), 0)
-        # self.assertEqual(models.PostTextBased.objects.get(
-        #     uuid=self.sample_posts[1][0].uuid).get_likes().count(), 0)
-        # self.assertFalse(str(
-        #     self.sample_authors[0].uuid) in self.sample_posts[1][0].get_likes_author_uuid_strings())
+        response = self.client.post(
+            url, like_json, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        self.sample_posts[0][0].refresh_from_db()
+        self.assertEqual(self.sample_posts[0][0].likes.count(), 0)
+        self.assertEqual(Like.objects.count(), 0)
 
     @tag("check-slow", "security")
     @skip("Waiting for implmentation of following")
@@ -87,34 +89,31 @@ class TestUserStory39(GeneralUserStoryApiTest):
         self.initialize_sample_authors(2)
         self.initialize_sample_text_posts(posts_per_author=1)
 
-        self.fail("not implemented")
-        # # send a comment
-        # url = reverse("user_management:node2node_inbox", args=[self.sample_authors[1].uuid])
-        # comment_json = JsonGenerator.generate_comment(
-        #     author=self.sample_authors[0],
-        #     target=self.sample_posts[1][0],
-        #     comment="comment",
-        #     comment_type="text/plain")
-        # response = self.client.post(url, comment_json, format="json")
-        # self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        # author 1 comments on author 0's post, then author 0 likes the comment
 
-        # post = Post.objects.get(
-        #     uuid=self.sample_posts[1][0].uuid)
-        # comment = post.get_comments().first()
-        # assert comment is not None  # for mypy
+        comment = Comment.objects.create_comment(
+            author=self.sample_authors[1],
+            post=self.sample_posts[0][0],
+            content="Comment",
+            content_type=PostTypes.PLAINTEXT
+        )
 
-        # # send a like
-        # url = reverse("user_management:node2node_inbox", args=[self.sample_authors[1].uuid])
-        # like_json = JsonGenerator.generate_like(
-        #     self.sample_authors[0], comment)
-        # response = self.client.post(url, like_json, format="json")
-        # self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        # # verify the like
-        # self.assertEqual(models.Like.objects.count(), 1)
-        # like = Like.objects.first()
-        # assert like is not None  # for mypy
-        # assert like.author is not None  # for mypy
-        # self.assertEqual(like.author.uuid, self.sample_authors[0].uuid)
+        url = reverse("user_management:node2node_inbox", args=[self.sample_authors[1].uuid])
+        self.client.force_authenticate(user=self.sample_authors[0].user)
+        like_json = {
+            "type": "like",
+            "author": AuthorSerializer().to_representation(self.sample_authors[0]),
+            "published": "2021-10-10T10:00:00Z",
+            "id": "http://nodeaaaa.com/api/authors/111/liked/166",
+            "object": quote(comment.fqid, safe="")
+        }
+        self.client.post(url, like_json, format="json")
+        comment.refresh_from_db()
+        self.assertEqual(comment.likes.count(), 1)
+        first_like = comment.likes.first()
+        assert first_like is not None  # for mypy
+        self.assertEqual(first_like.author.uuid, self.sample_authors[0].uuid)
+        self.assertEqual(first_like.target.uuid, comment.uuid)
 
     @tag("check-slow", "security")
     @skip("Waiting for implmentation of comments")

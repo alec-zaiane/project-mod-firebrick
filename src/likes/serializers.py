@@ -36,7 +36,7 @@ class LikeSerializer(serializers.ModelSerializer[Like]):
 
     class Meta:
         model = Like
-        fields = ["author", "published", "fqid", "_target_post", "_target_comment"]
+        fields = ["author", "created_at", "fqid", "_target_post", "_target_comment"]
 
     def to_representation(self, instance: Like) -> dict[str, Any]:
         if not isinstance(instance, Like):
@@ -52,8 +52,8 @@ class LikeSerializer(serializers.ModelSerializer[Like]):
     def to_internal_value(self, data: dict[str, Any]) -> dict[str, Any]:
         if data.get("type") != "like":
             raise ValidationError("Like object must always have type like")
-        maybe_post = Post.visible_posts.find_by_fqid(data["object"])
-        maybe_comment = Comment.objects.find_by_fqid(data["object"])
+        maybe_post = Post.visible_posts.find_by_encoded_fqid(data["object"])
+        maybe_comment = Comment.objects.find_by_encoded_fqid(data["object"])
         if maybe_post is None and maybe_comment is None:
             raise ValidationError(f"Could not find post or comment with id {data['object']}")
         return {
@@ -63,6 +63,15 @@ class LikeSerializer(serializers.ModelSerializer[Like]):
             "_target_post": maybe_post,
             "_target_comment": maybe_comment,
         }
+
+    def create(self, validated_data: dict[str, Any]) -> Like:
+        author = validated_data.get("author")
+        if isinstance(author, dict):
+            author = Author.objects.find_by_encoded_fqid(author["id"])
+        if not isinstance(author, Author):
+            raise ValueError(f"author must be an Author object, got {author}")
+        target = self.get_target()
+        return Like.objects.create_like(author, target)
 
     def get_target(self) -> Post | Comment:
         if self.validated_data.get("_target_post") is not None:

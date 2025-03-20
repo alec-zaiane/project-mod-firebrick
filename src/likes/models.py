@@ -57,7 +57,11 @@ class Like(AuthoredApiObject):
 
     @property
     def target(self) -> Post | Comment:
-        raise NotImplementedError("Like must be a PostLike or CommentLike")
+        if self._target_post:
+            return self._target_post
+        if self._target_comment:
+            return self._target_comment
+        raise ValueError("Like must have a target post or comment")
 
     objects: LikeManager = LikeManager()
     post_likes = PostLikeManager()

@@ -17,8 +17,8 @@ SUPPORTED_COMMENT_TYPES = [PostTypes.PLAINTEXT, PostTypes.MARKDOWN]
 
 
 class CommentManager(ApiObjectManager["Comment"]):
-    def create_comment(self, author: Author, post: Post, content: str) -> "Comment":
-        return self.create(host_node=author.host_node, author=author, post=post, content=content)
+    def create_comment(self, author: Author, post: Post, content: str, content_type: PostTypes) -> "Comment":
+        return self.create(host_node=author.host_node, author=author, post=post, content=content, content_type=content_type)
 
 
 class Comment(AuthoredApiObject):
