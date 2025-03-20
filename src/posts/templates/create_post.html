@@ -1,0 +1,34 @@
+{% extends 'return-meta-base.html' %}
+
+{% load static %}
+
+{% block title %}Creating Post{% endblock %}
+
+{% block return_title %}Return{% endblock %}
+
+{% block content %}
+{% block success %}{% endblock %}
+<div class="author-modify profile">
+    <form id="author-modification-form" method="post">
+        {% csrf_token %}
+        <section class="profile-info">
+            <div class="profile-top-bar">
+                <h2>Create Post</h2>
+                <input id="author-modification-submit" type="submit" value="Save">
+            </div>
+        </section>
+        <section class="author-modify-content">
+            {{ form.non_field_errors }}
+            {% for form_element in form %}
+                <div class="field-wrapper">
+                    <label for="{{ form_element.id_for_label }}">{{ form_element.label }}</label>
+                    {{ form_element.errors }}
+                    {{ form_element }}
+                </div>
+            {% endfor %}
+        </section>
+    </form>
+</div>
+
+<script src="{% static 'scripts/textarea-expand.min.js' %}"></script>
+{% endblock %}

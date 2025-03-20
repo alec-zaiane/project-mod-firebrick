@@ -1,7 +1,8 @@
 from django.shortcuts import render, get_object_or_404
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 from django.views import View
+from posts.forms import CreatePostForm
 from posts.models import Post
 
 
@@ -18,7 +19,26 @@ class CreatePostView(View):
         if viewer is None:
             return REDIRECT_TO_LOGIN(request)
 
-        return render(request, "create_post.html", {"author": viewer})
+        form = CreatePostForm()
+        return render(request, "create_post.html", {"form": form, "author": viewer})
+
+    def post(self, request: HttpRequest) -> HttpResponse:
+        """
+        Creates a PT or MD post and submit it, then returning to where the user was before.
+        """
+
+        viewer = get_request_viewer(request)
+        if viewer is None:
+            return REDIRECT_TO_LOGIN(request)
+
+        form = CreatePostForm(request.POST)
+        form.instance.author = viewer
+        print(viewer.host_node)
+        if form.is_valid():
+            form.save()
+            return HttpResponseRedirect(request.GET.get('next', '/'))
+
+        return render(request, "create_post.html", {"form": form, "author": viewer})
 
 
 class EditPostView(View):

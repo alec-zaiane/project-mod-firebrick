@@ -2,8 +2,8 @@
 
 {% load static %}
 {% block navbar %}
-{% if request.META.HTTP_REFERER %}
-<a id="navbar-return" class="navbar-category" href="{{request.META.HTTP_REFERER}}"><img class="navbar-icon" src="{% static 'svg/return.svg' %}"/> <span class="navbar-title">{% block return_title %}{% endblock %}</span></a>
+{% if request.GET.next %}
+<a id="navbar-return" class="navbar-category" href="{{request.GET.next}}"><img class="navbar-icon" src="{% static 'svg/return.svg' %}"/> <span class="navbar-title">{% block return_title %}{% endblock %}</span></a>
 {% endif %}
 {% include "navbar.html" %}
 {% endblock %}

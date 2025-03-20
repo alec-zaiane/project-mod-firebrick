@@ -15,10 +15,10 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path('create_post/',
          CreatePostView.as_view(),
          name='create_post'),
-    path('post/<uuid:post_uuid>/',  # TODO please completely overwrite this! it's only here for name=view_post to exist while it's not set up yet
+    path('post/<uuid:post_uuid>/',
          generic.TemplateView.as_view(template_name="components/post_card.html"),
          name="view_post"),
-    path('post/<uuid:post_uuid>/',  # TODO please completely overwrite this! it's only here for name=edit_post to exist while it's not set up yet
+    path('post/<uuid:post_uuid>/',
          generic.TemplateView.as_view(template_name="components/post_card.html"),
          name="edit_post"),
 ]
