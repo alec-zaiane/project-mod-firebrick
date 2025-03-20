@@ -303,7 +303,6 @@ class FollowRequest(ApiObject):
         Author, related_name="follow_requests_sent", on_delete=models.CASCADE)
     followee: models.ForeignKey[Author, Author] = models.ForeignKey(
         Author, related_name="follow_requests_received", on_delete=models.CASCADE)
-    host_node = models.ForeignKey('user_management.Node', on_delete=models.CASCADE)  
 
     objects: FollowRequestManager = FollowRequestManager()
 
