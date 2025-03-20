@@ -10,6 +10,7 @@ from user_management.models import Author, Node, FollowRequest
 from user_management.serializers import AuthorSerializer, FollowRequestSerializer
 
 from user_management.permissions import AuthorPermission
+from core.utils.request_viewer import get_request_viewer
 
 
 class AuthorViewSet(viewsets.ModelViewSet[Author]):
@@ -52,16 +53,16 @@ class FollowRequestViewSet(viewsets.ModelViewSet[FollowRequest]):
     permission_classes = [IsAuthenticated]
 
     def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        if request.user.is_anonymous:
+        viewer = get_request_viewer(request)
+        if request.user.is_anonymous or viewer is None:
             return Response({"error": "User must be authenticated."}, status=status.HTTP_401_UNAUTHORIZED)
 
-        logged_in_author = request.user.author
         # deserialize and validate the incoming follow request data
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         # check that the actor in the request matches the logged-in user
         input_actor = request.data.get("actor", {})
-        if input_actor.get("id") and logged_in_author.fqid != input_actor["id"]:
+        if input_actor.get("id") and viewer.fqid != input_actor["id"]:
             return Response({"error": "Logged in user does not match actor in request."}, status=status.HTTP_403_FORBIDDEN)
 
         follow_request = serializer.save()
