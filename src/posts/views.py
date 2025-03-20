@@ -42,7 +42,7 @@ class ViewPostView(View):
 
         post = get_object_or_404(Post, uuid=post_uuid)
 
-        if not Post.visible_posts.get_posts_visible_to_author(viewer).filter(uuid=post_uuid).exists():
+        if not viewer or not Post.visible_posts.get_posts_visible_to_author(viewer).filter(uuid=post_uuid).exists():
             return render(request, "no_permission_view.html", {"post": post, "viewer": viewer})
 
         return render(request, "view_post.html", {"post": post, "viewer": viewer})
