@@ -2,6 +2,7 @@ from django.test import tag
 from django.urls import reverse
 from rest_framework import status
 from core.utils.testing_utils import GeneralUserStoryApiTest
+from user_management.serializers import AuthorSerializer
 
 
 @tag("US-Following/Friends")
@@ -17,10 +18,18 @@ class TestUserStory31(GeneralUserStoryApiTest):
         author0 = self.sample_authors[0]  # follower
         author1 = self.sample_authors[1]  # target followee
 
+
+        follow_json = {
+                    "type": "follow",
+                    "summary": f"{author0.display_name} wants to follow {author1.display_name}",
+                    "actor": AuthorSerializer(author0).data,
+                    "object": AuthorSerializer(author1).data,
+        }
+
         # author0 sends a follow request to author1 via the API endpoint
         self.client.force_authenticate(user=author0.user)
         url = reverse("user_management:follow-requests-list")
-        response = self.client.post(url, {"followee_id": str(author1.uuid)})
+        response = self.client.post(url, follow_json, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 

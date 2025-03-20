@@ -55,23 +55,14 @@ class FollowRequestViewSet(viewsets.ModelViewSet[FollowRequest]):
         if request.user.is_anonymous:
             return Response({"error": "User must be authenticated."}, status=status.HTTP_401_UNAUTHORIZED)
 
-        try:
-            follower = request.user.author
-        except AttributeError:
-            return Response({"error": "User is not linked to an author."}, status=status.HTTP_400_BAD_REQUEST)
+        logged_in_author = request.user.author
+        # deserialize and validate the incoming follow request data
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        # check that the actor in the request matches the logged-in user
+        input_actor = request.data.get("actor", {})
+        if input_actor.get("id") and logged_in_author.fqid != input_actor["id"]:
+            return Response({"error": "Logged in user does not match actor in request."}, status=status.HTTP_403_FORBIDDEN)
 
-        followee_id = request.data.get("followee_id")
-        if not followee_id:
-            return Response({"error": "Field 'followee_id' is required."}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            followee = Author.objects.get(uuid=followee_id)
-        except Author.DoesNotExist:
-            return Response({"error": "Target author not found."}, status=status.HTTP_404_NOT_FOUND)
-
-        if not followee.is_local:
-            return Response({"error": "Target author is not local."}, status=status.HTTP_400_BAD_REQUEST)
-
-        follow_request = FollowRequest.objects.create_follow_request(follower, followee)
-        serializer = FollowRequestSerializer(follow_request)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        follow_request = serializer.save()
+        return Response(self.get_serializer(follow_request).data, status=status.HTTP_201_CREATED)
