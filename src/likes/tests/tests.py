@@ -19,7 +19,7 @@ class LikeUnitTests(TestCase):
             "Test Description", "Test Content",
             PostTypes.PLAINTEXT, VisibilityTypes.PUBLIC)
         self.comment = Comment.objects.create_comment(
-            self.author, self.post, "Test Comment")
+            self.author, self.post, "Test Comment", PostTypes.PLAINTEXT)
 
     def test_like_comment(self) -> None:
         like = Like.objects.create_like(self.author, self.comment)

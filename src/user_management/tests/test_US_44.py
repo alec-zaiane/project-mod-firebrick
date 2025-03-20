@@ -72,7 +72,7 @@ class TestUserStory44(AdminUITestCase):
         updates: list[tuple[tuple[str, str], tuple[str, str]]] = [
             (("username", "new_username"), ("username", "new_username")),                    # noqa
             (("display_name", "new_display_name"), ("display_name", "new_display_name")),    # noqa
-            (("profile_image", "https://picsum.photos/200"), ("profile_image", "https://picsum.photos/200")),  # noqa
+            (("profile_image", "https://i.imgur.com/6kRE6Y9.jpeg"), ("profile_image", "https://i.imgur.com/6kRE6Y9.jpeg")),  # noqa
             (("bio", "new_bio"), ("bio", "new_bio"))                                         # noqa
         ]
 
@@ -100,7 +100,7 @@ class TestUserStory44(AdminUITestCase):
             self.assertEqual(
                 getattr_nested(author, prop_name),
                 expected_value,
-                f"Author {author.uuid} does not have {prop_name} == {expected_value} post-update"
+                f"Author {author.uuid} does not have {prop_name} == {expected_value} post-update, got {getattr_nested(author, prop_name)}"
             )
         self.end_test()
 

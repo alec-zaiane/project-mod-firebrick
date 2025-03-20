@@ -4,6 +4,7 @@ Gives the model a UUID, host node, and FQID (fully qualified ID)"""
 
 from typing import TYPE_CHECKING, Any, TypeVar, Generic, Optional
 from datetime import datetime
+from urllib.parse import unquote
 
 if TYPE_CHECKING:
     from user_management.models import Node, Author
@@ -29,6 +30,10 @@ class ApiObjectManager(models.Manager[ModelT], Generic[ModelT]):
     def find_by_fqid(self, fqid: str) -> Optional[ModelT]:
         return self.filter(fqid=fqid).first()
 
+    def find_by_encoded_fqid(self, fqid: str) -> Optional[ModelT]:
+        """Find by a percent-encoded fqid"""
+        return self.find_by_fqid(unquote(fqid))
+
 
 class ApiObject(models.Model):
     class Meta:
@@ -50,7 +55,8 @@ class ApiObject(models.Model):
     @property
     def is_updated(self) -> bool:
         """Whether or not this object has been updated since it was created"""
-        return self.created_at != self.updated_at
+        # so long as the times are within 1ms of each other, consider them equal
+        return abs(self.updated_at.timestamp() - self.created_at.timestamp()) > 1e-3
 
     def generate_fqid(self) -> str:
         # Ideally this would be an abstract method, but Django shenanigans
