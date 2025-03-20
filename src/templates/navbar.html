@@ -4,7 +4,7 @@
         <a id="navbar-admin-panel" class="navbar-category" href="{% url 'admin:index' %}"><img class="navbar-icon" src="{% static 'svg/admin.svg' %}"/> <span class="navbar-title">Admin Panel</span></a>
     {% endif %}
 {% endif %}
-<a id="navbar-home" class="navbar-category" href=""><img class="navbar-icon" src="{% static 'svg/home.svg' %}"/> <span class="navbar-title">Home</span></a>
+<a id="navbar-home" class="navbar-category" href="{% url 'posts:stream' %}"><img class="navbar-icon" src="{% static 'svg/home.svg' %}"/> <span class="navbar-title">Home</span></a>
 {% if user.author %}
     <a id="navbar-follow-requests" class="navbar-category" href="">
         <img class="navbar-icon" src="{% static 'svg/followrequests.svg' %}"/>
