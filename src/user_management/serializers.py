@@ -60,7 +60,7 @@ class AuthorSerializer(serializers.ModelSerializer[Author]):
 class FollowRequestSerializer(serializers.ModelSerializer[FollowRequest]):
     class Meta:
         model = FollowRequest
-        fields = ["follower", "followee"]
+        fields = ["follower", "followee", "host_node"]
 
     def to_representation(self, instance: FollowRequest) -> dict[str, Any]:
         return {
@@ -73,7 +73,19 @@ class FollowRequestSerializer(serializers.ModelSerializer[FollowRequest]):
     def to_internal_value(self, data: dict[str, Any]) -> dict[str, Any]:
         if data.get("type") != "follow":
             raise ValidationError("Follow request object must always have type follow")
+        try:
+            follower = Author.objects.get_by_fqid(data["actor"]["id"])
+        except Exception as e:
+            raise ValidationError(f"Invalid actor: {e}")
+        try:
+            followee = Author.objects.get_by_fqid(data["object"]["id"])
+        except Exception as e:
+            raise ValidationError(f"Invalid object: {e}")
+
+        host_node = followee.host_node
+
         return {
-            "follower": Author.objects.get_by_fqid(data["actor"]["id"]),
-            "followee": Author.objects.get_by_fqid(data["object"]["id"]),
+            "follower": follower,
+            "followee": followee,
+            "host_node": host_node,
         }

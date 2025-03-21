@@ -4,8 +4,9 @@ from django.contrib.auth import views as auth_views
 from django.urls import path
 from user_management.forms import LoginForm
 
+
 from user_management.views import AuthorModifyView, AuthorView, JoinView
-from user_management.viewsets import AuthorViewSet
+from user_management.viewsets import AuthorViewSet, FollowRequestViewSet
 from user_management.views_api import InboxView
 
 app_name = "user_management"
@@ -37,5 +38,6 @@ urlpatterns: list[URLPattern | URLResolver] = [
 router = routers.SimpleRouter()
 # creates names: author-list, author-detail, author-create, author-update, author-delete
 router.register(r"api/authors", AuthorViewSet)
+router.register(r"api/follow-requests", FollowRequestViewSet, basename="follow-requests")
 
 urlpatterns += router.urls

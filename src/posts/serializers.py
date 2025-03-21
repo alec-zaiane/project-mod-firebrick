@@ -65,7 +65,7 @@ class PostSerializer(serializers.ModelSerializer[Post]):
     class Meta:
         model = Post
         fields = ["uuid", "title", "description", "content",
-                  "post_type", "visibility_type", "author", "published"]
+                  "post_type", "visibility_type", "author", "created_at"]
 
     def to_representation(self, instance: Post) -> dict[str, Any]:
         """Convert a Post instance into a dictionary following the expected schema."""

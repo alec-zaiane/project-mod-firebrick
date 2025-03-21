@@ -21,12 +21,15 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path('post/<uuid:post_uuid>/edit/',
          EditPostView.as_view(),
          name="edit_post"),
+
 ]
 
 # DRF Router to automatically generate CRUD API endpoints
 router = routers.SimpleRouter()
+
 # Registers /posts/ as an API route
 router.register(r"api/posts", PostViewSet, basename="api_posts")
+
 
 urlpatterns += router.urls  # Add all generated routes
 
