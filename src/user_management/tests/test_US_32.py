@@ -4,12 +4,9 @@ from rest_framework import status
 
 from core.utils.testing_utils import GeneralUserStoryApiTest
 from user_management.models import FollowRequest
-from user_management.serializers import FollowRequestSerializer
-
-from unittest import skip
+from user_management.serializers import AuthorSerializer
 
 
-@skip("Needs to be fixed")
 @tag("US-Following/Friends")
 class TestUserStory32(GeneralUserStoryApiTest):
     """
@@ -24,36 +21,64 @@ class TestUserStory32(GeneralUserStoryApiTest):
         author0 = self.sample_authors[0]
         author1 = self.sample_authors[1]
 
+        follow_json = {
+            "type": "follow",
+            "summary": f"{author0.display_name} wants to follow {author1.display_name}",
+            "actor": AuthorSerializer(author0).data,
+            "object": AuthorSerializer(author1).data,
+        }
+
         # author0 tries to follow author1
         self.client.force_authenticate(user=author0.user)
-        send_url = reverse("user_management:node2node_inbox", args=[str(author1.uuid)])
-        resp = self.client.post(send_url)
-        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        url = reverse("user_management:follow-requests-list")
+        response = self.client.post(url, follow_json, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         # author1 can see the follow request
         self.client.force_authenticate(user=author1.user)
         fr = FollowRequest.objects.get_follow_request(author0, author1)
 
         # deny it
-        deny_url = reverse("user_management:node2node_followrequest_deny", args=[str(fr.uuid)])
-        deny_resp = self.client.post(deny_url)
-        self.assertEqual(deny_resp.status_code, status.HTTP_200_OK)
-        self.assertIsNone(FollowRequest.objects.get_follow_request(author0, author1))
+        deny_url = reverse("user_management:follow-requests-deny", args=[str(fr.uuid)])
+        deny_response = self.client.post(deny_url)
+        self.assertEqual(deny_response.status_code, status.HTTP_200_OK)
+
+        # verify that the follow request no longer exists
+        with self.assertRaises(FollowRequest.DoesNotExist):
+            FollowRequest.objects.get_follow_request(author0, author1)
 
     def test_approve_follow_request(self) -> None:
         self.initialize_sample_authors(2)
-        author0, author1 = self.sample_authors[:2]
+        author0 = self.sample_authors[0]
+        author1 = self.sample_authors[1]
 
+        follow_json = {
+            "type": "follow",
+            "summary": f"{author0.display_name} wants to follow {author1.display_name}",
+            "actor": AuthorSerializer(author0).data,
+            "object": AuthorSerializer(author1).data,
+        }
+
+        # author0 tries to follow author1
         self.client.force_authenticate(user=author0.user)
-        send_url = reverse("user_management:node2node_inbox", args=[str(author1.uuid)])
-        self.client.post(send_url)  # send again
+        url = reverse("user_management:follow-requests-list")
+        response = self.client.post(url, follow_json, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # author1 can see the follow request
+        self.client.force_authenticate(user=author1.user)
         fr2 = FollowRequest.objects.get_follow_request(author0, author1)
 
-        self.client.force_authenticate(user=author1.user)
-        approve_url = reverse(
-            "user_management:node2node_followrequest_approve", args=[str(fr2.uuid)])
-        approve_resp = self.client.post(approve_url)
-        self.assertEqual(approve_resp.status_code, status.HTTP_200_OK)
+        # approve it
+        approve_url = reverse("user_management:follow-requests-approve", args=[str(fr2.uuid)])
+        approve_response = self.client.post(approve_url)
+        self.assertEqual(approve_response.status_code, status.HTTP_200_OK)
 
         # confirm author0 is in author1's followers
         self.assertTrue(author1.followers.filter(uuid=author0.uuid).exists())
+        # confirm that author0 is now following author1
+        self.assertTrue(author0.following.filter(uuid=author1.uuid).exists())
+
+        # verify that the follow request no longer exists
+        with self.assertRaises(FollowRequest.DoesNotExist):
+            FollowRequest.objects.get_follow_request(author0, author1)
