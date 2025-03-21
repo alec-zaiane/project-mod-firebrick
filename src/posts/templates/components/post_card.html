@@ -111,7 +111,7 @@
                     </a>
                     {% if post.visibility_type == "PB" %}
                     <a id="link-button" class="edit-button setting-container">
-                        <input type="hidden" id="copy-link" value="{{ post.generate_fqid }}" />
+                        <input type="hidden" id="copy-link" value="{{ post.get_absolute_url }}" />
                         <div class="setting">
                             <img class="link-icon" title="Copy Link" src="{% static 'svg/link.svg' %}" />
                             <span id="copy-link-field">Copy Link to Post</span>
