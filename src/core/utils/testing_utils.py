@@ -111,7 +111,7 @@ class UITestCase(LiveServerTestCase, GeneralUserStoryApiTest):
 
     def _get_driver(self) -> webdriver.Firefox:
         # https://stackoverflow.com/questions/73973332/check-if-were-in-a-github-action-travis-ci-circle-ci-etc-testing-environme
-        self.is_in_github_actions = os.getenv("GITHUB_ACTIONS")
+        self.is_in_github_actions = bool(os.getenv("GITHUB_ACTIONS"))
         if self.is_in_github_actions:
             # grab the installded geckodriver version (will be installed on the runner by the django-tests.yml before this is run)
             geckodriver_root = "/opt/hostedtoolcache/geckodriver"
