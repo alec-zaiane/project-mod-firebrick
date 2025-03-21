@@ -2,6 +2,7 @@ from django.shortcuts import render, get_object_or_404
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 from django.views import View
+from django.template import loader
 from posts.forms import CreatePostForm
 from posts.models import Post
 
@@ -34,7 +35,6 @@ class CreatePostView(View):
         form = CreatePostForm(request.POST)
         form.instance.author = viewer
         form.instance.host_node = viewer.host_node
-        print(viewer.host_node)
         if form.is_valid():
             form.save()
             return HttpResponseRedirect(request.GET.get('next', '/'))
@@ -64,7 +64,9 @@ class ViewPostView(View):
         post = get_object_or_404(Post, uuid=post_uuid)
 
         if not viewer or not Post.visible_posts.get_posts_visible_to_author(viewer).filter(uuid=post_uuid).exists():
-            return render(request, "no_permission_view.html", {"post": post, "viewer": viewer})
+            response = loader.render_to_string(
+                "no-permission.html", {"error": "You do not have permission to view this post.", "user": request.user, "post": post, "viewer": viewer})
+            return HttpResponse(response, status=403)
 
         return render(request, "view_post.html", {"post": post, "viewer": viewer})
 

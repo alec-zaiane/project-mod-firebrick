@@ -82,7 +82,6 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
             )
         return super().update(request, *args, **kwargs)
 
-    @login_required
     def destroy(self, request: Request, pk: Optional[str] = None) -> Response:
         """
         Soft delete the specified post.

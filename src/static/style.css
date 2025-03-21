@@ -395,6 +395,7 @@ a:link:active, a:visited:active  {
 }
 
 .stream-container .post-card, .profile .post {
+    width: 100%;
     list-style: none;
     overflow: visible;
     padding: 20px;
