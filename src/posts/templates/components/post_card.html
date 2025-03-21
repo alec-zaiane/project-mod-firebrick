@@ -25,7 +25,7 @@
         {% if post.author == viewer %}
         <div id="settings-dropdown-{{post.uuid}}" class="settings">
             <img class="settings-dropdown" src="{% static 'svg/dots.svg' %}"/>
-            <div class="settings-dropdown-content">
+            <div class="settings-dropdown-content" id="settings-dropdown-content-{{post.uuid}}">
                 {% url 'posts:view_post' post.uuid as view_post_url %}
                 <a class="setting-container edit-button" href="{% url 'posts:edit_post' post.uuid %}{% if request.path != view_post_url %}?next={% url 'posts:view_post' post.uuid %}{% endif %}{% if request.get_full_path != view_post_url %}?next={{ request.get_full_path }}{% endif %}">
                     <div class="setting">
