@@ -3,7 +3,6 @@ from django.forms.widgets import TextInput
 from django.utils.translation import gettext_lazy as _
 
 from posts.models import Post, PostTypes, VisibilityTypes
-from user_management.models import Author
 
 
 class CreatePostForm(forms.ModelForm[Post]):
