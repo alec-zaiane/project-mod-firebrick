@@ -29,14 +29,3 @@ class CreatePostForm(forms.ModelForm[Post]):
     visibility_type = forms.ChoiceField(error_messages={
         "required": "Please choose a visibility type.",
     }, choices=VisibilityTypes.choices)
-
-    def save(self, commit: bool = True) -> Post:
-        post = Post.objects.create_post(
-            author=self.instance.author,
-            title=self.cleaned_data["title"],
-            description=self.cleaned_data["description"],
-            content=self.cleaned_data["content"],
-            post_type=self.cleaned_data["post_type"],
-            visibility_type=self.cleaned_data["visibility_type"])
-
-        return post

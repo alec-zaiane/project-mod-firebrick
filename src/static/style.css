@@ -383,7 +383,6 @@ a:link:active, a:visited:active  {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
     border-left: 1px solid #242729;
     border-right: 1px solid #242729;
     padding: 0 20px;
@@ -399,6 +398,7 @@ a:link:active, a:visited:active  {
     list-style: none;
     overflow: visible;
     padding: 20px;
+    padding-top: 30px;
 }
 
 /*
@@ -420,21 +420,11 @@ a:link:active, a:visited:active  {
     top: 0px;
 }
 
-.post-card:not(:first-child) .post-view {
-    height: calc(100% + 10px);
-    top: -10px;
-}
-
 .profile .post-card .post-view {
     width: calc(100% + 40px);
     height: calc(100% + 40px);
     left: -20px;
     top: -20px;
-}
-
-.profile .post-card:not(:first-child) .post-view {
-    height: calc(100% + 50px);
-    top: -30px;
 }
 
 .post-card .post-view:hover {

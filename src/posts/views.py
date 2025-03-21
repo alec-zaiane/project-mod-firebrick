@@ -33,6 +33,7 @@ class CreatePostView(View):
 
         form = CreatePostForm(request.POST)
         form.instance.author = viewer
+        form.instance.host_node = viewer.host_node
         print(viewer.host_node)
         if form.is_valid():
             form.save()
