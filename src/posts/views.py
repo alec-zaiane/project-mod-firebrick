@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
+from django.urls import reverse
 from django.views import View
 from django.template import loader
 from posts.forms import CreatePostForm
@@ -36,8 +37,9 @@ class CreatePostView(View):
         form.instance.author = viewer
         form.instance.host_node = viewer.host_node
         if form.is_valid():
-            form.save()
-            return HttpResponseRedirect(request.GET.get('next', '/'))
+            post = form.save()
+            next_url = f"{reverse('posts:view_post', kwargs={'post_uuid': post.uuid})}?next={request.GET.get('next', '/')}"
+            return HttpResponseRedirect(next_url)
 
         return render(request, "create_post.html", {"form": form, "author": viewer})
 
@@ -51,9 +53,30 @@ class EditPostView(View):
 
         post = get_object_or_404(Post, uuid=post_uuid)
         if post.author != viewer:
-            return render(request, "no_permission_edit.html", {"post": post, "viewer": viewer})
+            response = loader.render_to_string(
+                "no-permission.html", {"error": "You do not have permission to edit this post.", "user": request.user, "post": post, "viewer": viewer})
+            return HttpResponse(response, status=403)
 
-        return render(request, "edit_post.html", {"post": post, "author": viewer})
+        form = CreatePostForm(instance=post)
+        return render(request, "edit_post.html", {"form": form, "author": viewer})
+
+    def post(self, request: HttpRequest, post_uuid: str) -> HttpResponse:
+        """
+        Creates a PT or MD post and submit it, then returning to where the user was before.
+        """
+
+        viewer = get_request_viewer(request)
+        if viewer is None:
+            return REDIRECT_TO_LOGIN(request)
+
+        form = CreatePostForm(request.POST)
+        form.instance.author = viewer
+        form.instance.host_node = viewer.host_node
+        if form.is_valid():
+            form.save()
+            return HttpResponseRedirect(request.GET.get('next', '/'))
+
+        return render(request, "edit_post.html", {"form": form, "author": viewer})
 
 
 class ViewPostView(View):
