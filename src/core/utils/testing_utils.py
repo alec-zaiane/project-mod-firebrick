@@ -129,6 +129,9 @@ class UITestCase(LiveServerTestCase, GeneralUserStoryApiTest):
             options.add_argument('--width=1920')
             options.add_argument('--height=1080')
 
+            # auto-accept alerts (From ChatGPT)
+            options.set_capability("unhandledPromptBehavior", "accept")  # Auto-accept alerts
+
             return webdriver.Firefox(service=driver_service, options=options)
         else:
             return webdriver.Firefox(options=webdriver.FirefoxOptions())
