@@ -1,7 +1,7 @@
 from rest_framework import routers
 from django.urls import URLPattern, URLResolver, path
 
-from posts.views import CreatePostView, StreamView
+from posts.views import CreatePostView, EditPostView, StreamView, ViewPostView
 from posts.viewsets import PostViewSet  # Import PostViewSet from posts.viewsets
 
 from django.views import generic
@@ -16,10 +16,10 @@ urlpatterns: list[URLPattern | URLResolver] = [
          CreatePostView.as_view(),
          name='create_post'),
     path('post/<uuid:post_uuid>/',
-         generic.TemplateView.as_view(template_name="components/post_card.html"),
+         ViewPostView.as_view(),
          name="view_post"),
-    path('post/<uuid:post_uuid>/',
-         generic.TemplateView.as_view(template_name="components/post_card.html"),
+    path('post/<uuid:post_uuid>/edit/',
+         EditPostView.as_view(),
          name="edit_post"),
 ]
 

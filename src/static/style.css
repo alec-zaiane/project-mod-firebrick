@@ -396,7 +396,6 @@ a:link:active, a:visited:active  {
 }
 
 .stream-container .post-card, .profile .post {
-    width: 100%;
     list-style: none;
     overflow: visible;
     padding: 20px;
@@ -408,6 +407,7 @@ a:link:active, a:visited:active  {
  ===========
 */
 .post-card {
+    width: 100%;
     position: relative;
 }
 
@@ -420,11 +420,21 @@ a:link:active, a:visited:active  {
     top: 0px;
 }
 
+.post-card:not(:first-child) .post-view {
+    height: calc(100% + 10px);
+    top: -10px;
+}
+
 .profile .post-card .post-view {
     width: calc(100% + 40px);
     height: calc(100% + 40px);
     left: -20px;
     top: -20px;
+}
+
+.profile .post-card:not(:first-child) .post-view {
+    height: calc(100% + 50px);
+    top: -30px;
 }
 
 .post-card .post-view:hover {

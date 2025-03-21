@@ -1,21 +1,14 @@
 {% extends 'return-meta-base.html' %}
-
 {% load static %}
 
-{% block content %}
-<div class="stream-container">
-    {% if posts %}
-    {% for post in posts %}
-    {% include 'components/post_card.html' %}
-    {% endfor %}
-    {% else %}
-    <p>No posts available in your stream.</p>
-    {% endif %}
+{% block title %}Post by {{post.author.display_name}}{% endblock %}
 
-</div>
+{% block return_title %}Return{% endblock %}
+
+{% block content %}
+{% include 'components/post_card.html' with full=True %}
 
 <script src="{% static 'scripts/generic-form.min.js' %}"></script>
 <script src="{% static 'scripts/posts.min.js' %}"></script>
 <script src="{% static 'scripts/markdown-renderer.min.js' %}"></script>
-
 {% endblock %}
