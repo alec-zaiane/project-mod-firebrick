@@ -523,6 +523,7 @@ a:link:active, a:visited:active  {
     padding: 4px;
     border-radius: 10px;
     width: 20px;
+    z-index: 10;
 }
 
 .post-card .settings-dropdown:hover {
@@ -553,16 +554,23 @@ a:link:active, a:visited:active  {
     padding: 10px;
 }
 
-.post-card .setting:first-child {
-    border-radius: 10px 10px 0 0;
+.post-card .setting-container:first-child .setting {
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
 }
 
-.post-card .setting:last-child {
-    border-radius: 0 0 10px 10px;
+.post-card .setting-container:last-child .setting {
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
 }
 
 .post-card .setting:hover {
     background: rgb(44, 45, 48);
+}
+
+.post-card .share-dropdown-content {
+    right: -90px;
+    bottom: 40px;
 }
 
 .post-card .edit-button {
@@ -588,7 +596,23 @@ a:link:active, a:visited:active  {
     margin: 15px 0;
 }
 
-.post-card .post-content {
+.post-card .post-title {
+    text-align: center;
+    margin: 0;
+}
+
+
+.post-card .post-description {
+    margin: 0;
+    margin-top: 5px;
+    text-align: center;
+    color: var(--color-sub);
+    font-style: italic;
+    font-size: 12px;
+}
+
+.post-card .post-inner-content {
+    margin-top: 10px;
     max-height: 600px;
     overflow-y: auto;
     overflow-x: hidden;
@@ -622,7 +646,7 @@ a:link:active, a:visited:active  {
     gap: 6px;
 }
 
-.post-card .likes-comments {
+.post-card .likes-comments-share {
     display: flex;
     justify-content: space-around;
     align-items: flex-start;
@@ -657,6 +681,18 @@ a:link:active, a:visited:active  {
 }
 
 .post-card .like-icon {
+    width: 20px;
+}
+
+.post-card .share-icon {
+    width: 20px;
+}
+
+.post-card .copy-icon {
+    width: 20px;
+}
+
+.post-card .link-icon {
     width: 20px;
 }
 

@@ -27,13 +27,13 @@
             <img class="settings-dropdown" src="{% static 'svg/dots.svg' %}"/>
             <div class="settings-dropdown-content">
                 {% url 'posts:view_post' post.uuid as view_post_url %}
-                <a href="{% url 'posts:edit_post' post.uuid %}?next={% url 'posts:view_post' post.uuid %}{% if request.GET.next and request.GET.next != view_post_url %}?next={{ request.GET.next }}{% endif %}" class="edit-button">
+                <a class="setting-container edit-button" href="{% url 'posts:edit_post' post.uuid %}?next={% url 'posts:view_post' post.uuid %}{% if request.GET.next and request.GET.next != view_post_url %}?next={{ request.GET.next }}{% endif %}">
                     <div class="setting">
                         <img class="edit-icon" title="Edit Post" src="{% static 'svg/editpost.svg' %}" />
                         Edit Post
                     </div>
                 </a>
-                <form name="generic-form" action="{% url 'posts:api_posts-detail' post.uuid %}" method="post">
+                <form class="setting-container" name="generic-form" action="{% url 'posts:api_posts-detail' post.uuid %}" method="post">
                     {% csrf_token %}
                     <input type="hidden" name="_method" value="DELETE">
                     <input type="hidden" name="_after_action" value="url:{{request.get_host}} url:{{request.GET.next}} reload confirm">
@@ -69,7 +69,7 @@
                 {% include 'components/post-meta.html' with full=True %}
             </div>
         {% endif %}
-        <div class="likes-comments">
+        <div class="likes-comments-share">
             <div class="comments-box">
                 <img class="comments-icon" src="{% static 'svg/comment.svg' %}" />
                 <span class="comments-count">{{post.comments.all|length}}</span>
@@ -89,6 +89,36 @@
                     </button>
                 </form>
                 <span class="likes-count">{{ post.likes.all|length }}</span>
+            </div>
+            <div id="share-dropdown" class="share settings">
+                <img class="settings-dropdown share-icon" src="{% static 'svg/share.svg' %}"/>
+                <div class="settings-dropdown-content share-dropdown-content">
+                    {% url 'posts:view_post' post.uuid as view_post_url %}
+                    <a id="copy-button" class="copy-button setting-container">
+                        <input type="hidden" id="copy-contents" value="{{ post.content }}" />
+                        <div class="setting">
+                            <img class="copy-icon" title="Copy Contents" src="{% static 'svg/copy.svg' %}" />
+                            <span id="copy-contents-field">
+                            {% if post.post_type == "PT" or post.post_type == "MD"  %}
+                            Copy Contents
+                            {% elif post.post_type == "VID" %}
+                            Copy Video Media Link
+                            {% elif post.post_type == "MD" %}
+                            Copy Image Media Link
+                            {% endif %}
+                            </span>
+                        </div>
+                    </a>
+                    {% if post.visibility_type == "PB" %}
+                    <a id="link-button" class="edit-button setting-container">
+                        <input type="hidden" id="copy-link" value="{{ post.generate_fqid }}" />
+                        <div class="setting">
+                            <img class="link-icon" title="Copy Link" src="{% static 'svg/link.svg' %}" />
+                            <span id="copy-link-field">Copy Link to Post</span>
+                        </div>
+                    </a>
+                    {% endif %}
+                </div>
             </div>
         </div>
         {% if full %}

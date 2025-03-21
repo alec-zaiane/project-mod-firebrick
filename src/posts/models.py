@@ -229,7 +229,7 @@ class Post(AuthoredApiObject):
         self.save()
 
     def generate_fqid(self) -> str:
-        return self.host_node.host_url + reverse('posts:view_post', kwargs={'post_uuid': self.uuid})
+        return self.host_node.host_url + reverse('posts:view_post', kwargs={'post_uuid': self.uuid}).split("/", 1)[1]
 
     def check_can_be_seen_by(self, viewer: Author) -> bool:
         """Check if this post is possible to be seen by the viewer (either in stream or via a direct link)

@@ -69,7 +69,13 @@ class EditPostView(View):
         if viewer is None:
             return REDIRECT_TO_LOGIN(request)
 
-        form = CreatePostForm(request.POST)
+        post = get_object_or_404(Post, uuid=post_uuid)
+        if post.author != viewer:
+            response = loader.render_to_string(
+                "no-permission.html", {"error": "You do not have permission to edit this post.", "user": request.user, "post": post, "viewer": viewer})
+            return HttpResponse(response, status=403)
+
+        form = CreatePostForm(request.POST, instance=post)
         form.instance.author = viewer
         form.instance.host_node = viewer.host_node
         if form.is_valid():
