@@ -277,6 +277,7 @@ class UITestCase(LiveServerTestCase, GeneralUserStoryApiTest):
     # --------- Waiting methods --------------
     def wait_for_element_by_id(self, element_id: str, timeout: int = 10) -> WebElementLoggingWrapper:
         """Wait for an element by its ID to appear"""
+        # Created by Copilot: wait for an element by its ID to appear
         self.log(f"Waiting for element by ID: {element_id}", indentation_offset=-1)
         try:
             element = WebDriverWait(self.driver, timeout).until(
