@@ -67,7 +67,7 @@ class TestUserStory01UI(UITestCase):
         self.visit(reverse("posts:stream"))
         post = self.sample_posts[0][0]
         self.find_element_by_id(f"settings-dropdown-{post.uuid}").click()
-        self.find_element_by_id(f"delete-button-{post.uuid}").click()
+        self.wait_for_element_by_id(f"delete-button-{post.uuid}").click()
         # created by copilot: confirm the deletion with an alert
         alert = Alert(self.driver)
         alert.accept()

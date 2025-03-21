@@ -16,6 +16,8 @@ from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support.ui import Select
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 from user_management.models import Author, JoinRequest
 from posts.models import Post, PostTypes, VisibilityTypes
@@ -271,6 +273,18 @@ class UITestCase(LiveServerTestCase, GeneralUserStoryApiTest):
             output.append(WebElementLoggingWrapper(element, self))
         self.log(f"Found {len(output)} elements")
         return output
+
+    # --------- Waiting methods --------------
+    def wait_for_element_by_id(self, element_id: str, timeout: int = 10) -> WebElementLoggingWrapper:
+        """Wait for an element by its ID to appear"""
+        self.log(f"Waiting for element by ID: {element_id}", indentation_offset=-1)
+        try:
+            element = WebDriverWait(self.driver, timeout).until(
+                EC.presence_of_element_located((By.ID, element_id))
+            )
+            return WebElementLoggingWrapper(element, self)
+        except Exception as e:
+            self.fail(f"Element with ID {element_id} did not appear: {e}")
 
     # --------- Assertion methods --------------
     def assert_title(self, expected_title: str) -> None:
