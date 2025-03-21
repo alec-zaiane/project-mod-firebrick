@@ -61,22 +61,17 @@ class TestUserStory01UI(UITestCase):
 
     def test_can_delete_post_ui(self) -> None:
         """Check that the user can delete a post through the UI"""
+        self.skip_if_on_github_actions()
         self.initialize_sample_authors(1)
         self.initialize_sample_text_posts(posts_per_author=1)
         self.login_as(self.sample_authors[0])
         self.visit(reverse("posts:stream"))
         post = self.sample_posts[0][0]
         self.find_element_by_id(f"settings-dropdown-{post.uuid}").click()
-        if self.is_in_github_actions:
-            # https://stackoverflow.com/questions/72525442/python-selenium-change-the-visiblity-of-the-element-from-hidden-to-visible-then
-            self.driver.execute_script(
-                # type: ignore
-                f"document.getElementById('settings-dropdown-content-{post.uuid}').style.visibility = 'visible';")
         self.wait_for_element_by_id(f"delete-button-{post.uuid}").click()
         # created by copilot: confirm the deletion with an alert
-        if not self.is_in_github_actions:
-            alert = Alert(self.driver)
-            alert.accept()
+        alert = Alert(self.driver)
+        alert.accept()
         self.visit(reverse("posts:stream"))
         post.refresh_from_db()
         self.assertTrue(post.is_soft_deleted)

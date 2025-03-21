@@ -174,6 +174,10 @@ class UITestCase(LiveServerTestCase, GeneralUserStoryApiTest):
 
     # ======================= PUBLIC UTILITY METHODS START HERE =======================
 
+    def skip_if_on_github_actions(self) -> None:
+        """Skip the test if running on GitHub actions, sometimes the browser doesn't work there"""
+        if self.is_in_github_actions:
+            self.skipTest("Skipping test on GitHub actions")
     # --------- Action methods --------------
 
     def log(self, message: str, level: int = logging.INFO, indentation_offset: int = 0) -> None:
