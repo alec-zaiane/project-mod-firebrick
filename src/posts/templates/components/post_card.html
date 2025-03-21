@@ -27,7 +27,7 @@
             <img class="settings-dropdown" src="{% static 'svg/dots.svg' %}"/>
             <div class="settings-dropdown-content">
                 {% url 'posts:view_post' post.uuid as view_post_url %}
-                <a class="setting-container edit-button" href="{% url 'posts:edit_post' post.uuid %}?next={% url 'posts:view_post' post.uuid %}{% if request.GET.next and request.GET.next != view_post_url %}?next={{ request.GET.next }}{% endif %}">
+                <a class="setting-container edit-button" href="{% url 'posts:edit_post' post.uuid %}{% if request.path != view_post_url %}?next={% url 'posts:view_post' post.uuid %}{% endif %}{% if request.get_full_path != view_post_url %}?next={{ request.get_full_path }}{% endif %}">
                     <div class="setting">
                         <img class="edit-icon" title="Edit Post" src="{% static 'svg/editpost.svg' %}" />
                         Edit Post

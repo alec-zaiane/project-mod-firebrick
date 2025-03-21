@@ -21,12 +21,12 @@
         <section class="author-modify-content">
             {{ form.non_field_errors }}
             <div class="field-wrapper">
-                <label for="id_display_name">Display Name</label>
+                <label for="id_display_name">Display Name <span class="required">∗</span></label>
                 {{ form.display_name.errors }}
                 {{ form.display_name }}
             </div>
             <div class="field-wrapper">
-                <label for="id_username">Username</label>
+                <label for="id_username">Username <span class="required">∗</span></label>
                 {{ form.username.errors }}
                 {{ form.username }}
             </div>

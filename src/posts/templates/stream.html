@@ -11,7 +11,7 @@
     {% else %}
     <p>No posts available in your stream.</p>
     {% endif %}
-
+    <a id="add-post-floating-button" href="{% url 'posts:create_post' %}?next={{ request.path|urlencode }}">+</a>
 </div>
 
 <script src="{% static 'scripts/generic-form.min.js' %}"></script>
