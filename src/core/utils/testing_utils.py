@@ -124,7 +124,7 @@ class UITestCase(LiveServerTestCase, GeneralUserStoryApiTest):
             options = webdriver.FirefoxOptions()
             options.add_argument('--no-sandbox')
             options.add_argument('--disable-dev-shm-usage')
-            options.add_argument('--headless')
+            # options.add_argument('--headless')
             # https://stackoverflow.com/questions/15397483/how-to-set-browsers-width-and-height-in-selenium-webdriver
             options.add_argument('--width=1920')
             options.add_argument('--height=1080')
