@@ -506,7 +506,7 @@ a:link:active, a:visited:active  {
     pointer-events: all;
 }
 
-.post-card.post-full .settings {
+.post-card.post-full .settings:not(.share) {
     margin-left: auto;
 }
 
@@ -644,6 +644,10 @@ a:link:active, a:visited:active  {
 .post-card footer .post-info {
     display: flex;
     gap: 6px;
+}
+
+.post-card.post-full footer .post-info {
+    margin-bottom: 6px;
 }
 
 .post-card .likes-comments-share {
