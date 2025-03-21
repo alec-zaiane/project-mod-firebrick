@@ -6,6 +6,7 @@ from datetime import timedelta
 from core.utils.testing_utils import GeneralUserStoryApiTest
 from posts.models import Post, VisibilityTypes
 
+
 @tag("US-Reading")
 class TestProfilePublicPosts(GeneralUserStoryApiTest):
     """
@@ -32,6 +33,8 @@ class TestProfilePublicPosts(GeneralUserStoryApiTest):
         self.oldest_public = Post.objects.filter(
             author=self.profile_owner, visibility_type=VisibilityTypes.PUBLIC
         ).first()
+        if self.oldest_public is None:
+            raise ValueError("Failed to create oldest public post")
         self.oldest_public.created_at = timezone.now() - timedelta(days=2)
         self.oldest_public.save()
 
@@ -47,6 +50,8 @@ class TestProfilePublicPosts(GeneralUserStoryApiTest):
             .order_by("-created_at")
             .first()
         )
+        if self.newest_public is None:
+            raise ValueError("Failed to create newest public post")
         # create friends-only post
         self.initialize_sample_text_posts(
             posts_per_author=1,
@@ -55,6 +60,8 @@ class TestProfilePublicPosts(GeneralUserStoryApiTest):
         self.friends_post = Post.objects.filter(
             author=self.profile_owner, visibility_type=VisibilityTypes.FRIENDS_ONLY
         ).first()
+        if self.friends_post is None:
+            raise ValueError("Failed to create friends-only post")
 
         # create unlisted post
         self.initialize_sample_text_posts(
@@ -64,6 +71,8 @@ class TestProfilePublicPosts(GeneralUserStoryApiTest):
         self.unlisted_post = Post.objects.filter(
             author=self.profile_owner, visibility_type=VisibilityTypes.UNLISTED
         ).first()
+        if self.unlisted_post is None:
+            raise ValueError("Failed to create unlisted post")
 
     def test_profile_shows_only_public_posts(self) -> None:
         """
@@ -165,6 +174,8 @@ class TestProfilePublicPosts(GeneralUserStoryApiTest):
             .order_by("-created_at")
             .first()
         )
+        if test_post is None:
+            raise ValueError("Failed to create test post")
         test_post.content = test_content
         test_post.title = test_title
         test_post.save()
