@@ -3,15 +3,12 @@ from django.urls import reverse
 
 from rest_framework import status
 
-from posts.models import Post
 
-from core.utils.testing_utils import GeneralUserStoryApiTest
+from core.utils.testing_utils import GeneralUserStoryApiTest, UITestCase
 
-
-from unittest import skip
+from selenium.webdriver.common.alert import Alert
 
 
-@skip("Not implemented")
 @tag("US-posting")
 class TestUserStory01(GeneralUserStoryApiTest):
     """
@@ -31,11 +28,11 @@ class TestUserStory01(GeneralUserStoryApiTest):
         self.assertFalse(self.sample_authors[0].posts.get().is_soft_deleted)
 
         # delete the post
-        url = reverse("posts:TODO_FIGURE_OUT",
+        url = reverse("posts:api_posts-detail",
                       args=[self.sample_authors[0].posts.get().uuid])
         self.client.force_authenticate(user=self.sample_authors[0].user)
         response = self.client.delete(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
         # check that the post was deleted
         self.assertTrue(self.sample_authors[0].posts.get().is_soft_deleted)
@@ -46,7 +43,7 @@ class TestUserStory01(GeneralUserStoryApiTest):
         self.initialize_sample_authors(2)
         self.initialize_sample_text_posts(posts_per_author=1)
 
-        url = reverse("posts:TODO_FIGURE_OUT",
+        url = reverse("posts:api_posts-detail",
                       args=[self.sample_authors[0].posts.get().uuid])
         self.client.force_authenticate(user=self.sample_authors[1].user)
         response = self.client.delete(url)
@@ -54,3 +51,28 @@ class TestUserStory01(GeneralUserStoryApiTest):
 
         # check that the post was not deleted
         self.assertFalse(self.sample_authors[0].posts.get().is_soft_deleted)
+
+
+@tag("check-slow", "US-posting")
+class TestUserStory01UI(UITestCase):
+    """
+    UI Tests for User Story 01
+    """
+
+    def test_can_delete_post_ui(self) -> None:
+        """Check that the user can delete a post through the UI"""
+        self.skip_if_on_github_actions()
+        self.initialize_sample_authors(1)
+        self.initialize_sample_text_posts(posts_per_author=1)
+        self.login_as(self.sample_authors[0])
+        self.visit(reverse("posts:stream"))
+        post = self.sample_posts[0][0]
+        self.find_element_by_id(f"settings-dropdown-{post.uuid}").click()
+        self.wait_for_element_by_id(f"delete-button-{post.uuid}").click()
+        # created by copilot: confirm the deletion with an alert
+        alert = Alert(self.driver)
+        alert.accept()
+        self.visit(reverse("posts:stream"))
+        post.refresh_from_db()
+        self.assertTrue(post.is_soft_deleted)
+        self.end_test()

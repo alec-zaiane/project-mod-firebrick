@@ -20,8 +20,9 @@ django_stubs_ext.monkeypatch()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# The url to the root of the site
+# The url to the root of the site, and the URL to the API
 SITE_URL = "http://127.0.0.1:63207"
+SITE_API_URL = f"{SITE_URL}/api"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
