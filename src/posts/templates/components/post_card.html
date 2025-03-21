@@ -23,7 +23,7 @@
         {% endif %}
 
         {% if post.author == viewer %}
-        <div id="settings-dropdown" class="settings">
+        <div id="settings-dropdown-{{post.uuid}}" class="settings">
             <img class="settings-dropdown" src="{% static 'svg/dots.svg' %}"/>
             <div class="settings-dropdown-content">
                 {% url 'posts:view_post' post.uuid as view_post_url %}
@@ -38,7 +38,7 @@
                     <input type="hidden" name="_method" value="DELETE">
                     <input type="hidden" name="_after_action" value="url:{{request.get_host}} url:{{request.GET.next}} reload confirm">
                     <input type="hidden" name="_confirm_text" value="Are you sure you want to delete this post?">
-                    <button type="submit" class="delete-button">
+                    <button type="submit" class="delete-button" id="delete-button-{{post.uuid}}">
                         <div class="setting delete">
                             <img class="delete-icon" title="Delete Post" src="{% static 'svg/delete.svg' %}" />
                             Delete Post

@@ -8,6 +8,7 @@ import traceback
 from typing import Any, Never
 
 from django.test import LiveServerTestCase, tag
+from django.urls import reverse
 from rest_framework.test import APITestCase
 
 from selenium import webdriver
@@ -27,6 +28,7 @@ class GeneralUserStoryApiTest(APITestCase):
             username="testuser", password="testpassword", display_name="Mr Test")
         self.client.force_authenticate(user=self.author.user)
         self.sample_authors: list[Author] = []
+        self.sample_author_passwords: list[str] = []
         self.sample_posts: list[list[Post]] = []
         # to get the posts of the sample authors (if initialized), use self.sample_authors[author_index].posts
 
@@ -36,6 +38,7 @@ class GeneralUserStoryApiTest(APITestCase):
             author = Author.local_authors.create_author(
                 username=f"testuser{i}", password="testpassword", display_name=f"Mr Test {i}")
             self.sample_authors.append(author)
+            self.sample_author_passwords.append("testpassword")
 
     def initialize_sample_text_posts(self,
                                      posts_per_author: int = 1,
@@ -203,25 +206,41 @@ class UITestCase(LiveServerTestCase, GeneralUserStoryApiTest):
     def login_as(self, author: Author) -> None:
         """Log in as an author"""
         self.log(f"Logging in as {author.username}", indentation_offset=-1)
-        raise NotImplementedError("This method has not been implemented yet")  # TODO
+        if not author.user:
+            self.fail("Author does not have a user")
+        self.visit(reverse("user_management:login"))
+        try:
+            author_index = self.sample_authors.index(author)
+        except ValueError:
+            raise Exception(
+                "You can only log in as a sample author, we can't fetch the password otherwise")
+        self.find_element_by_id("id_username").send_keys(author.username)
+        self.find_element_by_id("id_password").send_keys(self.sample_author_passwords[author_index])
+        self.find_elements_by_selector("input[type=submit]")[0].click()
 
     def log_out(self) -> None:
         """Log out of the current session"""
         self.log(f"Logging out", indentation_offset=-1)
-        raise NotImplementedError("This method has not been implemented yet")  # TODO
+        self.client.logout()
 
     # --------- Find element methods --------------
+    def _find_element(self, by: str, value: str) -> WebElementLoggingWrapper:
+        """Find an element by a given method"""
+        try:
+            element = self.driver.find_element(by=by, value=value)
+        except NoSuchElementException:
+            self.fail(f"Element not found by {by}: {value}")
+        return WebElementLoggingWrapper(element, self)
+
     def find_element_by_id(self, element_id: str) -> WebElementLoggingWrapper:
         """Find an element by its ID"""
         self.log(f"Finding element by ID: {element_id}", indentation_offset=-1)
-        element = self.driver.find_element(by=By.ID, value=element_id)
-        return WebElementLoggingWrapper(element, self)
+        return self._find_element(by=By.ID, value=element_id)
 
     def find_element_by_name(self, element_name: str) -> WebElementLoggingWrapper:
         """Find an element by its name"""
         self.log(f"Finding element by name: {element_name}", indentation_offset=-1)
-        element = self.driver.find_element(by=By.NAME, value=element_name)
-        return WebElementLoggingWrapper(element, self)
+        return self._find_element(by=By.NAME, value=element_name)
 
     def find_elements_by_name(self, element_name: str) -> list[WebElementLoggingWrapper]:
         """Find elements by their name"""
