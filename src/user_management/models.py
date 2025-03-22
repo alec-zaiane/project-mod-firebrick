@@ -355,7 +355,7 @@ class NodeManager(models.Manager["Node"]):
 
 class ExternalNodeManager(NodeManager):
     def get_queryset(self) -> models.QuerySet[Node]:
-        return super().get_queryset().filter(is_local_node=False)
+        return super().get_queryset().filter(is_local_node=False, is_disabled=False)
 
     def create(self, *args: Any, **kwargs: Any) -> Node:
         return super().create(*args, is_local_node=False, **kwargs)
