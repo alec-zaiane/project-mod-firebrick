@@ -48,6 +48,8 @@ class LikeManager(ApiObjectManager["Like"]):
             raise ValueError("Target must be a post or comment")
 
     def check_liked(self, author: Author, target: Post | Comment) -> bool:
+        if author is None:
+            return False
         if isinstance(target, Post):
             return author.likes.filter(_target_post=target).exists()
         elif isinstance(target, Comment):
