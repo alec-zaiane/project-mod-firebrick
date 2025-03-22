@@ -68,7 +68,7 @@
         </div>
         {% if author == viewer %}
         <div id="profile-create-post" class="create-post">
-            <a class="profile-button" href="" class="create-post">Create Post</a>
+            <a class="profile-button" href="{% url 'posts:create_post' %}?next={{ request.path|urlencode }}" class="create-post">Create Post</a>
         </div>
         {% endif %}
     </section>
@@ -78,7 +78,7 @@
         {% if posts %}
             {% for post in posts %}
             <li class="post">
-                <!-- {% include 'components/post_card.html' %} -->
+                {% include 'components/post_card.html' %}
             </li>
             {% endfor %}
         {% else %}

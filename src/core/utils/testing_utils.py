@@ -8,6 +8,7 @@ import traceback
 from typing import Any, Never
 
 from django.test import LiveServerTestCase, tag
+from django.urls import reverse
 from rest_framework.test import APITestCase
 
 from selenium import webdriver
@@ -15,6 +16,8 @@ from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support.ui import Select
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 from user_management.models import Author, JoinRequest
 from posts.models import Post, PostTypes, VisibilityTypes
@@ -27,6 +30,7 @@ class GeneralUserStoryApiTest(APITestCase):
             username="testuser", password="testpassword", display_name="Mr Test")
         self.client.force_authenticate(user=self.author.user)
         self.sample_authors: list[Author] = []
+        self.sample_author_passwords: list[str] = []
         self.sample_posts: list[list[Post]] = []
         # to get the posts of the sample authors (if initialized), use self.sample_authors[author_index].posts
 
@@ -36,6 +40,7 @@ class GeneralUserStoryApiTest(APITestCase):
             author = Author.local_authors.create_author(
                 username=f"testuser{i}", password="testpassword", display_name=f"Mr Test {i}")
             self.sample_authors.append(author)
+            self.sample_author_passwords.append("testpassword")
 
     def initialize_sample_text_posts(self,
                                      posts_per_author: int = 1,
@@ -106,8 +111,8 @@ class UITestCase(LiveServerTestCase, GeneralUserStoryApiTest):
 
     def _get_driver(self) -> webdriver.Firefox:
         # https://stackoverflow.com/questions/73973332/check-if-were-in-a-github-action-travis-ci-circle-ci-etc-testing-environme
-        is_actions_runner = os.getenv("GITHUB_ACTIONS")
-        if is_actions_runner:
+        self.is_in_github_actions = bool(os.getenv("GITHUB_ACTIONS"))
+        if self.is_in_github_actions:
             # grab the installded geckodriver version (will be installed on the runner by the django-tests.yml before this is run)
             geckodriver_root = "/opt/hostedtoolcache/geckodriver"
             geckodriver_version = os.listdir(geckodriver_root)[0]
@@ -123,6 +128,9 @@ class UITestCase(LiveServerTestCase, GeneralUserStoryApiTest):
             # https://stackoverflow.com/questions/15397483/how-to-set-browsers-width-and-height-in-selenium-webdriver
             options.add_argument('--width=1920')
             options.add_argument('--height=1080')
+
+            # auto-accept alerts (From ChatGPT)
+            options.set_capability("unhandledPromptBehavior", "accept")  # Auto-accept alerts
 
             return webdriver.Firefox(service=driver_service, options=options)
         else:
@@ -166,6 +174,10 @@ class UITestCase(LiveServerTestCase, GeneralUserStoryApiTest):
 
     # ======================= PUBLIC UTILITY METHODS START HERE =======================
 
+    def skip_if_on_github_actions(self) -> None:
+        """Skip the test if running on GitHub actions, sometimes the browser doesn't work there"""
+        if self.is_in_github_actions:
+            self.skipTest("Skipping test on GitHub actions")
     # --------- Action methods --------------
 
     def log(self, message: str, level: int = logging.INFO, indentation_offset: int = 0) -> None:
@@ -203,25 +215,41 @@ class UITestCase(LiveServerTestCase, GeneralUserStoryApiTest):
     def login_as(self, author: Author) -> None:
         """Log in as an author"""
         self.log(f"Logging in as {author.username}", indentation_offset=-1)
-        raise NotImplementedError("This method has not been implemented yet")  # TODO
+        if not author.user:
+            self.fail("Author does not have a user")
+        self.visit(reverse("user_management:login"))
+        try:
+            author_index = self.sample_authors.index(author)
+        except ValueError:
+            raise Exception(
+                "You can only log in as a sample author, we can't fetch the password otherwise")
+        self.find_element_by_id("id_username").send_keys(author.username)
+        self.find_element_by_id("id_password").send_keys(self.sample_author_passwords[author_index])
+        self.find_elements_by_selector("input[type=submit]")[0].click()
 
     def log_out(self) -> None:
         """Log out of the current session"""
         self.log(f"Logging out", indentation_offset=-1)
-        raise NotImplementedError("This method has not been implemented yet")  # TODO
+        self.client.logout()
 
     # --------- Find element methods --------------
+    def _find_element(self, by: str, value: str) -> WebElementLoggingWrapper:
+        """Find an element by a given method"""
+        try:
+            element = self.driver.find_element(by=by, value=value)
+        except NoSuchElementException:
+            self.fail(f"Element not found by {by}: {value}")
+        return WebElementLoggingWrapper(element, self)
+
     def find_element_by_id(self, element_id: str) -> WebElementLoggingWrapper:
         """Find an element by its ID"""
         self.log(f"Finding element by ID: {element_id}", indentation_offset=-1)
-        element = self.driver.find_element(by=By.ID, value=element_id)
-        return WebElementLoggingWrapper(element, self)
+        return self._find_element(by=By.ID, value=element_id)
 
     def find_element_by_name(self, element_name: str) -> WebElementLoggingWrapper:
         """Find an element by its name"""
         self.log(f"Finding element by name: {element_name}", indentation_offset=-1)
-        element = self.driver.find_element(by=By.NAME, value=element_name)
-        return WebElementLoggingWrapper(element, self)
+        return self._find_element(by=By.NAME, value=element_name)
 
     def find_elements_by_name(self, element_name: str) -> list[WebElementLoggingWrapper]:
         """Find elements by their name"""
@@ -252,6 +280,19 @@ class UITestCase(LiveServerTestCase, GeneralUserStoryApiTest):
             output.append(WebElementLoggingWrapper(element, self))
         self.log(f"Found {len(output)} elements")
         return output
+
+    # --------- Waiting methods --------------
+    def wait_for_element_by_id(self, element_id: str, timeout: int = 10) -> WebElementLoggingWrapper:
+        """Wait for an element by its ID to appear"""
+        # Created by Copilot: wait for an element by its ID to appear
+        self.log(f"Waiting for element by ID: {element_id}", indentation_offset=-1)
+        try:
+            element = WebDriverWait(self.driver, timeout).until(
+                EC.presence_of_element_located((By.ID, element_id))
+            )
+            return WebElementLoggingWrapper(element, self)
+        except Exception as e:
+            self.fail(f"Element with ID {element_id} did not appear: {e}")
 
     # --------- Assertion methods --------------
     def assert_title(self, expected_title: str) -> None:

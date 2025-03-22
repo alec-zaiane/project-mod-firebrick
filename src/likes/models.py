@@ -35,6 +35,26 @@ class LikeManager(ApiObjectManager["Like"]):
         else:
             raise ValueError("Target must be a post or comment")
 
+    def remove_like(self, author: Author, target: Post | Comment, like: Like) -> None:
+        if isinstance(target, Post):
+            if not author.likes.filter(_target_post=target).exists():
+                raise ValidationError("Post has not been liked")
+            like.delete()
+        elif isinstance(target, Comment):
+            if not author.likes.filter(_target_comment=target).exists():
+                raise ValidationError("Comment has not been liked")
+            like.delete()
+        else:
+            raise ValueError("Target must be a post or comment")
+
+    def check_liked(self, author: Author, target: Post | Comment) -> bool:
+        if isinstance(target, Post):
+            return author.likes.filter(_target_post=target).exists()
+        elif isinstance(target, Comment):
+            return author.likes.filter(_target_comment=target).exists()
+        else:
+            raise ValueError("Target must be a post or comment")
+
 
 class PostLikeManager(LikeManager):
     def get_queryset(self) -> models.QuerySet[PostLike]:

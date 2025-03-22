@@ -181,9 +181,14 @@ class Author(ApiObject):
     local_authors = LocalAuthorManager()
     external_authors = ExternalAuthorManager()
 
+    @property
+    def posts(self) -> QuerySet[Post]:
+        """Return all non-soft-deleted posts by this author"""
+        return self.all_posts.filter(is_soft_deleted=False)
+
     # type hints for reverse relations (you can use author.posts/author.comments to get all posts/comments by the author, etc)
     if TYPE_CHECKING:
-        posts: QuerySet[Post]
+        all_posts: QuerySet[Post]  # Note: This includes soft-deleted posts!
         comments: QuerySet[Comment]
         likes: QuerySet[Like]
         follow_requests_sent: QuerySet[FollowRequest]
@@ -331,10 +336,11 @@ class NodeManager(models.Manager["Node"]):
         try:
             return super().get_queryset().get(is_local_node=True)
         except Node.DoesNotExist:
-            from core.settings import SITE_URL
+            from core.settings import SITE_URL, SITE_API_URL
             return self.create(
                 name="self",
-                host_url=f"{SITE_URL}/api",
+                host_url=SITE_API_URL,
+                host_site_url=SITE_URL,
                 is_local_node=True
             )
 
@@ -370,7 +376,10 @@ class Node(models.Model):
     uuid: models.UUIDField[uuid.UUID, uuid.UUID] = models.UUIDField(
         _("UUID"), primary_key=True, editable=False, default=uuid.uuid4)
     name: models.CharField[str, str] = models.CharField(_("Name"), max_length=255)
+    # host_URL is for API endpoint, site URL is for the actual site, and is optional (for ease of use)
     host_url: models.URLField[str, str] = models.URLField(_("Host"), unique=True)
+    # the host_site_url will always be set for local node, but may not be set for external nodes
+    host_site_url = models.URLField(_("Site URL"), blank=True)
 
     # internal_user is for authentication - this may change in the future
     internal_user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)

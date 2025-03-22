@@ -42,3 +42,4 @@ class TestUserStory26AdminUI(AdminUITestCase):
         found_elems = self.find_elements_by_selector(f"a[href*='{self.sample_posts[0][0].uuid}']")
         self.assertEqual(len(found_elems), 1)
         self.assertEqual(found_elems[0].element.text, str(self.sample_posts[0][0].uuid))
+        self.end_test()

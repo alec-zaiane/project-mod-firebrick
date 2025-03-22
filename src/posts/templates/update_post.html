@@ -1,0 +1,72 @@
+{% load static %}
+
+<div class="update-post">
+    <form id="create-post-form" method="post">
+        {% csrf_token %}
+        <section class="create-post-info">
+            <h2>{{ title }}</h2>
+            <input id="create-post-submit" type="submit" value="Save">
+        </section>
+        <section class="create-post-fields">
+            {{ form.non_field_errors }}
+            <div class="field-wrapper">
+                <label for="id_title">Title <span class="required">∗</span></label>
+                {{ form.title.errors }}
+                {{ form.title }}
+            </div>
+            <div class="field-wrapper">
+                <label for="id_description">Description</label>
+                {{ form.description.errors }}
+                {{ form.description }}
+            </div>
+            <div class="field-wrapper">
+                <label for="id_content">Content <span class="required">∗</span></label>
+                {{ form.content.errors }}
+                {{ form.content }}
+            </div>
+        </section>
+        <section class="create-post-tags">
+            <div class="field-wrapper">
+                <label for="id_post_type">Post Type</label>
+                {{ form.post_type.errors }}
+                {{ form.post_type }}
+            </div>
+            <div class="field-wrapper">
+                <label for="id_visibility">Visibility</label>
+                {{ form.visibility_type.errors }}
+                {{ form.visibility_type }}
+            </div>
+        </section>
+    </form>
+    <div class="post-preview">
+        <article class="post-card">
+            <header>
+                <a id="post-profile-select" class="names">
+                    {% if author.profile_image %}
+                    <img class="profile-image" src="{{ author.profile_image }}"/>
+                    {% endif %}
+                    <h3 class="display-name">{{ author.display_name }}</h3>
+                    <h5 class="username">{{ author.username }}</h5>
+                </a>
+                ·
+                <span id="post-meta" class="post-meta">
+                    <div class="posted"><time title="{% now 'g:i a · F j, Y' %}" datetime="{% now %'Y-m-d H:i:s' %}">{% now "M jS" %}</time></div>
+                </span>
+
+                <span id="visibility-container" class="visibility">
+                    <img id="public-visibility" class="visibility-icon public" title="Public" src="{% static 'svg/public.svg' %}" />
+                    <img id="unlisted-visibility" class="visibility-icon" title="Unlisted" src="{% static 'svg/unlisted.svg' %}" />
+                    <img id="friends-only-visibility" class="visibility-icon" title="Friends Only" src="{% static 'svg/friends.svg' %}" />
+                </span>
+
+            </header>
+
+            <div class="post-content">
+                <h2 id="preview-title" class="post-title"></h2>
+                <p id="preview-description" class="post-description"></p>
+                <div id="preview" class="post-inner-content"></div>
+            </div>
+
+        </article>
+    </div>
+</div>
