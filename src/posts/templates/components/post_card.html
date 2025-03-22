@@ -134,15 +134,7 @@
                     <button class="submit-comment" type="submit">Comment</button>
                 </form>
                 {% for comment in post.comments.all %}
-                    <div class="post-comment">
-                        <a href="" class="names">
-                            {% if comment.author.profile_image %}
-                            <img class="profile-image" src="{{ comment.author.profile_image }}"/>
-                            {% endif %}
-                            <h3 class="display-name">{{ comment.author.display_name }}</h3>
-                        </a>
-                        <span class="comment-content">{{ comment.content }}</span>
-                    </div>
+                    {% include 'components/comment-card.html' %}
                 {% endfor %}
             </section>
         {% endif %}
