@@ -1,4 +1,4 @@
-{% extends 'navbar-base.html' %}
+{% extends 'return-meta-base.html' %}
 
 {% load static %}
 
@@ -11,9 +11,10 @@
     {% else %}
     <p>No posts available in your stream.</p>
     {% endif %}
-
+    <a id="add-post-floating-button" href="{% url 'posts:create_post' %}?next={{ request.path|urlencode }}">+</a>
 </div>
 
+<script src="{% static 'scripts/generic-form.min.js' %}"></script>
 <script src="{% static 'scripts/posts.min.js' %}"></script>
 <script src="{% static 'scripts/markdown-renderer.min.js' %}"></script>
 

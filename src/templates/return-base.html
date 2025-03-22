@@ -3,4 +3,5 @@
 {% load static %}
 {% block navbar %}
 <a id="navbar-return" class="navbar-category" href="{% block return_href %}{% endblock %}"><img class="navbar-icon" src="{% static 'svg/return.svg' %}"/> <span class="navbar-title">{% block return_title %}{% endblock %}</span></a>
+{% include "navbar.html" %}
 {% endblock %}

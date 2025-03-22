@@ -1,51 +1,44 @@
 {# expects a post object as a models.Post subclass instance #}
 
 {% load static %}
+{% load check_liked %}
 
-<article class="post-card">
-    <a class="post-view" href="{% url 'posts:view_post' post.uuid %}"></a>
+<article class="post-card{% if full %} post-full{% endif %}">
+    {% if not full %}
+        <a id="post-select" class="post-view" href="{% url 'posts:view_post' post.uuid %}?next={{ request.path|urlencode }}"></a>
+    {% endif %}
     <header>
-        <a href="{% url 'user_management:author_profile' post.author.uuid %}" class="names">
+        <a id="post-profile-select" href="{% url 'user_management:author_profile' post.author.uuid %}" class="names">
             {% if post.author.profile_image %}
             <img class="profile-image" src="{{ post.author.profile_image }}"/>
             {% endif %}
             <h3 class="display-name">{{ post.author.display_name }}</h3>
             <h5 class="username">{{ post.author.username }}</h5>
         </a>
+        {% if not full %}
         ·
-        <span class="post-meta">
-            <div class="posted"><time title="{{ post.created_at|date:'g:i a · F j, Y' }}" datetime="{{ post.created_at|date:'Y-m-d H:i:s' }}">{{ post.created_at|date:"M jS" }}</time></div>
-            {% if post.is_updated %}
-            <img class="edit-pencil" title="Edited {{ post.updated_at|date:'g:i a · F j, Y' }}" src="{% static 'svg/edit.svg' %}" />
-            {% endif %}
-        </span>
+        {% include 'components/post-meta.html' %}
 
-        <span class="visibility">
-            {% if post.get_visibility_type_display == "Public" %}
-                <img class="visibility-icon" title="Public" src="{% static 'svg/public.svg' %}" />
-            {% elif post.get_visibility_type_display == "Unlisted" %}
-                <img class="visibility-icon" title="Unlisted" src="{% static 'svg/unlisted.svg' %}" />
-            {% elif post.get_visibility_type_display == "Friends-Only" %}
-                <img class="visibility-icon" title="Friends Only" src="{% static 'svg/friends.svg' %}" />
-            {% endif %}
-        </span>
+        {% include 'components/post-visibility.html' %}
+        {% endif %}
 
         {% if post.author == viewer %}
-        <div class="settings">
+        <div id="settings-dropdown-{{post.uuid}}" class="settings">
             <img class="settings-dropdown" src="{% static 'svg/dots.svg' %}"/>
-            <div class="settings-dropdown-content">
-                <a href="{% url 'posts:edit_post' post.uuid %}" class="edit-button">
+            <div class="settings-dropdown-content" id="settings-dropdown-content-{{post.uuid}}">
+                {% url 'posts:view_post' post.uuid as view_post_url %}
+                <a class="setting-container edit-button" href="{% url 'posts:edit_post' post.uuid %}{% if request.path != view_post_url %}?next={% url 'posts:view_post' post.uuid %}{% endif %}{% if request.get_full_path != view_post_url %}?next={{ request.get_full_path }}{% endif %}">
                     <div class="setting">
                         <img class="edit-icon" title="Edit Post" src="{% static 'svg/editpost.svg' %}" />
                         Edit Post
                     </div>
                 </a>
-                <form name="generic-form" action="{% url 'posts:api_posts-detail' post.uuid %}">
+                <form class="setting-container" name="generic-form" action="{% url 'posts:api_posts-detail' post.uuid %}" method="post">
                     {% csrf_token %}
                     <input type="hidden" name="_method" value="DELETE">
-                    <input type="hidden" name="_after_action" value="reload confirm">
+                    <input type="hidden" name="_after_action" value="url:{{request.get_host}} url:{{request.GET.next}} reload confirm">
                     <input type="hidden" name="_confirm_text" value="Are you sure you want to delete this post?">
-                    <button type="submit" class="delete-button">
+                    <button type="submit" class="delete-button" id="delete-button-{{post.uuid}}">
                         <div class="setting delete">
                             <img class="delete-icon" title="Delete Post" src="{% static 'svg/delete.svg' %}" />
                             Delete Post
@@ -60,35 +53,99 @@
 
     <div class="post-content">
         {% if post.title %}
-        <h2 class="post-title">{{ post.title }}</h2>
+        <h2 id="post-title" class="post-title">{{ post.title }}</h2>
         {% endif %}
         {% if post.description %}
-        <p class="post-description">{{ post.description }}</p>
+        <p id="post-description" class="post-description">{{ post.description }}</p>
         {% endif %}
         {% include post.get_template_name %} {# see posts.models.Post.get_template_name #}
     </div>
 
     <footer>
-        <div class="likes-comments">
+        {% if full %}
+            <div class="post-info">
+                {% include 'components/post-visibility.html' %}
+
+                {% include 'components/post-meta.html' with full=True %}
+            </div>
+        {% endif %}
+        <div class="likes-comments-share">
             <div class="comments-box">
                 <img class="comments-icon" src="{% static 'svg/comment.svg' %}" />
                 <span class="comments-count">{{post.comments.all|length}}</span>
             </div>
             <div class="likes-box">
-                <form name="generic-form" action="{% url 'likes:like_by_viewer' post.fqid|urlencode:"" %}">
+                <form id="like-form" name="generic-form" action="{% url 'likes:like_by_viewer' post.fqid|urlencode:"" %}">
                     {% csrf_token %}
-                    {{ viewer.uuid|json_script:"viewer" }}
-                    {{ post.get_likes_author_uuid_strings|json_script:"like_authors" }}
                     <input type="hidden" name="_method" value="POST">
                     <input type="hidden" name="_after_action" value="reload">
-                    <button class="like-button" type="submit">
-                        <img class="like-icon like" src="{% static 'svg/like.svg' %}" />
-                        <img class="like-icon liked" src="{% static 'svg/liked.svg' %}" />
+                    <button class="like-button" type="submit" {% if not viewer %}disabled{% endif %}>
+                        {% check_liked viewer post as liked %}
+                        {% if liked %}
+                            <img class="like-icon liked" src="{% static 'svg/liked.svg' %}" />
+                        {% else %}
+                            <img class="like-icon like" src="{% static 'svg/like.svg' %}" />
+                        {% endif %}
                     </button>
                 </form>
                 <span class="likes-count">{{ post.likes.all|length }}</span>
             </div>
+            <div id="share-dropdown" class="share settings">
+                <img class="settings-dropdown share-icon" src="{% static 'svg/share.svg' %}"/>
+                <div class="settings-dropdown-content share-dropdown-content">
+                    {% url 'posts:view_post' post.uuid as view_post_url %}
+                    <a id="copy-button" class="copy-button setting-container">
+                        <input type="hidden" id="copy-contents" value="{{ post.content }}" />
+                        <div class="setting">
+                            <img class="copy-icon" title="Copy Contents" src="{% static 'svg/copy.svg' %}" />
+                            <span id="copy-contents-field">
+                            {% if post.post_type == "PT" or post.post_type == "MD"  %}
+                            Copy Contents
+                            {% elif post.post_type == "VID" %}
+                            Copy Video Media Link
+                            {% elif post.post_type == "MD" %}
+                            Copy Image Media Link
+                            {% endif %}
+                            </span>
+                        </div>
+                    </a>
+                    {% if post.visibility_type == "PB" %}
+                    <a id="link-button" class="edit-button setting-container">
+                        <input type="hidden" id="copy-link" value="{{ post.get_absolute_url }}" />
+                        <div class="setting">
+                            <img class="link-icon" title="Copy Link" src="{% static 'svg/link.svg' %}" />
+                            <span id="copy-link-field">Copy Link to Post</span>
+                        </div>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
         </div>
+        {% if full %}
+            <section class="comments-section">
+                <form id="comment-form" class="add-comment" name="generic-form" action="">
+                    {% csrf_token %}
+                    <input type="hidden" name="_method" value="POST">
+                    <input type="hidden" name="_after_action" value="reload">
+                    {% if viewer.profile_image %}
+                        <img class="profile-image" src="{{ viewer.profile_image }}"/>
+                    {% endif %}
+                    <textarea class="add-comment-text" name="comment" placeholder="Add a comment..."></textarea>
+                    <button class="submit-comment" type="submit">Comment</button>
+                </form>
+                <!-- {#% for comment in post.comments %#}
+                    <div class="post-comment">
+                        <a href="" class="names">
+                            {% if comment.author.profile_image %}
+                            <img class="profile-image" src="{{ comment.author.profile_image }}"/>
+                            {% endif %}
+                            <h3 class="display-name">{{ comment.author.display_name }}</h3>
+                        </a>
+                        <span class="comment-content">{{ comment.comment }}</span>
+                    </div>
+                {#% endfor %#} -->
+            </section>
+        {% endif %}
     </footer>
 
 </article>

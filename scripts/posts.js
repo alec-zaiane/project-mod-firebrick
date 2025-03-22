@@ -1,19 +1,10 @@
 window.addEventListener('load', () => {
-    document.querySelectorAll(".post-content .text").forEach(el => {
+    document.querySelectorAll(".post-content .post-inner-content").forEach(el => {
         // For whatever reason, all posts were appended with a newline and some spaces,
         // This removes that
         el.innerText = el.textContent.split(`
-        `)[1];
+    `)[1];
     });
-
-    document.querySelectorAll(".likes-box").forEach(el => {
-        let viewer = JSON.parse(el.querySelector('#viewer').textContent);
-        let like_authors = JSON.parse(el.querySelector('#like_authors').textContent);
-        if (like_authors.includes(viewer)) {
-            // Eventually, unliking should exist
-            el.querySelector(".like-button").disabled = true;
-        }
-    })
 
     var comment_textarea = document.querySelector(".add-comment-text");
     if (comment_textarea) {
@@ -34,6 +25,20 @@ window.addEventListener('load', () => {
             });
 
             el.querySelector(".settings-dropdown-content").style.visibility = new_visibility;
+        });
+        el.querySelector("#copy-button")?.addEventListener("click", () => {
+            let copy_contents = el.querySelector("#copy-contents");
+            let copy_contents_field = el.querySelector("#copy-contents-field");
+            copy_contents_field.textContent = "Copied!";
+
+            navigator.clipboard.writeText(copy_contents.value);
+        });
+        el.querySelector("#link-button")?.addEventListener("click", () => {
+            let copy_link = el.querySelector("#copy-link");
+            let copy_link_field = el.querySelector("#copy-link-field");
+            copy_link_field.textContent = "Copied!";
+
+            navigator.clipboard.writeText(copy_link.value);
         });
     })
 

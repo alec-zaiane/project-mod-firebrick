@@ -1,8 +1,8 @@
 from rest_framework import routers
 from django.urls import URLPattern, URLResolver, path
 
+from posts.views import CreatePostView, EditPostView, StreamView, ViewPostView
 from posts.viewsets import PostViewSet  # Import PostViewSet from posts.viewsets
-from posts import views
 
 from django.views import generic
 from posts.models import Post
@@ -10,15 +10,16 @@ from posts.models import Post
 app_name = "posts"
 urlpatterns: list[URLPattern | URLResolver] = [
     path('stream/',
-         views.stream_view,
+         StreamView.as_view(),
          name='stream'),
-
-    path("posts/<uuid:post_uuid>/", 
-         views.view_post, 
+    path('create_post/',
+         CreatePostView.as_view(),
+         name='create_post'),
+    path('post/<uuid:post_uuid>/',
+         ViewPostView.as_view(),
          name="view_post"),
-
-    path('post/<uuid:post_uuid>/',  # TODO please completely overwrite this! it's only here for name=edit_post to exist while it's not set up yet
-         generic.TemplateView.as_view(template_name="components/post_card.html"),
+    path('post/<uuid:post_uuid>/edit/',
+         EditPostView.as_view(),
          name="edit_post"),
 
 ]

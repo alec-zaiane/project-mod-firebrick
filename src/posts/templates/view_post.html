@@ -1,0 +1,14 @@
+{% extends 'return-meta-base.html' %}
+{% load static %}
+
+{% block title %}Post by {{post.author.display_name}}{% endblock %}
+
+{% block return_title %}Return{% endblock %}
+
+{% block content %}
+{% include 'components/post_card.html' with full=True %}
+
+<script src="{% static 'scripts/generic-form.min.js' %}"></script>
+<script src="{% static 'scripts/posts.min.js' %}"></script>
+<script src="{% static 'scripts/markdown-renderer.min.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends 'return-meta-base.html' %}
+
+{% load static %}
+
+{% block content %}
+<div id="no-permission-container" class="no-permissions">
+    <h1>Permission Denied</h1>
+    <p>{{ error }}</p>
+</div>
+{% endblock %}

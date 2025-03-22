@@ -79,6 +79,10 @@ a:link:active, a:visited:active  {
   color: rgb(199, 40, 40);
 }
 
+.required {
+    color: firebrick;
+}
+
 /*
  ===========
   LOGIN
@@ -279,6 +283,7 @@ a:link:active, a:visited:active  {
 }
 
 .navbar .names {
+    margin: -10px;
     align-items: center;
     padding: 10px;
     margin-top: -30px;
@@ -294,7 +299,7 @@ a:link:active, a:visited:active  {
 
 .navbar .names .display-name {
     margin: 0;
-    max-width: 200px;
+    max-width: 130px;
     text-overflow: ellipsis;
     overflow: hidden;
     white-space: nowrap;
@@ -302,7 +307,7 @@ a:link:active, a:visited:active  {
 
 .navbar .names .username {
     margin: 0;
-    max-width: 200px;
+    max-width: 130px;
     text-overflow: ellipsis;
     overflow: hidden;
     white-space: nowrap;
@@ -378,11 +383,11 @@ a:link:active, a:visited:active  {
 }
 
 .stream-container, .profile .post-list {
+    position: relative;
     padding-left: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
     border-left: 1px solid #242729;
     border-right: 1px solid #242729;
     padding: 0 20px;
@@ -394,12 +399,41 @@ a:link:active, a:visited:active  {
     text-align: center;
 }
 
-.stream-container .post-card, .profile .post {
+.stream-container .post-card, .profile .post, .post-preview .post-card {
     width: 100%;
     list-style: none;
     overflow: visible;
     padding: 20px;
+    padding-top: 30px;
 }
+
+#add-post-floating-button {
+    position: fixed;
+    bottom: 10%;
+    right: auto;
+    margin-left: 700px;
+    width: 60px;
+    height: 60px;
+    border-radius: 100%;
+    border: 0;
+    font-size: 50px;
+    color: var(--color);
+    background: firebrick;
+    filter: drop-shadow(5px 5px 4px #0000006b);
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    z-index: 2;
+}
+
+#add-post-floating-button:hover {
+    background: rgb(159, 30, 30);
+}
+
+#add-post-floating-button:focus {
+    background: rgb(199, 69, 69);
+}
+
 
 /*
  ===========
@@ -407,6 +441,7 @@ a:link:active, a:visited:active  {
  ===========
 */
 .post-card {
+    width: 100%;
     position: relative;
 }
 
@@ -451,6 +486,7 @@ a:link:active, a:visited:active  {
     color: var(--color) !important;
     text-decoration: none;
     pointer-events: all;
+    align-items: center;
 }
 
 .names:hover .display-name {
@@ -475,7 +511,6 @@ a:link:active, a:visited:active  {
 }
 
 .post-card .visibility {
-    margin-left: auto;
     width: 20px;
     pointer-events: all;
     display: flex;
@@ -486,16 +521,20 @@ a:link:active, a:visited:active  {
     font-size: 14px;
 }
 
-.post-card footer .visibility {
+.post-card:not(.post-full) .visibility {
+    margin-left: auto;
+}
+
+.visibility {
     width: fit-content;
     margin-left: 0;
 }
 
-.post-card .visibility-icon {
+.visibility-icon {
     max-width: 100%;
 }
 
-.post-card footer .visibility-icon {
+.visibility-icon {
     width: 20px;
 }
 
@@ -504,7 +543,7 @@ a:link:active, a:visited:active  {
     pointer-events: all;
 }
 
-.post-card.post-full .settings {
+.post-card.post-full .settings:not(.share) {
     margin-left: auto;
 }
 
@@ -521,6 +560,7 @@ a:link:active, a:visited:active  {
     padding: 4px;
     border-radius: 10px;
     width: 20px;
+    z-index: 10;
 }
 
 .post-card .settings-dropdown:hover {
@@ -551,16 +591,23 @@ a:link:active, a:visited:active  {
     padding: 10px;
 }
 
-.post-card .setting:first-child {
-    border-radius: 10px 10px 0 0;
+.post-card .setting-container:first-child .setting {
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
 }
 
-.post-card .setting:last-child {
-    border-radius: 0 0 10px 10px;
+.post-card .setting-container:last-child .setting {
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
 }
 
 .post-card .setting:hover {
     background: rgb(44, 45, 48);
+}
+
+.post-card .share-dropdown-content {
+    right: -90px;
+    bottom: 40px;
 }
 
 .post-card .edit-button {
@@ -579,14 +626,30 @@ a:link:active, a:visited:active  {
     color: #d91f2b;
 }
 
-.post-card .post-content img, #preview img {
+.post-card .post-content img, .post-preview img:not(.visibility-icon) {
     max-width: 100%;
     border-radius: 20px;
     border: 0.1px solid #242729;
     margin: 15px 0;
 }
 
-.post-card .post-content {
+.post-card .post-title {
+    text-align: center;
+    margin: 0;
+}
+
+
+.post-card .post-description {
+    margin: 0;
+    margin-top: 5px;
+    text-align: center;
+    color: var(--color-sub);
+    font-style: italic;
+    font-size: 12px;
+}
+
+.post-card .post-inner-content {
+    margin-top: 10px;
     max-height: 600px;
     overflow-y: auto;
     overflow-x: hidden;
@@ -620,7 +683,11 @@ a:link:active, a:visited:active  {
     gap: 6px;
 }
 
-.post-card .likes-comments {
+.post-card.post-full footer .post-info {
+    margin-bottom: 6px;
+}
+
+.post-card .likes-comments-share {
     display: flex;
     justify-content: space-around;
     align-items: flex-start;
@@ -658,16 +725,16 @@ a:link:active, a:visited:active  {
     width: 20px;
 }
 
-.post-card .liked {
-    display: none;
+.post-card .share-icon {
+    width: 20px;
 }
 
-.post-card .like-button:disabled .like {
-    display: none;
+.post-card .copy-icon {
+    width: 20px;
 }
 
-.post-card .like-button:disabled .liked {
-    display: block;
+.post-card .link-icon {
+    width: 20px;
 }
 
 .post-card .markdown-container {
@@ -697,12 +764,14 @@ a:link:active, a:visited:active  {
     border-bottom: 1px solid #242729;
 }
 
-#preview {
-    background: #161519;
-    border: 1px solid #6e6e6e;
-    padding: 30px;
-    border-radius: 10px;
-    box-shadow: 0px 2px 4px rgb(255 255 255 / 10%), 0px 8px 16px rgb(255 255 255 / 10%);
+.post-preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-left: 1px solid #242729;
+    border-right: 1px solid #242729;
+    padding: 0 20px;
+    flex-grow: 1;
 }
 
 /*
@@ -771,8 +840,12 @@ a:link:active, a:visited:active  {
 .profile-image {
     width: 40px;
     height: 40px;
+    min-width: 40px;
+    min-height: 40px;
     object-fit: cover;
     border-radius: 100%;
+    margin-top: auto;
+    margin-bottom: auto;
 }
 
 .profile .profile-top-bar {
@@ -878,7 +951,7 @@ a:link:active, a:visited:active  {
 
 #author-modification-form .author-modify-content {
     flex-grow: 1;
-    border-left: 1px solid #242729;
+    border-left: 1px solid #242424;
     border-right: 1px solid #242729;
     display: flex;
     flex-direction: column;
@@ -955,6 +1028,112 @@ a:link:active, a:visited:active  {
 #author-modification-form .profile-image {
     outline: solid firebrick;
     background: firebrick;
+}
+
+/*
+ ===========
+  CREATE POST
+ ===========
+*/
+.update-post {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.update-post .create-post-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-left: 1px solid #242729;
+    border-right: 1px solid #242729;
+    padding: 0 20px;
+}
+
+.update-post .create-post-fields, .update-post .create-post-tags {
+    flex-grow: 1;
+    border-left: 1px solid #242729;
+    border-right: 1px solid #242729;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    padding-top: 20px;
+}
+
+.update-post .create-post-tags {
+    flex-direction: row;
+    justify-content: space-evenly;
+}
+
+.update-post #create-post-submit {
+    background: firebrick;
+    border-radius: 20px;
+    padding: 6px 12px;
+    border: 0;
+    height: 30px;
+    cursor: pointer;
+}
+
+#author-modification-form label {
+    color: var(--color-sub);
+}
+
+.update-post input, .update-post textarea {
+    height: 22px;
+    padding: 10px 0 0 0;
+    border: 0;
+    background: none;
+    color: var(--color);
+    caret-color: var(--color);
+    resize: none;
+    overflow-y: hidden;
+    font-size: 16px;
+    font-family: sans-serif;
+}
+
+.update-post input:focus, .update-post textarea:focus {
+    outline: 0;
+}
+
+.update-post .field-wrapper {
+    display: flex;
+    align-items: stretch;
+    flex-direction: column;
+    border: 1px solid #686868;
+    border-radius: 10px;
+    margin: 0 10px;
+    background: #222222;
+    padding: 14px 16px;
+}
+
+.update-post .field-wrapper:focus-within {
+    border-color: firebrick;
+}
+
+.update-post .field-wrapper:focus-within label {
+    color: firebrick;
+}
+
+.update-post .field-wrapper.url input {
+    font-family: monospace;
+    font-size: 14px;
+}
+
+.update-post select {
+    margin-top: 10px;
+    background: rgb(26, 26, 26);
+    color: var(--color);
+    border: firebrick;
+    border-radius: 10px;
+    padding: 5px;
+}
+
+.update-post .visibility-icon {
+    display: none;
+}
+
+.update-post .visibility-icon.public {
+    display: block;
 }
 
 /*
