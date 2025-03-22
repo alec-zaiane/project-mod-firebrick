@@ -92,9 +92,24 @@ class WebElementLoggingWrapper:
         self.test_case.log(f"{self}: Sending keys: {keys}")
         self.element.send_keys(keys)
 
+    def as_selector_choose_value(self, value: str) -> None:
+        """Assuming this element is a selector, set the dropdown to this entry"""
+        self.test_case.log(f"{self}: Choosing value: {value}")
+        try:
+            Select(self.element).select_by_visible_text(value)
+        except Exception as e:
+            self.test_case.fail(f"{self}: could not choose value: {e}")
+
     def clear(self) -> None:
         self.test_case.log(f"{self}: Clearing")
         self.element.clear()
+
+    def find_element_by_selector(self, selector: str) -> WebElementLoggingWrapper:
+        self.test_case.log(f"{self}: Finding element by selector: {selector}")
+        try:
+            return WebElementLoggingWrapper(self.element.find_element(By.CSS_SELECTOR, selector), self.test_case)
+        except NoSuchElementException:
+            self.test_case.fail(f"Element not found by selector: {selector}")
 
 
 @tag("ui")
@@ -301,10 +316,11 @@ class UITestCase(LiveServerTestCase, GeneralUserStoryApiTest):
         self.assertEqual(self.driver.title, expected_title)
 
     def assert_path(self, expected_path: str) -> None:
-        """Assert that the path of the page is as expected"""
-        self.log(f"Asserting path is: {expected_path}", indentation_offset=-1)
-        self.assertEqual(self.driver.current_url,
-                         self.live_server_url + expected_path)
+        """Assert that the path of the page is as expected, **ignores query parameters**"""
+        self.log(
+            f"Asserting path is: {expected_path} (current: {self.driver.current_url})", indentation_offset=-1)
+        current_path = self.driver.current_url.split("?")[0]
+        self.assertEqual(current_path, self.live_server_url + expected_path)
 
     def assert_id_exists(self, element_id: str) -> None:
         """Assert that an element with the given ID exists"""

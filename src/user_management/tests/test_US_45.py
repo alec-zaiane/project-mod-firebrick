@@ -13,66 +13,68 @@ from rest_framework import status
 from core.utils.testing_utils import AdminUITestCase, GeneralUserStoryApiTest
 from user_management.models import JoinRequest, Author, User
 
+from user_management.forms import JoinRequestForm
+
 from unittest import skip
 
 
-@skip("Not implemented")
 @tag("US-node-management", "api")
 class TestUserStory45(GeneralUserStoryApiTest):
+    def make_form(self, username: str, password: str) -> JoinRequestForm:
+        return JoinRequestForm({"username": username, "password": password})
 
     @tag("check-fast")
     def test_create_join_request_logged_out(self) -> None:
         """Test that a logged-out user can create a join request"""
         self.client.logout()
-        url = reverse("user_management:api_joinrequest_create")
+        url = reverse("user_management:join")
         response = self.client.post(
-            url, {"username": "Mr-Logged-out", "password": "passwordlong"})
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            url, self.make_form("Mr-Logged-out", "passwordlong").data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(JoinRequest.objects.count(), 1)
+        join_request = JoinRequest.objects.get_join_request("Mr-Logged-out")
+        self.assertEqual(join_request.username, "Mr-Logged-out")
+        self.assertEqual(join_request.display_name, "Mr-Logged-out")
+        self.assertEqual(join_request.password, "passwordlong")
+        self.assertFalse(join_request.is_denied)
 
     @tag("check-medium", "security")
     def test_create_join_request_logged_in(self) -> None:
         """Test that a logged-in user cannot create a join request"""
         self.initialize_sample_authors()
+        assert self.sample_authors[0].user is not None  # for mypy
         self.client.force_authenticate(user=self.sample_authors[0].user)
-        url = reverse("user_management:api_joinrequest_create")
+        self.client.force_login(self.sample_authors[0].user)
+        url = reverse("user_management:join")
         response = self.client.post(
-            url, {"username": "Mr-Logged-in", "password": "passwordlong"})
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-    @tag("check-medium", "security")
-    def test_join_request_fails_on_bad_password(self) -> None:
-        """Test that a join request fails if the password is too short"""
-        self.client.logout()
-        url = reverse("user_management:api_joinrequest_create")
-        response = self.client.post(
-            url, {"username": "Mr-Short-password", "password": "pass"})
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        with self.assertRaises(JoinRequest.DoesNotExist):
-            JoinRequest.objects.get_join_request("Mr-Short-password")
-        self.assertEqual(JoinRequest.objects.count(), 0)
+            url, self.make_form("Mr-Logged-in", "passwordlong").data)
+        # don't check for error code, as the view will redirect
+        self.assertEqual(JoinRequest.objects.count(), 0, response)
 
     @tag("check-medium")
     def test_create_existing_join_request_fail(self) -> None:
         """Test that you cannot create a join request if another one exists for the same username"""
         self.client.logout()
-        url = reverse("user_management:api_joinrequest_create")
+        url = reverse("user_management:join")
         response = self.client.post(
-            url, {"username": "Mr-Double-entry", "password": "passwordlong"})
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            url, self.make_form("Mr-Double-entry", "passwordlong").data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(JoinRequest.objects.count(), 1)
         response = self.client.post(
-            url, {"username": "Mr-Double-entry", "password": "passwordlong"})
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            url, self.make_form("Mr-Double-entry", "passwordlongmaybedifferent").data)
+        # don't check for error code, as the view will redirect
+        self.assertEqual(JoinRequest.objects.count(), 1)
 
     @tag("check-medium")
     def test_create_join_request_matching_username_fail(self) -> None:
         """Test that you cannot create a join request with a username that matches an existing user"""
         self.initialize_sample_authors()
         self.client.logout()
-        url = reverse("user_management:api_joinrequest_create")
+        url = reverse("user_management:join")
         assert self.sample_authors[0].user is not None  # for mypy
         response = self.client.post(
-            url, {"username": self.sample_authors[0].user.username, "password": "passwordlong"})
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            url, self.make_form(self.sample_authors[0].user.username, "passwordlong").data)
+        self.assertEqual(JoinRequest.objects.count(), 0)
 
 
 @tag("US-node-management", "ui")
@@ -163,10 +165,16 @@ class UITestUserStory45(AdminUITestCase):
             JoinRequest.objects.get_join_request("Mr-Delete")
         self.end_test()
 
-    @skip("Not implemented")
     @tag("check-slow")
     def test__can_send_join_request(self) -> None:
         self.log_out()
-        # TODO: a logged out user should be able to fill in their details and send to the API
-        # then a JoinRequest should be created with the correct details
-        self.fail("Not implemented")
+        self.visit("/join")
+        self.find_element_by_id("id_username").send_keys("Mr-Request")
+        self.find_element_by_id("id_password").send_keys("passwordlong")
+        self.find_element_by_id("registration-submit").click()
+        self.assertEqual(JoinRequest.objects.count(), 1)
+        join_request = JoinRequest.objects.first()
+        assert join_request is not None  # for mypy
+        self.assertEqual(join_request.username, "Mr-Request")
+        self.assertEqual(join_request.password, "passwordlong")
+        self.end_test()
