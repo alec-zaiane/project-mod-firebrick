@@ -1,6 +1,10 @@
-from typing import Any
+from rest_framework import viewsets, status
+from user_management.serializers import FollowRequestSerializer
+from user_management.models import Author, FollowRequest
+from typing import Any, Optional
 
 from rest_framework import viewsets
+from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -67,3 +71,40 @@ class FollowRequestViewSet(viewsets.ModelViewSet[FollowRequest]):
 
         follow_request = serializer.save()
         return Response(self.get_serializer(follow_request).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["post"], url_path="approve", url_name="approve")
+    def approve_follow_request(self, request: Request, pk: Optional[str] = None) -> Response:
+        # ensure user is authenticated and has an associated author
+        if request.user.is_anonymous or not hasattr(request.user, "author"):
+            return Response({"error": "User must be authenticated and linked to an author."},
+                            status=status.HTTP_401_UNAUTHORIZED)
+        logged_in_author = request.user.author
+
+        follow_request = self.get_object()
+        # only the followee should be allowed to approve the request
+        if logged_in_author != follow_request.followee:
+            return Response(
+                {"error": "You do not have permission to approve this follow request."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # approve by adding the follow relationship and deleting the request
+        follow_request.follower.following.add(follow_request.followee)
+        follow_request.delete()
+        return Response({"detail": "Follow request approved."}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["post"], url_path="deny", url_name="deny")
+    def deny_follow_request(self, request: Request, pk: Optional[str] = None) -> Response:
+        if request.user.is_anonymous or not hasattr(request.user, "author"):
+            return Response({"error": "User must be authenticated and linked to an author."},
+                            status=status.HTTP_401_UNAUTHORIZED)
+        logged_in_author = request.user.author
+
+        follow_request = self.get_object()
+        if logged_in_author != follow_request.followee:
+            return Response(
+                {"error": "You do not have permission to deny this follow request."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        follow_request.delete()
+        return Response({"detail": "Follow request denied."}, status=status.HTTP_200_OK)
