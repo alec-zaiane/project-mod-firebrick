@@ -28,16 +28,18 @@ class TestUserStory01(GeneralUserStoryApiTest):
         # check that the post was created
         self.assertEqual(self.sample_authors[0].posts.count(), 1)
         self.assertFalse(self.sample_authors[0].posts.get().is_soft_deleted)
-
+        post_uuid = self.sample_authors[0].posts.get().uuid
         # delete the post
         url = reverse("posts:api_posts-detail",
-                      args=[self.sample_authors[0].posts.get().uuid])
+                      args=[post_uuid])
         self.client.force_authenticate(user=self.sample_authors[0].user)
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
         # check that the post was deleted
-        self.assertTrue(self.sample_authors[0].posts.get().is_soft_deleted)
+        self.assertTrue(Post.objects.get(uuid=post_uuid).is_soft_deleted)
+        # make sure it no longer exists in author.posts
+        self.assertEqual(self.sample_authors[0].posts.count(), 0)
 
     @tag("check-medium", "security")
     def test_other_user_cannot_delete_post(self) -> None:
