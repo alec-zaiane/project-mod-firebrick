@@ -32,5 +32,3 @@ router.register(r"api/posts", PostViewSet, basename="api_posts")
 
 
 urlpatterns += router.urls  # Add all generated routes
-
-print(urlpatterns)
