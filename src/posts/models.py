@@ -198,7 +198,7 @@ class Post(AuthoredApiObject):
     is_soft_deleted = models.BooleanField(default=False)
 
     author: models.ForeignKey[Author, Author] = models.ForeignKey(
-        Author, on_delete=models.CASCADE, related_name='posts')
+        Author, on_delete=models.CASCADE, related_name='all_posts')
 
     if TYPE_CHECKING:
         comments: models.QuerySet[Comment]

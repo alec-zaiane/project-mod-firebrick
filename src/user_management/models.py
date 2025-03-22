@@ -181,9 +181,14 @@ class Author(ApiObject):
     local_authors = LocalAuthorManager()
     external_authors = ExternalAuthorManager()
 
+    @property
+    def posts(self) -> QuerySet[Post]:
+        """Return all non-soft-deleted posts by this author"""
+        return self.all_posts.filter(is_soft_deleted=False)
+
     # type hints for reverse relations (you can use author.posts/author.comments to get all posts/comments by the author, etc)
     if TYPE_CHECKING:
-        posts: QuerySet[Post]
+        all_posts: QuerySet[Post]  # Note: This includes soft-deleted posts!
         comments: QuerySet[Comment]
         likes: QuerySet[Like]
         follow_requests_sent: QuerySet[FollowRequest]
