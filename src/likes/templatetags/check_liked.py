@@ -1,3 +1,5 @@
+from typing import Optional
+
 from django import template
 
 from likes.models import Like
@@ -9,7 +11,7 @@ register = template.Library()
 
 
 @register.simple_tag
-def check_liked(author: Author, target: Post | Comment) -> bool:
+def check_liked(author: Optional[Author], target: Post | Comment) -> bool:
     if author is None:
         return False
     return Like.objects.check_liked(author, target)
