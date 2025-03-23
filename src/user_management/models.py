@@ -208,6 +208,10 @@ class Author(ApiObject):
     def user(self) -> Optional[User]:
         return self._user
 
+    @property
+    def friends(self) -> "QuerySet[Author]":
+        return self.following.filter(pk__in=self.followers.all())
+
     def clean(self) -> None:
         super().clean()
         # make sure that the fqid starts with the host
