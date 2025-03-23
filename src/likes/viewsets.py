@@ -14,6 +14,10 @@ from user_management.serializers import AuthorSerializer
 
 
 class LikeViewSet(viewsets.ModelViewSet[Like]):
+    # suggested by copilot: lookup_field/lookup_url_kwarg/lookup_value_regex to change the lookup field to an encoded fqid
+    lookup_field = "fqid"
+    lookup_url_kwarg = "fqid"
+    lookup_value_regex = ".+"
     queryset = Like.objects.all()
     serializer_class = LikeSerializer
     permission_classes = [IsAuthenticated]

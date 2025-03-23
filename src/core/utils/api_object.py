@@ -36,6 +36,9 @@ class ApiObjectManager(models.Manager[ModelT], Generic[ModelT]):
         """Find by a percent-encoded fqid"""
         return self.find_by_fqid(unquote(fqid))
 
+    def find_by_uuid(self, uuid:str) -> Optional[ModelT]:
+        return self.filter(uuid=uuid).first()
+
 
 class ApiObject(models.Model):
     class Meta:

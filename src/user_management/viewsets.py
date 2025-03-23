@@ -18,6 +18,10 @@ from core.utils.request_viewer import get_request_viewer
 
 
 class AuthorViewSet(viewsets.ModelViewSet[Author]):
+    # suggested by copilot: lookup_field/lookup_url_kwarg/lookup_value_regex to change the lookup field to an encoded fqid
+    lookup_field = "fqid"
+    lookup_url_kwarg = "fqid"
+    lookup_value_regex = ".+"
     queryset = Author.objects.all()
     serializer_class = AuthorSerializer
     permission_classes = [IsAuthenticated, AuthorPermission]
@@ -52,6 +56,10 @@ class AuthorViewSet(viewsets.ModelViewSet[Author]):
 
 
 class FollowRequestViewSet(viewsets.ModelViewSet[FollowRequest]):
+    # suggested by copilot: lookup_field/lookup_url_kwarg/lookup_value_regex to change the lookup field to an encoded fqid
+    lookup_field = "fqid"
+    lookup_url_kwarg = "fqid"
+    lookup_value_regex = ".+"
     queryset = FollowRequest.objects.all()
     serializer_class = FollowRequestSerializer
     permission_classes = [IsAuthenticated]
@@ -73,7 +81,7 @@ class FollowRequestViewSet(viewsets.ModelViewSet[FollowRequest]):
         return Response(self.get_serializer(follow_request).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["post"], url_path="approve", url_name="approve")
-    def approve_follow_request(self, request: Request, pk: Optional[str] = None) -> Response:
+    def approve_follow_request(self, request: Request, *args:Any, **kwargs: Any) -> Response:
         # ensure user is authenticated and has an associated author
         if request.user.is_anonymous or not hasattr(request.user, "author"):
             return Response({"error": "User must be authenticated and linked to an author."},

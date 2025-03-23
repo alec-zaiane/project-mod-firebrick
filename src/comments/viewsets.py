@@ -10,6 +10,10 @@ from comments.models import Comment
 
 
 class CommentViewSet(viewsets.ModelViewSet[Comment]):
+    # suggested by copilot: lookup_field/lookup_url_kwarg/lookup_value_regex to change the lookup field to an encoded fqid
+    lookup_field = "fqid"
+    lookup_url_kwarg = "fqid"
+    lookup_value_regex = ".+"
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
 
