@@ -4,7 +4,7 @@ Gives the model a UUID, host node, and FQID (fully qualified ID)"""
 
 from typing import TYPE_CHECKING, Any, TypeVar, Generic, Optional
 from datetime import datetime
-from urllib.parse import unquote
+from urllib.parse import unquote, quote
 
 if TYPE_CHECKING:
     from user_management.models import Node, Author
@@ -63,6 +63,10 @@ class ApiObject(models.Model):
         # MUST BE DETERMINISTIC
         raise NotImplementedError(
             f"generate_fqid must be implemented by subclasses (perhaps in `{self.__class__}`?)")
+
+    def get_encoded_fqid(self) -> str:
+        """Get a percent-encoded fqid"""
+        return quote(self.fqid, safe="")
 
     def clean(self) -> None:
         super().clean()
