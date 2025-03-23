@@ -336,7 +336,7 @@ class UITestCase(LiveServerTestCase, GeneralUserStoryApiTest):
         with self.assertRaises(NoSuchElementException):
             self.find_element_by_id(element_id)
 
-    def assertEqual(self, first: Any, second: Any, msg: str = ...) -> None:
+    def assertEqual(self, first: Any, second: Any, msg: str|None = None) -> None:
         """Assert that two values are equal"""
         self.log(f"Asserting {first} == {second}", indentation_offset=-1)
         if first != second:

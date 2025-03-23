@@ -18,6 +18,7 @@ class TestUserStory40UI(UITestCase):
     https://github.com/uofa-cmput404/w25-project-mod-firebrick/issues/40
     """
     def test_can_like_post_comment(self) -> None:
+        self.skip_if_on_github_actions()
         self.initialize_sample_authors(2)
         self.initialize_sample_text_posts(posts_per_author=1)
         comment = Comment.objects.create_comment(self.sample_authors[0], self.sample_posts[1][0], "My cool comment", PostTypes.PLAINTEXT)

@@ -100,6 +100,7 @@ class TestUserStory38UI(UITestCase):
 
     def test_can_comment_on_post(self) -> None:
         """Test that an author can comment on a post via the UI"""
+        self.skip_if_on_github_actions()
         self.initialize_sample_authors(2)
         self.initialize_sample_text_posts(posts_per_author=1)
 
