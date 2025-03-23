@@ -37,7 +37,7 @@ urlpatterns: list[URLPattern | URLResolver] = [
 
 router = routers.SimpleRouter()
 # creates names: author-list, author-detail, author-create, author-update, author-delete
-router.register(r"api/authors", AuthorViewSet)
-router.register(r"api/follow-requests", FollowRequestViewSet, basename="follow-requests")
+router.register(r"api/authors", AuthorViewSet, basename="node2node_authors")
+router.register(r"api/follow-requests", FollowRequestViewSet, basename="node2node_follow_requests")
 
 urlpatterns += router.urls

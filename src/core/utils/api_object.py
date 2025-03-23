@@ -70,13 +70,6 @@ class ApiObject(models.Model):
         """Get a percent-encoded fqid"""
         return quote(self.fqid, safe="")
 
-    def encode_as_class_json_dict(self) -> dict[str, Any]:
-        """
-        Encode this object as a dictionary that can be converted to JSON, following the class's example schema
-        https://uofa-cmput404.github.io/general/project.html#api-objects
-        """
-        raise NotImplementedError(
-            f"encode_as_json must be implemented by subclasses (perhaps in `{self.__class__}`?)")
 
 
     def clean(self) -> None:
@@ -97,9 +90,9 @@ class ApiObject(models.Model):
         from user_management.models import Node # janky but needed for circular import prevention
         for node in Node.external_nodes.all():
             if created:
-                node.send_create(self.encode_as_class_json_dict())
+                node.send_create(self.node2node_encode_as_class_json_dict(), to=self.node2node_get_creation_url())
             else:
-                node.send_update(self.encode_as_class_json_dict())
+                node.send_update(self.node2node_encode_as_class_json_dict(), to=self.node2node_get_update_url())
 
     def delete(self, *args: Any, **kwargs: Any) -> tuple[int, dict[str, Any]]:
         self._propagate_deletion_to_other_nodes()
@@ -111,10 +104,30 @@ class ApiObject(models.Model):
             return
         from user_management.models import Node
         for node in Node.external_nodes.all():
-            self.send_deletion_to_node(node)
+            node.send_delete(self.node2node_get_deletion_url())
 
-    def send_deletion_to_node(self, node: "Node") -> None:
-        raise NotImplementedError(f"send_deletion_to_node must be implemented by subclasses, perhaps in `{self.__class__}`?")
+    # =====================================
+    # Node2node methods, these must be implemented by subclasses
+
+    def node2node_encode_as_class_json_dict(self) -> dict[str, Any]:
+        """
+        Encode this object as a dictionary that can be converted to JSON, following the class's example schema
+        https://uofa-cmput404.github.io/general/project.html#api-objects
+        """
+        raise NotImplementedError(
+            f"encode_as_json must be implemented by subclasses (perhaps in `{self.__class__}`?)")
+    def node2node_get_creation_url(self) -> str:
+        raise NotImplementedError(
+            f"node2node_get_creation_url must be implemented by subclasses (perhaps in `{self.__class__}`?)")
+
+    def node2node_get_update_url(self) -> str:
+        raise NotImplementedError(
+            f"node2node_get_update_url must be implemented by subclasses (perhaps in `{self.__class__}`?)")
+
+    def node2node_get_deletion_url(self) -> str:
+        raise NotImplementedError(
+            f"node2node_get_deletion_url must be implemented by subclasses (perhaps in `{self.__class__}`?)")
+    # =====================================
 
 class AuthoredApiObject(ApiObject):
     """An API object with an author attribute

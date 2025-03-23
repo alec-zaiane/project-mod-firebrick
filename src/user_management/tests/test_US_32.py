@@ -30,7 +30,7 @@ class TestUserStory32(GeneralUserStoryApiTest):
 
         # author0 tries to follow author1
         self.client.force_authenticate(user=author0.user)
-        url = reverse("user_management:follow-requests-list")
+        url = reverse("user_management:node2node_follow_requests-list")
         response = self.client.post(url, follow_json, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
@@ -39,7 +39,7 @@ class TestUserStory32(GeneralUserStoryApiTest):
         fr = FollowRequest.objects.get_follow_request(author0, author1)
 
         # deny it
-        deny_url = reverse("user_management:follow-requests-deny", args=[str(fr.uuid)])
+        deny_url = reverse("user_management:node2node_follow_requests-deny", args=[str(fr.uuid)])
         deny_response = self.client.post(deny_url)
         self.assertEqual(deny_response.status_code, status.HTTP_200_OK)
 
@@ -61,7 +61,7 @@ class TestUserStory32(GeneralUserStoryApiTest):
 
         # author0 tries to follow author1
         self.client.force_authenticate(user=author0.user)
-        url = reverse("user_management:follow-requests-list")
+        url = reverse("user_management:node2node_follow_requests-list")
         response = self.client.post(url, follow_json, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
@@ -70,7 +70,7 @@ class TestUserStory32(GeneralUserStoryApiTest):
         fr2 = FollowRequest.objects.get_follow_request(author0, author1)
 
         # approve it
-        approve_url = reverse("user_management:follow-requests-approve", args=[str(fr2.uuid)])
+        approve_url = reverse("user_management:node2node_follow_requests-approve", args=[str(fr2.uuid)])
         approve_response = self.client.post(approve_url)
         self.assertEqual(approve_response.status_code, status.HTTP_200_OK)
 

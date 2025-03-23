@@ -14,6 +14,8 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import AbstractUser, UserManager
+from django.urls import reverse
+
 
 from core.utils.api_object import ApiObject, ApiObjectManager
 from core.utils.validators import validate_url_returns_image
@@ -261,6 +263,22 @@ class Author(ApiObject):
         from posts.models import Post  # some jankiness to avoid circular imports
         return Post.visible_posts.get_posts_in_stream_of_author(self, paginate_start=paginate_start, paginate_count=paginate_count)
 
+    # node2node stuff
+    def node2node_encode_as_class_json_dict(self) -> dict[str,Any]:
+        from user_management.serializers import AuthorSerializer
+        return AuthorSerializer().to_representation(self)
+
+    def node2node_get_creation_url(self) -> str:
+        return reverse("user_management:node2node_authors-list")
+
+    def node2node_get_update_url(self) -> str:
+        return reverse("user_management:node2node_authors-detail", kwargs={"fqid": self.get_encoded_fqid()})
+
+    def node2node_get_deletion_url(self) -> str:
+        return self.node2node_get_update_url()
+
+
+
 # === Proxy Classes for Authors ===
 
 
@@ -318,6 +336,20 @@ class FollowRequest(ApiObject):
     def generate_fqid(self) -> str:
         """Generate a unique FQID for the follow request"""
         return f"{self.host_node.host_url}/authors/{self.follower.uuid}/followers/{self.followee.uuid}"
+
+    # node2node stuff
+    def node2node_encode_as_class_json_dict(self) -> dict[str,Any]:
+        from user_management.serializers import FollowRequestSerializer
+        return FollowRequestSerializer().to_representation(self)
+
+    def node2node_get_creation_url(self) -> str:
+        return reverse("user_management:node2node_follow_requests-list")
+
+    def node2node_get_update_url(self) -> str:
+        return reverse("user_management:node2node_follow_requests-detail", kwargs={"fqid": self.get_encoded_fqid()})
+
+    def node2node_get_deletion_url(self) -> str:
+        return self.node2node_get_update_url()
 
 # =============================================================================
 # External Nodes
@@ -405,13 +437,27 @@ class Node(models.Model):
     def get_hosted_users(self) -> models.QuerySet[Author]:
         return Author.objects.filter(host_node=self)
 
-    def send_update(self, json: dict[str, Any]) -> None:
-        """Send an object update to this node"""
+    def _confirm_url_is_valid(self, url: str) -> bool:
+        """Make sure the given URL is on the host API"""
+        return url.startswith(self.host_url)
+
+    def send_update(self, json: dict[str, Any], to:str) -> None:
+        """Send an object update to this node via the given `to` URL"""
+        if not self._confirm_url_is_valid(to):
+            raise ValidationError(f"URL {to} is not on this node's host URL ({self.host_url})")
         print(f"Sending update to {self.name}: {json}")
 
-    def send_create(self, json: dict[str, Any]) -> None:
-        """Send an object creation to this node"""
+    def send_create(self, json: dict[str, Any] ,to:str) -> None:
+        """Send an object creation to this node via the given `to` URL"""
+        if not self._confirm_url_is_valid(to):
+            raise ValidationError(f"URL {to} is not on this node's host URL ({self.host_url})")
         print(f"Sending create to {self.name}: {json}")
+
+    def send_delete(self, to:str) -> None:
+        """Send a delete request to this node via the given `to` URL"""
+        if not self._confirm_url_is_valid(to):
+            raise ValidationError(f"URL {to} is not on this node's host URL ({self.host_url})")
+        print(f"Sending delete to {self.name}")
 
 
 # =============================================================================
