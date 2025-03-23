@@ -8,10 +8,12 @@ from rest_framework.views import APIView
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from user_management.models import Author
-from user_management.serializers import AuthorSerializer
+from user_management.models import Author, FollowRequest
+from user_management.serializers import AuthorSerializer, FollowRequestSerializer
 
 from django.urls import reverse
+
+from drf_spectacular.utils import extend_schema
 
 from user_management.forms import AuthorModifyForm, JoinRequestForm
 from user_management.models import LocalAuthor
@@ -61,6 +63,10 @@ class AuthorView(View):
             author=target_author, visibility_type=VisibilityTypes.PUBLIC
         ).order_by("-created_at")
 
+        is_following = target_author in viewer.following.all() if viewer is not None else False
+        is_follow_requested = viewer.follow_requests_sent.filter(
+            followee=target_author).exists() if viewer is not None else False
+
         return render(
             request,
             "author_profile.html",
@@ -68,6 +74,8 @@ class AuthorView(View):
                 "author": target_author,
                 "viewer": viewer,
                 "posts": public_posts,
+                "is_following": is_following,
+                "is_follow_requested": is_follow_requested
             },
         )
 
@@ -121,6 +129,7 @@ class AuthorModifyView(View):
             "form": form
         })
 
+
 class AuthorSearchAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -131,3 +140,45 @@ class AuthorSearchAPIView(APIView):
         )
         serializer = AuthorSerializer(authors, many=True)
         return Response(serializer.data)
+
+
+class FollowRequestByViewer(APIView):
+    @extend_schema(
+        summary="[Internal] create a follow request for an author by the viewer",
+        description="Create a follow request for an author by the viewer. Cannot create a follow request for an author that has already been followed by the viewer.",
+        responses={201: None, 400: None, 401: None, 404: None},
+    )
+    def post(self, request: Request, target_fqid: str) -> Response:
+        """Create a follow request for an author by the viewer.
+        Cannot create a follow request for an author that has already been followed by the viewer.
+        """
+        viewer = get_request_viewer(request)
+        if viewer is None:
+            return Response({"error": "Log in as a user to follow an author"}, status=401)
+
+        target_author = Author.objects.find_by_encoded_fqid(target_fqid)
+        if target_author is None:
+            return Response({"error": f"Could not find author with id {target_fqid}"}, status=404)
+        if viewer.following.filter(fqid=target_fqid).exists():
+            return Response({"error": "You are already following this author"}, status=400)
+        if viewer.follow_requests_sent.filter(followee=target_author).exists():
+            return Response({"error": "You have already requested to follow this author"}, status=400)
+        # deserialize and validate the incoming follow request data
+        FollowRequest.objects.create_follow_request(viewer, target_author)
+        return Response(status=201)
+
+    def delete(self, request: Request, target_fqid: str) -> Response:
+        """Delete a follow request for an author by the viewer.
+        Cannot delete a follow request for an author that has not been requested to be followed by the viewer.
+        """
+        viewer = get_request_viewer(request)
+        if viewer is None:
+            return Response({"error": "Log in as a user to remove a follow request from an author"}, status=401)
+
+        target_author = Author.objects.find_by_encoded_fqid(target_fqid)
+        if target_author is None:
+            return Response({"error": f"Could not find author with id {target_fqid}"}, status=404)
+        if not viewer.follow_requests_sent.filter(followee=target_author).exists():
+            return Response({"error": "You have not requested to follow this author"}, status=404)
+        viewer.follow_requests_sent.filter(followee=target_author).delete()
+        return Response(status=204)

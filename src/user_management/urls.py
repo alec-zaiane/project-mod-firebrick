@@ -5,7 +5,7 @@ from django.urls import path
 from user_management.forms import LoginForm
 
 
-from user_management.views import AuthorModifyView, AuthorView, JoinView, AuthorSearchAPIView
+from user_management.views import AuthorModifyView, AuthorView, FollowRequestByViewer, JoinView, AuthorSearchAPIView
 from user_management.viewsets import AuthorViewSet, FollowRequestViewSet
 from user_management.views_api import InboxView
 
@@ -33,7 +33,12 @@ urlpatterns: list[URLPattern | URLResolver] = [
          InboxView.as_view(),
          name="node2node_inbox"
          ),
-    path("api/authors/search/", AuthorSearchAPIView.as_view(), name="author_search")
+    path("api/authors/search/", AuthorSearchAPIView.as_view(), name="author_search"),
+
+
+
+    path("api/follow-requests/<str:target_fqid>/request-follow",
+         FollowRequestByViewer.as_view(), name="follow-request"),
 ]
 
 router = routers.SimpleRouter()

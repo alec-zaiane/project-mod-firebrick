@@ -28,10 +28,17 @@
                             <div name="errorresponse-error"></div>
                         </form>
                     {% else %}
-                        {% if follow_requests_pending %}
-                            <button class="profile-button" disabled>Follow Request Sent</button>
+                        {% if is_follow_requested %}
+                        <form id="follow-form" name="generic-form" action="{% url 'user_management:follow-request' author.fqid|urlencode:"" %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="_method" value="DELETE">
+                                <input type="hidden" name="_after_action" value="reload">
+                                <button class="profile-button request-sent" type="submit">Follow Request Sent</button>
+                                <div name="response-detail"></div>
+                                <div name="errorresponse-error"></div>
+                            </form>
                         {% else %}
-                            <form id="follow-form" name="generic-form" action="">
+                            <form id="follow-form" name="generic-form" action="{% url 'user_management:follow-request' author.fqid|urlencode:"" %}">
                                 {% csrf_token %}
                                 <input type="hidden" name="_method" value="POST">
                                 <input type="hidden" name="_after_action" value="reload">

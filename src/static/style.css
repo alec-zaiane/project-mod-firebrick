@@ -340,7 +340,7 @@ a:link:active, a:visited:active  {
     display: flex;
     flex-direction: column;
     position: fixed;
-    width: 170px;
+    width: 200px;
     gap: 40px;
     height: 100%;
 }
@@ -385,6 +385,17 @@ a:link:active, a:visited:active  {
 
 .navbar-contents .logout-signup:hover {
     background: rgb(117, 16, 23);
+}
+
+.navbar-contents .navbar-title {
+    display: flex;
+    flex-grow: 1;
+}
+
+.navbar-contents .navbar-title #follow-request-count {
+    flex-grow: 1;
+    text-align: center;
+    color: firebrick;
 }
 
 /*
@@ -916,6 +927,10 @@ a:link:active, a:visited:active  {
 .profile .profile-button:disabled {
     background: rgb(115, 34, 34);
     color: #6e6e6e;
+}
+
+.profile .profile-button.request-sent {
+    opacity: 0.5;
 }
 
 .profile .followers-list {

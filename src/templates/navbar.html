@@ -1,4 +1,5 @@
 {% load static %}
+{% load get_follow_requests_count %}
 {% if user.is_authenticated %}
     {% if user.is_superuser %}
         <a id="navbar-admin-panel" class="navbar-category" href="{% url 'admin:index' %}"><img class="navbar-icon" src="{% static 'svg/admin.svg' %}"/> <span class="navbar-title">Admin Panel</span></a>
@@ -6,11 +7,10 @@
 {% endif %}
 {% if user.author %}
     <a id="navbar-home" class="navbar-category" href="{% url 'posts:stream' %}"><img class="navbar-icon" src="{% static 'svg/home.svg' %}"/> <span class="navbar-title">Home</span></a>
-    <a id="navbar-follow-requests" class="navbar-category" href="">
+    <a id="navbar-follow-requests" class="navbar-category" href="{% url 'user_management:follow-requests' %}">
         <img class="navbar-icon" src="{% static 'svg/followrequests.svg' %}"/>
         <span class="navbar-title">
-            <!-- When follow requests are implemented, use a template instead of JS -->
-            Follow Requests<span id="follow-request-count"></span>
+            <span>Follow Requests</span><span id="follow-request-count">{% get_follow_requests_count user.author %}</span>
         </span>
     </a>
 {% endif %}
