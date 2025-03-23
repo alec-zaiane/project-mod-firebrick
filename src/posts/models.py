@@ -156,7 +156,7 @@ class VisiblePostManager(PostManager):
             query = VisibilityTypeResolver.modify_q(query, visibility_type, author)
 
         # also, always show your own posts
-        query = query | Q(author=author)
+        query = query | Q(author=author, is_soft_deleted=False)
 
         return self.get_queryset().filter(query)
 

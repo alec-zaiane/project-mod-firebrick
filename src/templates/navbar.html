@@ -7,7 +7,7 @@
 {% endif %}
 {% if user.author %}
     <a id="navbar-home" class="navbar-category" href="{% url 'posts:stream' %}"><img class="navbar-icon" src="{% static 'svg/home.svg' %}"/> <span class="navbar-title">Home</span></a>
-    <a id="navbar-follow-requests" class="navbar-category" href="{% url 'user_management:follow-requests' %}">
+    <a id="navbar-follow-requests" class="navbar-category" href="">
         <img class="navbar-icon" src="{% static 'svg/followrequests.svg' %}"/>
         <span class="navbar-title">
             <span>Follow Requests</span><span id="follow-request-count">{% get_follow_requests_count user.author %}</span>
