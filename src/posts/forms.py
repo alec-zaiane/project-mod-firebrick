@@ -6,6 +6,11 @@ from posts.models import Post, PostTypes, VisibilityTypes
 
 
 class CreatePostForm(forms.ModelForm[Post]):
+    image_upload = forms.ImageField(
+        required=False,
+        label="Upload Image",
+        help_text="Select an image file to upload."
+    )
     class Meta:
         model = Post
         fields = ["title", "description", "content", "post_type", "visibility_type"]
