@@ -19,12 +19,11 @@
             {% if viewer %}
                 {% if author != viewer %}
                     {% if is_following %}
-                        <form id="unfollow-form" name="generic-form" action="">
+                        <form id="unfollow-form" name="generic-form" action="{% url 'user_management:author-unfollow' author.uuid %}">
                             {% csrf_token %}
                             <input type="hidden" name="_method" value="POST">
                             <input type="hidden" name="_after_action" value="reload">
                             <button class="profile-button" type="submit">Unfollow</button>
-                            <div name="response-detail"></div>
                             <div name="errorresponse-error"></div>
                         </form>
                     {% else %}
@@ -34,7 +33,6 @@
                                 <input type="hidden" name="_method" value="DELETE">
                                 <input type="hidden" name="_after_action" value="reload">
                                 <button class="profile-button request-sent" type="submit">Follow Request Sent</button>
-                                <div name="response-detail"></div>
                                 <div name="errorresponse-error"></div>
                             </form>
                         {% else %}
@@ -43,7 +41,6 @@
                                 <input type="hidden" name="_method" value="POST">
                                 <input type="hidden" name="_after_action" value="reload">
                                 <button class="profile-button" type="submit">Follow</button>
-                                <div name="response-detail"></div>
                                 <div name="errorresponse-error"></div>
                             </form>
                         {% endif %}

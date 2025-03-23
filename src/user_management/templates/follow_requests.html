@@ -1,0 +1,41 @@
+{% extends 'return-meta-base.html' %}
+
+{% load static %}
+
+{% block title %}Follow Requests{% endblock %}
+
+{% block content %}
+<div class="follow-requests">
+    <h1>Follow Requests</h1>
+    {% for follow_request in follow_requests %}
+    <div class="follow-request">
+        <a id="post-profile-select" href="{% url 'user_management:author_profile' follow_request.follower.uuid %}" class="names">
+            {% if follow_request.follower.profile_image %}
+            <img class="profile-image" src="{{ follow_request.follower.profile_image }}"/>
+            {% endif %}
+            <h3 class="display-name">{{ follow_request.follower.display_name }}</h3>
+            <h5 class="username">{{ follow_request.follower.username }}</h5>
+        </a>
+        <div class="selector">
+            <form class="follow-request-form" name="generic-form" action="{% url 'user_management:follow-requests-approve' follow_request.uuid %}">
+                {% csrf_token %}
+                <input type="hidden" name="_method" value="POST">
+                <input type="hidden" name="_after_action" value="reload">
+                <button type="submit" class="follow-request-button accept-button" id="accept-button-{{follow_request.uuid}}">
+                    <div class="follow-request-button accept"><img class="accept-decline-icon" src="{% static 'svg/yes.svg' %}"></div>
+                </button>
+            </form>
+            <form class="follow-request-form" name="generic-form" action="{% url 'user_management:follow-requests-deny' follow_request.uuid %}">
+                {% csrf_token %}
+                <input type="hidden" name="_method" value="POST">
+                <input type="hidden" name="_after_action" value="reload">
+                <button type="submit" class="follow-request-button reject-button" id="reject-button-{{follow_request.uuid}}">
+                    <div class="follow-request-button reject"><img class="accept-decline-icon" src="{% static 'svg/no.svg' %}"></div>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+<script src="{% static 'scripts/generic-form.min.js' %}"></script>
+{% endfor %}
+{% endblock %}

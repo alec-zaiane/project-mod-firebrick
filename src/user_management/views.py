@@ -13,6 +13,8 @@ from user_management.serializers import AuthorSerializer, FollowRequestSerialize
 
 from django.urls import reverse
 
+from django.template import loader
+
 from drf_spectacular.utils import extend_schema
 
 from user_management.forms import AuthorModifyForm, JoinRequestForm
@@ -128,6 +130,32 @@ class AuthorModifyView(View):
             "author": target_author,
             "form": form
         })
+
+
+class AuthorFollowRequests(View):
+    def get(self, request: HttpRequest) -> HttpResponse:
+        """
+        The view for viewing all of the follow requests that belong to an author.
+        """
+
+        viewer = get_request_viewer(request)
+
+        if viewer == None:
+            if request.GET.get('next') == None:
+                return HttpResponseRedirect(reverse("user_management:login") + "?next=" + reverse("user_management:follow_requests"))
+            return HttpResponseRedirect(reverse("user_management:login") + "?next=" + reverse("user_management:follow_requests") + "?next=" + request.GET.get('next', ''))
+
+        follow_requests = viewer.follow_requests_received.all()
+
+        return render(
+            request,
+            "follow_requests.html",
+            {
+                "author": viewer,
+                "viewer": viewer,
+                "follow_requests": follow_requests
+            },
+        )
 
 
 class AuthorSearchAPIView(APIView):
