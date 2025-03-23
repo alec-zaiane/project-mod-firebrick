@@ -29,7 +29,7 @@ class TestUserStory34(GeneralUserStoryApiTest):
         # author0 logs in and unfollows author1
         self.client.force_authenticate(user=author0.user)
         unfollow_url = reverse("user_management:node2node_authors-unfollow",
-                               args=[str(author1.get_encoded_fqid())])
+                               kwargs={"fqid": author1.get_encoded_fqid()})
         response = self.client.post(unfollow_url)
 
         # check for success

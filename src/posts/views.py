@@ -1,13 +1,11 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from django.views import View
 from django.template import loader
 from posts.forms import CreatePostForm
-from posts.models import Post
-
-
+from posts.models import Post, PostTypes
 from core.utils.redirects import REDIRECT_TO_LOGIN
 from core.utils.request_viewer import get_request_viewer
 
@@ -33,7 +31,7 @@ class CreatePostView(View):
         if viewer is None:
             return REDIRECT_TO_LOGIN(request)
 
-        form = CreatePostForm(request.POST)
+        form = CreatePostForm(request.POST, request.FILES)
         form.instance.author = viewer
         form.instance.host_node = viewer.host_node
         if form.is_valid():

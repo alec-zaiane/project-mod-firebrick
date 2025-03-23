@@ -66,7 +66,7 @@ class AuthorViewSet(viewsets.ModelViewSet[Author]):
         return Response(serializer.to_representation(author), status=201)
 
     @action(detail=True, methods=["post"], url_path="unfollow", url_name="unfollow", permission_classes=[IsAuthenticated])
-    def unfollow(self, request: Request, fqid: Optional[str] = None) -> Response:
+    def unfollow(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         viewer = get_request_viewer(request)
         if request.user.is_anonymous or viewer is None:
             return Response(
@@ -119,7 +119,6 @@ class FollowRequestViewSet(viewsets.ModelViewSet[FollowRequest]):
 
     @action(detail=True, methods=["post"], url_path="approve", url_name="approve")
     def approve_follow_request(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        print("HERE!")
         # ensure user is authenticated and has an associated author
         if request.user.is_anonymous or not hasattr(request.user, "author"):
             return Response({"error": "User must be authenticated and linked to an author."},

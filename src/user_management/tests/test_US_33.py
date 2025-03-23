@@ -22,7 +22,7 @@ class TestUserStory33(GeneralUserStoryApiTest):
 
         # author1 initially has 0 pending requests
         self.client.force_authenticate(user=author1.user)
-        pending_count_url = reverse("user_management:node2node_follow_requests-pending_count")
+        pending_count_url = reverse("user_management:node2node_follow_requests-pending-count")
         resp_count_1 = self.client.get(pending_count_url)
         self.assertEqual(resp_count_1.status_code, status.HTTP_200_OK)
         self.assertIn("count", resp_count_1.data)
