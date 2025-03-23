@@ -32,12 +32,10 @@ class CreatePostView(View):
             return REDIRECT_TO_LOGIN(request)
 
         form = CreatePostForm(request.POST, request.FILES)
+        form.instance.author = viewer
+        form.instance.host_node = viewer.host_node
         if form.is_valid():
-            post = form.save(commit=False)
-            post.author = viewer
-            post.host_node = viewer.host_node
-            post.save()
-
+            post = form.save()
             next_url = f"{reverse('posts:view_post', kwargs={'post_uuid': post.uuid})}?next={request.GET.get('next', '/')}"
             return HttpResponseRedirect(next_url)
 
