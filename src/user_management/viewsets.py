@@ -102,6 +102,7 @@ class FollowRequestViewSet(viewsets.ModelViewSet[FollowRequest]):
 
     @action(detail=True, methods=["post"], url_path="approve", url_name="approve")
     def approve_follow_request(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        print("HERE!")
         # ensure user is authenticated and has an associated author
         if request.user.is_anonymous or not hasattr(request.user, "author"):
             return Response({"error": "User must be authenticated and linked to an author."},
