@@ -413,7 +413,8 @@ class Node(models.Model):
 
     uuid: models.UUIDField[uuid.UUID, uuid.UUID] = models.UUIDField(
         _("UUID"), primary_key=True, editable=False, default=uuid.uuid4)
-    name: models.CharField[str, str] = models.CharField(_("Name"), max_length=255)
+    name: models.CharField[str, Optional[str]] = models.CharField(
+        _("Name"), max_length=255, blank=True, null=True)
     # host_URL is for API endpoint, site URL is for the actual site, and is optional (for ease of use)
     host_url: models.URLField[str, str] = models.URLField(_("Host"), unique=True)
     # the host_site_url will always be set for local node, but may not be set for external nodes
