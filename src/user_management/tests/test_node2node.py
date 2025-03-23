@@ -5,7 +5,7 @@ from django.urls import reverse
 
 from core.utils.testing_utils import GeneralUserStoryApiTest
 
-from user_management.models import FollowRequest, Author, Node
+from user_management.models import FollowRequest, Author, Node, User
 
 
 @tag("node2node")
@@ -106,7 +106,8 @@ class TestNode2NodeAuthors(GeneralUserStoryApiTest):
             "profileImage": "https://i.imgur.com/k7XVwpB.jpeg",
             "page": "http://nodeaaaa.abc/authors/greg"
         }
-        Node.external_nodes.create_node("Node a", "http://nodeaaaa.abc/api/")
+        external_node_user = User.nodes.create_user("nodeaaaa", password="password")
+        Node.external_nodes.create_node("Node a", "http://nodeaaaa.abc/api/", external_node_user)
         response = self.client.post(reverse("user_management:node2node_authors-list"), data)
         self.assertEqual(response.status_code, 201)
         author = Author.objects.get_by_fqid(data["id"])

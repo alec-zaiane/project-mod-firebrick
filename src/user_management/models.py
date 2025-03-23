@@ -264,7 +264,7 @@ class Author(ApiObject):
         return Post.visible_posts.get_posts_in_stream_of_author(self, paginate_start=paginate_start, paginate_count=paginate_count)
 
     # node2node stuff
-    def node2node_encode_as_class_json_dict(self) -> dict[str,Any]:
+    def node2node_encode_as_class_json_dict(self) -> dict[str, Any]:
         from user_management.serializers import AuthorSerializer
         return AuthorSerializer().to_representation(self)
 
@@ -276,7 +276,6 @@ class Author(ApiObject):
 
     def node2node_get_deletion_url(self) -> str:
         return self.node2node_get_update_url()
-
 
 
 # === Proxy Classes for Authors ===
@@ -338,7 +337,7 @@ class FollowRequest(ApiObject):
         return f"{self.host_node.host_url}/authors/{self.follower.uuid}/followers/{self.followee.uuid}"
 
     # node2node stuff
-    def node2node_encode_as_class_json_dict(self) -> dict[str,Any]:
+    def node2node_encode_as_class_json_dict(self) -> dict[str, Any]:
         from user_management.serializers import FollowRequestSerializer
         return FollowRequestSerializer().to_representation(self)
 
@@ -396,8 +395,11 @@ class ExternalNodeManager(NodeManager):
     def create(self, *args: Any, **kwargs: Any) -> Node:
         return super().create(*args, is_local_node=False, **kwargs)
 
-    def create_node(self, name: str, host_url: str) -> Node:
-        return self.create(name=name, host_url=host_url)
+    def create_node(self, name: str, host_url: str, user: User, host_site_url: str = "") -> Node:
+        """Create a new node with a host_url (API endpoint) and host_site_url (site URL)"""
+        if not user.type == User.Types.NODE:
+            raise ValidationError("User must be a Node typed user")
+        return self.create(name=name, host_url=host_url, internal_user=user, host_site_url=host_site_url)
 
     def find_node(self, host_url: str) -> Optional[Node]:
         return self.filter(host_url=host_url).first()
@@ -418,7 +420,8 @@ class Node(models.Model):
     host_site_url = models.URLField(_("Site URL"), blank=True)
 
     # internal_user is for authentication - this may change in the future
-    internal_user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
+    internal_user: models.OneToOneField[User, Optional[User]] = models.OneToOneField(
+        User, on_delete=models.CASCADE, null=True, blank=True)
 
     # if true, this `Node` is the local node. This can only be true for one node (upheld in the manager)
     is_local_node = models.BooleanField(_("Is Local Node"), default=False)
@@ -441,19 +444,19 @@ class Node(models.Model):
         """Make sure the given URL is on the host API"""
         return url.startswith(self.host_url)
 
-    def send_update(self, json: dict[str, Any], to:str) -> None:
+    def send_update(self, json: dict[str, Any], to: str) -> None:
         """Send an object update to this node via the given `to` URL"""
         if not self._confirm_url_is_valid(to):
             raise ValidationError(f"URL {to} is not on this node's host URL ({self.host_url})")
         print(f"Sending update to {self.name}: {json}")
 
-    def send_create(self, json: dict[str, Any] ,to:str) -> None:
+    def send_create(self, json: dict[str, Any], to: str) -> None:
         """Send an object creation to this node via the given `to` URL"""
         if not self._confirm_url_is_valid(to):
             raise ValidationError(f"URL {to} is not on this node's host URL ({self.host_url})")
         print(f"Sending create to {self.name}: {json}")
 
-    def send_delete(self, to:str) -> None:
+    def send_delete(self, to: str) -> None:
         """Send a delete request to this node via the given `to` URL"""
         if not self._confirm_url_is_valid(to):
             raise ValidationError(f"URL {to} is not on this node's host URL ({self.host_url})")
