@@ -92,7 +92,7 @@ class ViewPostView(View):
 
         post = get_object_or_404(Post, uuid=post_uuid)
 
-        if not viewer or not Post.visible_posts.get_posts_visible_to_author(viewer).filter(uuid=post_uuid).exists():
+        if post.visibility_type != "PB" and (viewer is not None and Post.visible_posts.get_posts_visible_to_author(viewer).filter(uuid=post_uuid).exists()):
             response = loader.render_to_string(
                 "no-permission.html", {"error": "You do not have permission to view this post.", "user": request.user, "post": post, "viewer": viewer})
             return HttpResponse(response, status=403)
