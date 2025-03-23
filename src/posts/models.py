@@ -201,6 +201,8 @@ class Post(AuthoredApiObject):
     author: models.ForeignKey[Author, Author] = models.ForeignKey(
         Author, on_delete=models.CASCADE, related_name='all_posts')
 
+    image = models.ImageField(upload_to="post_images/", null = True, blank = True)
+
     if TYPE_CHECKING:
         comments: models.QuerySet[Comment]
         likes: models.QuerySet[Like]
@@ -264,3 +266,14 @@ class Post(AuthoredApiObject):
         # will return, for example "components/post_inner_content/PT.html" for a plaintext post
         # each inner-content template can be customized based on what kind of content it is
         return f"components/post_inner_content/{self.post_type}.html"
+
+    @property
+    def markdown_image_link(self) -> str | None:
+        """
+        Returns a MD img link for the uploaded image, if present.
+        expl of this: ![title](http://127.0.0.1:8000/media/post_images/abc.png)
+        """
+        if self.image:
+            return f"![{self.title}]({self.image.url})"
+        return None
+

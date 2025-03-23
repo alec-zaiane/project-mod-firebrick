@@ -1,14 +1,9 @@
-import uuid
-import os
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from django.views import View
 from django.template import loader
-from django.core.files.storage import default_storage
-from django.conf import settings
-from django.utils.text import slugify
 from posts.forms import CreatePostForm
 from posts.models import Post, PostTypes
 from core.utils.redirects import REDIRECT_TO_LOGIN
@@ -37,26 +32,10 @@ class CreatePostView(View):
             return REDIRECT_TO_LOGIN(request)
 
         form = CreatePostForm(request.POST, request.FILES)
-        form.instance.author = viewer
-        form.instance.host_node = viewer.host_node
         if form.is_valid():
-            post = form.save()
-
-            uploaded_file = request.FILES.get("image_upload")
-            if uploaded_file and form.cleaned_data["post_type"] == PostTypes.IMAGE:
-                file_ext = os.path.splitext(uploaded_file.name or "")[1]
-                filename = f"{slugify(post.title)}-{uuid.uuid4()}{file_ext}"
-                file_path = os.path.join(settings.MEDIA_ROOT, filename)
-
-                # Save file to disk
-                with open(file_path, "wb+") as destination:
-                    for chunk in uploaded_file.chunks():
-                        destination.write(chunk)
-
-                # Set content to markdown-style image URL
-                image_url = f"{settings.MEDIA_URL}{filename}"
-                post.content = f"![{post.title}]({image_url})"
-
+            post = form.save(commit=False)
+            post.author = viewer
+            post.host_node = viewer.host_node
             post.save()
 
             next_url = f"{reverse('posts:view_post', kwargs={'post_uuid': post.uuid})}?next={request.GET.get('next', '/')}"
