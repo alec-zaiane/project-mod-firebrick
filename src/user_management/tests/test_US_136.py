@@ -13,12 +13,12 @@ from user_management.forms import JoinRequestForm
 @tag("US-node-management")
 class UserStory132TestUI(AdminUITestCase):
     """
-    Tests for User Story 133
-    "As a node admin, I want to be able to remove nodes and stop sharing with them."
-    https://github.com/uofa-cmput404/w25-project-mod-firebrick/issues/133
+    Tests for User Story 136
+    "As a node admin, I can disable the node to node interfaces for connections that I no longer want, in case another node goes bad.
+    https://github.com/uofa-cmput404/w25-project-mod-firebrick/issues/136
     """
 
-    def test_can_remove_node(self) -> None:
+    def test_can_disable_node(self) -> None:
         self.login_as_admin()
 
         # create the user of the node
@@ -30,13 +30,19 @@ class UserStory132TestUI(AdminUITestCase):
         # make sure the node was created
         self.assertEqual(Node.external_nodes.all().count(), 1)
 
-        # now try to delete it via the UI
+        # now try to disable it via the UI
         self.login_as_admin()
         self.visit(f"/admin/user_management/node/{node.uuid}/change/")
-        self.find_elements_by_selector("a.deletelink")[0].click()
+        self.find_element_by_id("id_is_disabled").click()
         self.find_elements_by_selector("input[type=submit]")[0].click()
 
-        # make sure the node was deleted
+        # make sure the node was disabled
+        node.refresh_from_db()
+        self.assertTrue(node.is_disabled)
+
+        self.assertEqual(Node.objects.count(), 2)  # local + this one
+
+        # make sure it doesn't show up in the external nodes
         self.assertEqual(Node.external_nodes.all().count(), 0)
 
         self.end_test()
