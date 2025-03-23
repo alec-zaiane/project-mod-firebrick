@@ -1,7 +1,7 @@
 {% load check_liked %}
 {% load static %}
 
-<div class="post-comment">
+<div class="post-comment" id="comment-{{ comment.uuid }}">
     <a href="" class="names">
         {% if comment.author.profile_image %}
         <img class="profile-image" src="{{ comment.author.profile_image }}"/>

@@ -336,6 +336,13 @@ class UITestCase(LiveServerTestCase, GeneralUserStoryApiTest):
         with self.assertRaises(NoSuchElementException):
             self.find_element_by_id(element_id)
 
+    def assertEqual(self, first: Any, second: Any, msg: str|None = None) -> None:
+        """Assert that two values are equal"""
+        self.log(f"Asserting {first} == {second}", indentation_offset=-1)
+        if first != second:
+            self.logger.critical(f"Assertion failed: {first} != {second}")
+        super().assertEqual(first, second, msg)
+
 
 class AdminUITestCase(UITestCase):
     """Ui Test case for the admin panel, has some extra functionality for logging in as the admin user"""

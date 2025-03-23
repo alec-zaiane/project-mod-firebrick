@@ -130,8 +130,8 @@
                     {% if viewer.profile_image %}
                         <img class="profile-image" src="{{ viewer.profile_image }}"/>
                     {% endif %}
-                    <textarea class="add-comment-text" name="comment" placeholder="Add a comment..."></textarea>
-                    <button class="submit-comment" type="submit">Comment</button>
+                    <textarea class="add-comment-text" name="comment" placeholder="Add a comment..." id="add-comment-area"></textarea>
+                    <button class="submit-comment" type="submit" id="submit-comment">Comment</button>
                 </form>
                 {% for comment in post.comments.all %}
                     {% include 'components/comment-card.html' %}
