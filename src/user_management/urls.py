@@ -5,7 +5,7 @@ from django.urls import path
 from user_management.forms import LoginForm
 
 
-from user_management.views import AuthorModifyView, AuthorView, JoinView
+from user_management.views import AuthorModifyView, AuthorView, JoinView, AuthorSearchAPIView
 from user_management.viewsets import AuthorViewSet, FollowRequestViewSet
 from user_management.views_api import InboxView
 
@@ -32,7 +32,8 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path("api/authors/<uuid:target_author_uuid>/inbox",
          InboxView.as_view(),
          name="node2node_inbox"
-         )
+         ),
+    path("api/authors/search/", AuthorSearchAPIView.as_view(), name="author_search")
 ]
 
 router = routers.SimpleRouter()
