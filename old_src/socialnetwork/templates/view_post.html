@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+{# Mostly a copy of post_card, but requires some changes. #}
+<article class="post-card post-full">
+    <header>
+        <a href="{% url 'socialnetwork:author_profile' post.author.uuid %}" class="names">
+            {% if post.author.profile_image %}
+            <img class="profile-image" src="{{ post.author.profile_image }}"/>
+            {% endif %}
+            <h3 class="display-name">{{ post.author.display_name }}</h3>
+            <h5 class="username">{{ post.author.username }}</h5>
+        </a>
+
+        {% if post.author == viewer %}
+        <div class="settings">
+            <img class="settings-dropdown" src="{% static 'svg/dots.svg' %}"/>
+            <div class="settings-dropdown-content">
+                <a href="{% url 'socialnetwork:edit_post' post.uuid %}" class="edit-button">
+                    <div class="setting">
+                        <img class="edit-icon" title="Edit Post" src="{% static 'svg/editpost.svg' %}" />
+                        Edit Post
+                    </div>
+                </a>
+                <form name="generic-form" action="{% url 'socialnetwork:api_post_delete' post.uuid %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="_method" value="POST">
+                    <input type="hidden" name="_after_action" value="reload confirm">
+                    <input type="hidden" name="_confirm_text" value="Are you sure you want to delete this post?">
+                    <button type="submit" class="delete-button">
+                        <div class="setting delete">
+                            <img class="delete-icon" title="Delete Post" src="{% static 'svg/delete.svg' %}" />
+                            Delete Post
+                        </div>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        {% endif %}
+    </header>
+
+    <div class="post-content {{ post.css_class }}">
+        {% if post.image %}
+            <img src="{{ post.image.url }}" alt="Image Post" class="post-image">
+
+            <!-- Display Markdown Link Below Image -->
+            <div class="markdown-container">
+                <p><strong>Markdown for this image:</strong></p>
+                <textarea class="markdown-box" readonly>[![{{ post.image.url|cut:"/media/hosted_images/" }}]({{ post.image.url }})]</textarea>
+            </div>
+        {% else %}
+            <div class="text">
+                {{ post.content }}
+            </div>
+        {% endif %}
+    </div>
+
+    <footer>
+
+        <div class="post-info">
+            <div class="visibility">
+                {% if post.get_visibility_type_display == "Public" %}
+                    <img class="visibility-icon" title="Public" src="{% static 'svg/public.svg' %}" /> Public
+                {% elif post.get_visibility_type_display == "Unlisted" %}
+                    <img class="visibility-icon" title="Unlisted" src="{% static 'svg/unlisted.svg' %}" /> Unlisted
+                {% elif post.get_visibility_type_display == "Friends-Only" %}
+                    <img class="visibility-icon" title="Friends Only" src="{% static 'svg/friends.svg' %}" /> Friends Only
+                {% endif %}
+                ·
+            </div>
+
+            <span class="post-meta">
+                {% if post.date_edited %}
+                <img class="edit-pencil" src="{% static 'svg/edit.svg' %}" />
+                <span class="last-edited" title="Posted {{ post.date_created|date:'g:i a · F j, Y' }}">Last Edited <time datetime="{{ post.date_edited|date:'Y-m-d H:i:s' }}">{{ post.date_edited|date:'g:i a · F j, Y' }}</time></span>
+                {% else %}
+                <div class="posted">Posted <time datetime="{{ post.date_created|date:'Y-m-d H:i:s' }}">{{ post.date_created|date:"g:i a · F j, Y" }}</time></div>
+                {% endif %}
+            </span>
+        </div>
+        <div class="likes-comments">
+            <div class="comments-box">
+                <img class="comments-icon" src="{% static 'svg/comment.svg' %}" />
+                <span class="comments-count">{{post.comments|length}}</span>
+            </div>
+            <div class="likes-box">
+                <form name="generic-form" action="{% url 'api:like_post_internal' post.uuid %}">
+                    {% csrf_token %}
+                    {{ viewer.uuid|json_script:"viewer" }}
+                    {{ post.get_likes_author_uuid_strings|json_script:"like_authors" }}
+                    <input type="hidden" name="_method" value="POST">
+                    <input type="hidden" name="_after_action" value="reload">
+                    <button class="like-button" type="submit">
+                        <img class="like-icon like" src="{% static 'svg/like.svg' %}" />
+                        <img class="like-icon liked" src="{% static 'svg/liked.svg' %}" />
+                    </button>
+                </form>
+                <span class="likes-count">{{ post.like_count }}</span>
+            </div>
+        </div>
+        <section class="comments-section">
+            <form class="add-comment" name="generic-form" action="{% url 'api:post_comment_internal' post.uuid %}">
+                {% csrf_token %}
+                <input type="hidden" name="_method" value="POST">
+                <input type="hidden" name="_after_action" value="reload">
+                {% if viewer.profile_image %}
+                    <img class="profile-image" src="{{ viewer.profile_image }}"/>
+                {% endif %}
+                <textarea class="add-comment-text" name="comment" placeholder="Add a comment..."></textarea>
+                <button class="submit-comment" type="submit">Comment</button>
+            </form>
+            {% for comment in post.comments %}
+                <div class="post-comment">
+                    <a href="{% url 'socialnetwork:author_profile' comment.author.uuid %}" class="names">
+                        {% if comment.author.profile_image %}
+                        <img class="profile-image" src="{{ comment.author.profile_image }}"/>
+                        {% endif %}
+                        <h3 class="display-name">{{ comment.author.display_name }}</h3>
+                    </a>
+                    <span class="comment-content">{{ comment.comment }}</span>
+                </div>
+            {% endfor %}
+        </section>
+    </footer>
+
+</article>
+
+    <script src="{% static 'scripts/posts.min.js' %}"></script>
+    <script src="{% static 'scripts/markdown-renderer.min.js' %}"></script>
+{% endblock %}

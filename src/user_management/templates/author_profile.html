@@ -1,0 +1,94 @@
+{% extends 'navbar-base.html' %}
+
+{% load static %}
+
+{% block title %}{{ author.display_name }}'s Profile{% endblock %}
+
+{% block content %}
+<main class="profile">
+    <section class="profile-info">
+        <div class="profile-top-bar">
+            <div class="profile-image-and-name">
+                {% if author.profile_image %}
+                <img id="author-profile-image" class="profile-image" src="{{ author.profile_image }}"/>
+                {% endif %}
+                <h2 id="author-profile-display-name">{{ author.display_name }}</h2>
+                <h3 id="author-profile-username">{{ author.username }}</h3>
+            </div>
+
+            {% if viewer %}
+                {% if author != viewer %}
+                    {% if is_following %}
+                        <form id="unfollow-form" name="generic-form" action="">
+                            {% csrf_token %}
+                            <input type="hidden" name="_method" value="POST">
+                            <input type="hidden" name="_after_action" value="reload">
+                            <button class="profile-button" type="submit">Unfollow</button>
+                            <div name="response-detail"></div>
+                            <div name="errorresponse-error"></div>
+                        </form>
+                    {% else %}
+                        {% if follow_requests_pending %}
+                            <button class="profile-button" disabled>Follow Request Sent</button>
+                        {% else %}
+                            <form id="follow-form" name="generic-form" action="">
+                                {% csrf_token %}
+                                <input type="hidden" name="_method" value="POST">
+                                <input type="hidden" name="_after_action" value="reload">
+                                <button class="profile-button" type="submit">Follow</button>
+                                <div name="response-detail"></div>
+                                <div name="errorresponse-error"></div>
+                            </form>
+                        {% endif %}
+                    {% endif %}
+                {% else %}
+                    <a class="profile-button" href="{% url 'user_management:author_modify' author.uuid %}">Modify Profile</a>
+                {% endif %}
+            {% endif %}
+        </div>
+
+        <p class="bio">{{ author.bio|linebreaksbr }}</p>
+
+        <div class="followers-list">
+            <h3>
+                <a id="profile-followers" class="follower-clickable" href="">
+                    <span class="follower-number">{{ followers|length }}</span> <span class="follower-type">Followers</span>
+                </a>
+            </h3>
+            <h3>
+                <a id="profile-following" class="follower-clickable" href="">
+                    <span class="follower-number">{{ following|length }}</span> <span class="follower-type">Following</span>
+                </a>
+            </h3>
+            <h3>
+                <a id="profile-friends" class="follower-clickable" href="">
+                    <span class="follower-number">{{ friends|length }}</span> <span class="follower-type">Friends</span>
+                </a>
+            </h3>
+        </div>
+        {% if author == viewer %}
+        <div id="profile-create-post" class="create-post">
+            <a class="profile-button" href="{% url 'posts:create_post' %}?next={{ request.path|urlencode }}" class="create-post">Create Post</a>
+        </div>
+        {% endif %}
+    </section>
+
+
+    <ul id="profile-post-list" class="post-list">
+        {% if posts %}
+            {% for post in posts %}
+            <li class="post">
+                {% include 'components/post_card.html' %}
+            </li>
+            {% endfor %}
+        {% else %}
+            <p>No posts available.</p>
+        {% endif %}
+    </ul>
+
+</main>
+
+<script src="{% static 'scripts/posts.min.js' %}"></script>
+<script src="{% static 'scripts/markdown-renderer.min.js' %}"></script>
+<script src="{% static 'scripts/generic-form.min.js' %}"></script>
+{% endblock %}

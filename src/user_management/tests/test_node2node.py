@@ -1,0 +1,141 @@
+"""Test the Node2Node communication for the User Management classes"""
+
+from django.test import tag
+from django.urls import reverse
+
+from core.utils.testing_utils import GeneralUserStoryApiTest
+
+from user_management.models import FollowRequest, Author, Node, User
+
+import base64
+
+
+@tag("node2node")
+class TestNode2NodeAuthors(GeneralUserStoryApiTest):
+    """Test the Node2Node communication for Authors"""
+
+    def test_author_detail(self) -> None:
+        """Test listing a single author fits the expected format"""
+        self.initialize_sample_authors(1)
+        result = self.client.get(reverse("user_management:node2node_authors-detail",
+                                         kwargs={"fqid": self.sample_authors[0].get_encoded_fqid()}))
+        self.assertEqual(result.status_code, 200)
+        expected = {
+            "type": "author",
+            "id": self.sample_authors[0].fqid,
+            "host": self.sample_authors[0].host_node.host_url,
+            "displayName": self.sample_authors[0].display_name,
+            "profileImage": self.sample_authors[0].profile_image,
+            "page": self.sample_authors[0].page_url,
+        }
+        self.assertEqual(result.json(), expected)
+
+    def test_author_list(self) -> None:
+        """Test listing all authors fits the expected format"""
+        for author in Author.objects.all():
+            author.delete()
+        self.initialize_sample_authors(3)
+        result = self.client.get(reverse("user_management:node2node_authors-list"))
+        self.assertEqual(result.status_code, 200)
+        expected = {
+            "type": "authors",
+            "items": [
+                {
+                    "type": "author",
+                    "id": author.fqid,
+                    "host": author.host_node.host_url,
+                    "displayName": author.display_name,
+                    "profileImage": author.profile_image,
+                    "page": author.page_url,
+                }
+                for author in Author.objects.all()
+            ]
+        }
+        self.assertEqual(result.json(), expected)
+
+    def test_author_list_pagination(self) -> None:
+        """Test listing all authors fits the expected format with pagination"""
+        for author in Author.objects.all():
+            author.delete()
+        self.initialize_sample_authors(3)
+        response = self.client.get(reverse("user_management:node2node_authors-list") + "?page=2")
+        self.assertEqual(response.status_code, 404)
+        response2 = self.client.get(
+            reverse("user_management:node2node_authors-list") + "?page=1&size=2")
+        self.assertEqual(response2.status_code, 200)
+        expected2 = {
+            "type": "authors",
+            "items": [
+                {
+                    "type": "author",
+                    "id": author.fqid,
+                    "host": author.host_node.host_url,
+                    "displayName": author.display_name,
+                    "profileImage": author.profile_image,
+                    "page": author.page_url,
+                }
+                for author in Author.objects.all()[:2]
+            ]
+        }
+        self.assertEqual(response2.json(), expected2)
+        response3 = self.client.get(
+            reverse("user_management:node2node_authors-list") + "?page=2&size=2")
+        self.assertEqual(response3.status_code, 200)
+        expected3 = {
+            "type": "authors",
+            "items": [
+                {
+                    "type": "author",
+                    "id": author.fqid,
+                    "host": author.host_node.host_url,
+                    "displayName": author.display_name,
+                    "profileImage": author.profile_image,
+                    "page": author.page_url,
+                }
+                for author in Author.objects.all()[2:]
+            ]
+        }
+        self.assertEqual(response3.json(), expected3)
+
+    def test_author_creation(self) -> None:
+        """Test creating an author via the API"""
+        data = {
+            "type": "author",
+            "id": "http://nodeaaaa.abc/api/authors/111",
+            "host": "http://nodeaaaa.abc/api/",
+            "displayName": "Greg Johnson",
+            "github": "http://github.com/gjohnson",
+            "profileImage": "https://i.imgur.com/k7XVwpB.jpeg",
+            "page": "http://nodeaaaa.abc/authors/greg"
+        }
+        external_node_user = User.nodes.create_user("nodeaaaa", password="password")
+        Node.external_nodes.create_node("Node a", "http://nodeaaaa.abc/api/", external_node_user)
+        response = self.client.post(reverse("user_management:node2node_authors-list"), data)
+        self.assertEqual(response.status_code, 201)
+        author = Author.objects.get_by_fqid(data["id"])
+        self.assertEqual(author.display_name, data["displayName"])
+
+    def test_basic_auth(self) -> None:
+        """Test that you can create an author with Http Basic Auth (so long as AuthorViewset doesn't have any special treatment it should work for all Node2Node views)"""
+        data = {
+            "type": "author",
+            "id": "http://nodeaaaa.abc/api/authors/111",
+            "host": "http://nodeaaaa.abc/api/",
+            "displayName": "Greg Johnson",
+            "github": "http://github.com/gjohnson",
+            "profileImage": "https://i.imgur.com/k7XVwpB.jpeg",
+            "page": "http://nodeaaaa.abc/authors/greg"
+        }
+        external_node_user = User.nodes.create_user("nodeaaaa", password="password")
+        Node.external_nodes.create_node("Node a", "http://nodeaaaa.abc/api/", external_node_user)
+
+        # modified from https://stackoverflow.com/questions/5495452/using-basic-http-access-authentication-in-django-testing-framework
+        self.client.logout()
+        response = self.client.post(
+            reverse("user_management:node2node_authors-list"), data,
+            format="json",
+            HTTP_AUTHORIZATION="Basic " + base64.b64encode(b"nodeaaaa:password").decode("utf-8"))
+
+        self.assertEqual(response.status_code, 201)
+        author = Author.objects.get_by_fqid(data["id"])
+        self.assertEqual(author.display_name, data["displayName"])

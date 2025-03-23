@@ -1,0 +1,11 @@
+{% load static %}
+
+<span id="visibility-container" class="visibility">
+    {% if post.get_visibility_type_display == "Public" %}
+        <img class="visibility-icon" title="Public" src="{% static 'svg/public.svg' %}" />
+    {% elif post.get_visibility_type_display == "Unlisted" %}
+        <img class="visibility-icon" title="Unlisted" src="{% static 'svg/unlisted.svg' %}" />
+    {% elif post.get_visibility_type_display == "Friends-Only" %}
+        <img class="visibility-icon" title="Friends Only" src="{% static 'svg/friends.svg' %}" />
+    {% endif %}
+</span>

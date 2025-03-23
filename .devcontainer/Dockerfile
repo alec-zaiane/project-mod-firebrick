@@ -13,5 +13,9 @@ RUN groupadd --gid $USER_GID $USERNAME \
     && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
     && usermod -aG docker $USERNAME
 
+# install firefox and some fonts # https://wiki.alpinelinux.org/wiki/Fonts
+RUN apk add font-terminus font-inconsolata font-dejavu font-noto font-noto-cjk font-awesome font-noto-extra
+RUN apk add firefox
+
 # let dev sudo without password
 RUN echo "$USERNAME ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/$USERNAME

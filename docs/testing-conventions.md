@@ -22,6 +22,8 @@ We'll have a few different tagging schemes:
     - `api` for testing API related features
     - `bugfix` for if you fix a bug and want to make sure it cant re-occur
     - `security` for security related tests (eg access control)
+    - `ui` for UI related tests (these are often slowww)
+    - `node2node` for tests on functionality between nodes
     - ...
 
 - User story categories
@@ -34,7 +36,7 @@ We'll have a few different tagging schemes:
     - `US-comments/likes`
     - `US-node-management`
 
-- Depth related tags 
+- Depth related tags
     - (speed related words are referring to the speed to run all tagged tests, *not the speed of an individual test*, however if an individual test is slow, consider putting it in a slow group)
     - This is a little vibe-based, so there is grey area
     - `check-fast` for tests to be included in a "fast check"
@@ -49,5 +51,5 @@ We'll have a few different tagging schemes:
         - eg: You fixed a bug and doubt it will come back, but you wrote a test to be sure
         - eg: You wrote lots of tests verifying access control permissions are respected
         - eg: Give an API bad data a bunch of times and expect it to fail properly in different ways
-- 
+-
 

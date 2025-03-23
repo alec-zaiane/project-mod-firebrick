@@ -1,0 +1,36 @@
+{# expects author and viewer objects, both of type socialnetwork.models.LocalAuthor #}
+
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}Modify Author{% endblock %}
+
+{% block content %}
+<h1>Modify {{ author.username}} </h1>
+<form name="generic-form" action="{% url 'socialnetwork:api_author_update' author.uuid %}">
+    {% csrf_token %}
+    <div name="response-detail"></div>
+    <div name="errorresponse-error"></div>
+    <input type="hidden" name="_method" value="PUT">
+    <input type="hidden" name="user" value="{{ author.uuid }}">
+    <br>
+    <label for="username">Username:</label>
+    <div name="errorresponse-author__user__username"></div>
+    <input type="text" id="username" name="username" value="{{ author.username }}" required>
+    <br>
+    <label for="display_name">Display Name:</label>
+    <div name="errorresponse-author__display_name"></div>
+    <input type="text" id="display_name" name="display_name" value="{{ author.display_name }}" required>
+    <br>
+    <label for="profile_image">Profile Image:</label>
+    <div name="errorresponse-author__profile_image"></div>
+    <input type="url" id="profile_image" name="profile_image" value="{{ author.profile_image }}">
+    <br>
+    <label for="bio">Bio:</label>
+    <div name="errorresponse-author__bio"></div>
+    <textarea id="bio" name="bio">{{ author.bio }}</textarea>
+    <input type="submit" value="Submit">
+    <a href="{% url 'socialnetwork:author_profile' author.uuid %}">Cancel</a>
+</form>
+{% endblock %}

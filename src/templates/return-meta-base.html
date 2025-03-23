@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{% load static %}
+{% block navbar %}
+{% if request.GET.next %}
+<a id="navbar-return" class="navbar-category" href="{{request.GET.next}}"><img class="navbar-icon" src="{% static 'svg/return.svg' %}"/> <span class="navbar-title">{% block return_title %}{% endblock %}</span></a>
+{% endif %}
+{% include "navbar.html" %}
+{% endblock %}

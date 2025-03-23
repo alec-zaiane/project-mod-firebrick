@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Follow Requests{% endblock %}
+{% block content %}
+<main class="follow-requests">
+    <h2>Your Follow Requests</h2>
+    {% if follow_requests %}
+        <ul>
+            {% for request in follow_requests %}
+                <li>
+                    <strong>{{ request.actor.user.username|default:"[No Username]" }}</strong> has requested to follow you.
+
+                    <form  name="generic-form" action="{% url 'api:approve_follow_request' request.uuid %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="_method" value="POST">
+                        <input type="hidden" name="_after_action" value="reload">
+                        <button type="submit">Approve</button>
+                    </form>
+
+                    <form  name="generic-form" action="{% url 'api:deny_follow_request' request.uuid %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="_method" value="POST">
+                        <input type="hidden" name="_after_action" value="reload">
+                        <button type="submit">Deny</button>
+                    </form>
+                </li>
+            {% endfor %}
+        </ul>
+
+
+    {% else %}
+        <p>You have no follow requests.</p>
+    {% endif %}
+</main>
+{% endblock %}

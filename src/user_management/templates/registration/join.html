@@ -1,0 +1,14 @@
+{% extends "registration/registration.html" %}
+
+{% load static %}
+
+{% block title %}Join Request{% endblock %}
+
+{% block id %}join{% endblock %}
+{% block registration_title %}Request to Join{% endblock %}
+{% block registration_contents%}
+    {% with submit_button='Create Join Request' %}
+    {% include "registration/registration_form.html" %}
+    {% endwith %}
+    {% include "registration/or_sign_in.html" %}
+{% endblock%}

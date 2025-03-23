@@ -1,7 +1,0 @@
-from django.contrib import admin
-from . import models
-
-admin.site.register(models.LocalAuthor)
-admin.site.register(models.PostTextBased)
-
-admin.site.register(models.HostedImage)
