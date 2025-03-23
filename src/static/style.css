@@ -392,7 +392,7 @@ a:link:active, a:visited:active  {
     flex-grow: 1;
 }
 
-.navbar-contents .navbar-title #follow-info-count {
+.navbar-contents .navbar-title #follow-request-count {
     flex-grow: 1;
     text-align: center;
     color: firebrick;

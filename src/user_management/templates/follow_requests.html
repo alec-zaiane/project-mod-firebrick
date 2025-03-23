@@ -17,7 +17,7 @@
             <h5 class="username">{{ follow_request.follower.username }}</h5>
         </a>
         <div class="selector">
-            <form class="follow-request-form" name="generic-form" action="{% url 'user_management:follow-requests-approve' follow_request.uuid %}">
+            <form class="follow-request-form" name="generic-form" action="{% url 'user_management:node2node_follow_requests-approve' follow_request.get_encoded_fqid %}">
                 {% csrf_token %}
                 <input type="hidden" name="_method" value="POST">
                 <input type="hidden" name="_after_action" value="reload">
@@ -25,7 +25,7 @@
                     <div class="follow-request-button accept"><img class="accept-decline-icon" src="{% static 'svg/yes.svg' %}"></div>
                 </button>
             </form>
-            <form class="follow-request-form" name="generic-form" action="{% url 'user_management:follow-requests-deny' follow_request.uuid %}">
+            <form class="follow-request-form" name="generic-form" action="{% url 'user_management:node2node_follow_requests-deny' follow_request.get_encoded_fqid %}">
                 {% csrf_token %}
                 <input type="hidden" name="_method" value="POST">
                 <input type="hidden" name="_after_action" value="reload">

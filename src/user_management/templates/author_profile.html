@@ -19,7 +19,7 @@
             {% if viewer %}
                 {% if author != viewer %}
                     {% if is_following %}
-                        <form id="unfollow-form" name="generic-form" action="{% url 'user_management:author-unfollow' author.uuid %}">
+                        <form id="unfollow-form" name="generic-form" action="{% url 'user_management:node2node_authors-unfollow' author.get_encoded_fqid %}">
                             {% csrf_token %}
                             <input type="hidden" name="_method" value="POST">
                             <input type="hidden" name="_after_action" value="reload">
@@ -28,7 +28,7 @@
                         </form>
                     {% else %}
                         {% if is_follow_requested %}
-                        <form id="follow-form" name="generic-form" action="{% url 'user_management:follow-request' author.fqid|urlencode:"" %}">
+                        <form id="follow-form" name="generic-form" action="{% url 'user_management:follow_request' author.fqid|urlencode:"" %}">
                                 {% csrf_token %}
                                 <input type="hidden" name="_method" value="DELETE">
                                 <input type="hidden" name="_after_action" value="reload">
@@ -36,7 +36,7 @@
                                 <div name="errorresponse-error"></div>
                             </form>
                         {% else %}
-                            <form id="follow-form" name="generic-form" action="{% url 'user_management:follow-request' author.fqid|urlencode:"" %}">
+                            <form id="follow-form" name="generic-form" action="{% url 'user_management:follow_request' author.fqid|urlencode:"" %}">
                                 {% csrf_token %}
                                 <input type="hidden" name="_method" value="POST">
                                 <input type="hidden" name="_after_action" value="reload">
