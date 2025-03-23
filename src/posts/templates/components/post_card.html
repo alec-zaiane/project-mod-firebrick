@@ -33,7 +33,7 @@
                         Edit Post
                     </div>
                 </a>
-                <form class="setting-container" name="generic-form" action="{% url 'posts:api_posts-detail' post.uuid %}" method="post">
+                <form class="setting-container" name="generic-form" action="{% url 'posts:api_posts-detail' post.get_encoded_fqid %}" method="post">
                     {% csrf_token %}
                     <input type="hidden" name="_method" value="DELETE">
                     <input type="hidden" name="_after_action" value="url:{{request.get_host}} url:{{request.GET.next}} reload confirm">

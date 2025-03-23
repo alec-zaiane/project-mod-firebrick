@@ -2,15 +2,11 @@ from django.test import tag
 from django.urls import reverse
 
 
-
-
 from core.utils.testing_utils import UITestCase
 
 from selenium.webdriver.common.alert import Alert
 
 from posts.models import Post
-
-
 
 
 @tag("check-slow", "US-posting")
