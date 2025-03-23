@@ -8,6 +8,8 @@ from rest_framework.response import Response
 from comments.serializers import CommentSerializer
 from comments.models import Comment
 
+from urllib.parse import unquote
+
 
 class CommentViewSet(viewsets.ModelViewSet[Comment]):
     # suggested by copilot: lookup_field/lookup_url_kwarg/lookup_value_regex to change the lookup field to an encoded fqid
@@ -16,6 +18,15 @@ class CommentViewSet(viewsets.ModelViewSet[Comment]):
     lookup_value_regex = ".+"
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
+
+    def get_object(self) -> Comment:
+        """Allow for encoded fqid based lookup"""
+        fqid = self.kwargs.get("fqid", None)
+        if fqid is not None:
+            lookup_field = "fqid"
+            lookup_value = unquote(fqid)
+            return self.get_queryset().get(**{lookup_field: lookup_value})
+        return super().get_object()
 
     def list(self, request: Request) -> Response:
         super_data = super().list(request).data

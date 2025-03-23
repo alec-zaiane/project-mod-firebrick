@@ -16,6 +16,8 @@ from user_management.serializers import AuthorSerializer, FollowRequestSerialize
 from user_management.permissions import AuthorPermission
 from core.utils.request_viewer import get_request_viewer
 
+from urllib.parse import unquote
+
 
 class AuthorViewSet(viewsets.ModelViewSet[Author]):
     # suggested by copilot: lookup_field/lookup_url_kwarg/lookup_value_regex to change the lookup field to an encoded fqid
@@ -25,6 +27,15 @@ class AuthorViewSet(viewsets.ModelViewSet[Author]):
     queryset = Author.objects.all()
     serializer_class = AuthorSerializer
     permission_classes = [IsAuthenticated, AuthorPermission]
+
+    def get_object(self) -> Author:
+        """Allow for encoded fqid based lookup"""
+        fqid = self.kwargs.get("fqid", None)
+        if fqid is not None:
+            lookup_field = "fqid"
+            lookup_value = unquote(fqid)
+            return self.get_queryset().get(**{lookup_field: lookup_value})
+        return super().get_object()
 
     def list(self, request: Request) -> Response:
         super_data = super().list(request).data
@@ -64,6 +75,15 @@ class FollowRequestViewSet(viewsets.ModelViewSet[FollowRequest]):
     serializer_class = FollowRequestSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_object(self) -> FollowRequest:
+        """Allow for encoded fqid based lookup"""
+        fqid = self.kwargs.get("fqid", None)
+        if fqid is not None:
+            lookup_field = "fqid"
+            lookup_value = unquote(fqid)
+            return self.get_queryset().get(**{lookup_field: lookup_value})
+        return super().get_object()
+
     def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         viewer = get_request_viewer(request)
         if request.user.is_anonymous or viewer is None:
@@ -81,7 +101,7 @@ class FollowRequestViewSet(viewsets.ModelViewSet[FollowRequest]):
         return Response(self.get_serializer(follow_request).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["post"], url_path="approve", url_name="approve")
-    def approve_follow_request(self, request: Request, *args:Any, **kwargs: Any) -> Response:
+    def approve_follow_request(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         # ensure user is authenticated and has an associated author
         if request.user.is_anonymous or not hasattr(request.user, "author"):
             return Response({"error": "User must be authenticated and linked to an author."},

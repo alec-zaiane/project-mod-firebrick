@@ -16,7 +16,7 @@ class TestNode2NodeAuthors(GeneralUserStoryApiTest):
         """Test listing a single author fits the expected format"""
         self.initialize_sample_authors(1)
         result = self.client.get(reverse("user_management:node2node_authors-detail",
-                                         args=[str(self.sample_authors[0].uuid)]))
+                                         kwargs={"fqid": self.sample_authors[0].get_encoded_fqid()}))
         self.assertEqual(result.status_code, 200)
         expected = {
             "type": "author",
@@ -58,7 +58,8 @@ class TestNode2NodeAuthors(GeneralUserStoryApiTest):
         self.initialize_sample_authors(3)
         response = self.client.get(reverse("user_management:node2node_authors-list") + "?page=2")
         self.assertEqual(response.status_code, 404)
-        response2 = self.client.get(reverse("user_management:node2node_authors-list") + "?page=1&size=2")
+        response2 = self.client.get(
+            reverse("user_management:node2node_authors-list") + "?page=1&size=2")
         self.assertEqual(response2.status_code, 200)
         expected2 = {
             "type": "authors",
@@ -75,7 +76,8 @@ class TestNode2NodeAuthors(GeneralUserStoryApiTest):
             ]
         }
         self.assertEqual(response2.json(), expected2)
-        response3 = self.client.get(reverse("user_management:node2node_authors-list") + "?page=2&size=2")
+        response3 = self.client.get(
+            reverse("user_management:node2node_authors-list") + "?page=2&size=2")
         self.assertEqual(response3.status_code, 200)
         expected3 = {
             "type": "authors",
