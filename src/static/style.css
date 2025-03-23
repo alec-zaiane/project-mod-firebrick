@@ -392,7 +392,7 @@ a:link:active, a:visited:active  {
     flex-grow: 1;
 }
 
-.navbar-contents .navbar-title #follow-request-count {
+.navbar-contents .navbar-title #follow-info-count {
     flex-grow: 1;
     text-align: center;
     color: firebrick;
@@ -1112,6 +1112,26 @@ a:link:active, a:visited:active  {
 
 .follow-requests .follow-request button:active  {
     filter: grayscale(1) !important;
+}
+
+/*
+ ===========
+  FOLLOW INFO
+ ===========
+*/
+.follow-infos {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+}
+
+.follow-infos .follow-info {
+    display: flex;
+    height: fit-content;
+    width: 100%;
+    justify-content: space-evenly;
+    align-items: center;
 }
 
 /*

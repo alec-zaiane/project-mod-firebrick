@@ -9,7 +9,8 @@
         <a id="post-select" class="post-view" href="{% url 'posts:view_post' post.uuid %}?next={{ request.path|urlencode }}"></a>
     {% endif %}
     <header>
-        <a id="post-profile-select" href="{% url 'user_management:author_profile' post.author.uuid %}" class="names">
+        {% url 'user_management:author_profile' post.author.uuid as author_url %}
+        <a id="post-profile-select" href="{% if request.path == author_url %}{{ request.get_full_path }}{% else %}{{ author_url }}?next={{ request.get_full_path }}{% endif %}" class="names">
             {% if post.author.profile_image %}
             <img class="profile-image" src="{{ post.author.profile_image }}"/>
             {% endif %}

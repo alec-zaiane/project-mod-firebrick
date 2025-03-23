@@ -5,7 +5,7 @@ from django.urls import path
 from user_management.forms import LoginForm
 
 
-from user_management.views import AuthorFollowRequests, AuthorModifyView, AuthorView, FollowRequestByViewer, JoinView, AuthorSearchAPIView
+from user_management.views import AuthorFollowInfoView, AuthorFollowRequests, AuthorModifyView, AuthorView, FollowRequestByViewer, JoinView, AuthorSearchAPIView
 from user_management.viewsets import AuthorViewSet, FollowRequestViewSet
 from user_management.views_api import InboxView
 
@@ -26,6 +26,16 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path("authors/<uuid:target_author_uuid>/modify/",
          AuthorModifyView.as_view(),
          name="author_modify"),
+    path("authors/<uuid:target_author_uuid>/following",
+         AuthorFollowInfoView.as_view(follow_type="following"),
+         name="author_following"),
+    path("authors/<uuid:target_author_uuid>/followers",
+         AuthorFollowInfoView.as_view(follow_type="followers"),
+         name="author_followers"),
+    path("authors/<uuid:target_author_uuid>/friends",
+         AuthorFollowInfoView.as_view(follow_type="friends"),
+         name="author_friends"),
+
 
     path("follow-requests",
          AuthorFollowRequests.as_view(),

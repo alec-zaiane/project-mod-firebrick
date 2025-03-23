@@ -1,4 +1,4 @@
-{% extends 'navbar-base.html' %}
+{% extends 'return-meta-base.html' %}
 
 {% load static %}
 
@@ -46,7 +46,7 @@
                         {% endif %}
                     {% endif %}
                 {% else %}
-                    <a class="profile-button" href="{% url 'user_management:author_modify' author.uuid %}">Modify Profile</a>
+                    <a class="profile-button" href="{% url 'user_management:author_modify' author.uuid %}?next={{ request.get_full_path }}">Modify Profile</a>
                 {% endif %}
             {% endif %}
         </div>
@@ -55,24 +55,24 @@
 
         <div class="followers-list">
             <h3>
-                <a id="profile-followers" class="follower-clickable" href="">
+                <a id="profile-followers" class="follower-clickable" href="{% url 'user_management:author_followers' author.uuid %}?next={{ request.get_full_path }}">
                     <span class="follower-number">{{ followers|length }}</span> <span class="follower-type">Followers</span>
                 </a>
             </h3>
             <h3>
-                <a id="profile-following" class="follower-clickable" href="">
+                <a id="profile-following" class="follower-clickable" href="{% url 'user_management:author_following' author.uuid %}?next={{ request.get_full_path }}">
                     <span class="follower-number">{{ following|length }}</span> <span class="follower-type">Following</span>
                 </a>
             </h3>
             <h3>
-                <a id="profile-friends" class="follower-clickable" href="">
+                <a id="profile-friends" class="follower-clickable" href="{% url 'user_management:author_friends' author.uuid %}?next={{ request.get_full_path }}">
                     <span class="follower-number">{{ friends|length }}</span> <span class="follower-type">Friends</span>
                 </a>
             </h3>
         </div>
         {% if author == viewer %}
         <div id="profile-create-post" class="create-post">
-            <a class="profile-button" href="{% url 'posts:create_post' %}?next={{ request.path|urlencode }}" class="create-post">Create Post</a>
+            <a class="profile-button" href="{% url 'posts:create_post' %}?next={{ request.get_full_path }}" class="create-post">Create Post</a>
         </div>
         {% endif %}
     </section>

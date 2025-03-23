@@ -69,6 +69,10 @@ class AuthorView(View):
         is_follow_requested = viewer.follow_requests_sent.filter(
             followee=target_author).exists() if viewer is not None else False
 
+        following = target_author.following.all()
+        followers = target_author.followers.all()
+        friends = target_author.friends.all()
+
         return render(
             request,
             "author_profile.html",
@@ -77,7 +81,10 @@ class AuthorView(View):
                 "viewer": viewer,
                 "posts": public_posts,
                 "is_following": is_following,
-                "is_follow_requested": is_follow_requested
+                "is_follow_requested": is_follow_requested,
+                "following": following,
+                "followers": followers,
+                "friends": friends
             },
         )
 
@@ -154,6 +161,47 @@ class AuthorFollowRequests(View):
                 "author": viewer,
                 "viewer": viewer,
                 "follow_requests": follow_requests
+            },
+        )
+
+
+class AuthorFollowInfoView(View):
+    follow_type: str = ""
+
+    def get(self, request: HttpRequest, target_author_uuid: str) -> HttpResponse:
+        """
+        The view for viewing all of the follow info that belongs to an author.
+        Represents all three main types, since they all use the same template and are otherwise extremely similar.
+        That is: following, followers, and friends.
+        """
+
+        target_author = get_object_or_404(
+            LocalAuthor, uuid=target_author_uuid)
+
+        viewer = get_request_viewer(request)
+
+        if viewer == None:
+            if request.GET.get('next') == None:
+                return HttpResponseRedirect(reverse("user_management:login") + "?next=" + reverse("user_management:author_following", args=[target_author.uuid]))
+            return HttpResponseRedirect(reverse("user_management:login") + "?next=" + reverse("user_management:author_following", args=[target_author.uuid]) + "?next=" + request.GET.get('next', ''))
+
+        if self.follow_type == "following":
+            follow_info = target_author.following.all()
+        elif self.follow_type == "followers":
+            follow_info = target_author.followers.all()
+        elif self.follow_type == "friends":
+            follow_info = target_author.friends.all()
+        else:
+            return HttpResponse(status=404)
+
+        return render(
+            request,
+            "follow_info.html",
+            {
+                "author": target_author,
+                "viewer": viewer,
+                "follow_info": follow_info,
+                "follow_type": self.follow_type.capitalize()
             },
         )
 
