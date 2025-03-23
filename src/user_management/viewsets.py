@@ -65,6 +65,22 @@ class AuthorViewSet(viewsets.ModelViewSet[Author]):
         author = serializer.create(validated_data)
         return Response(serializer.to_representation(author), status=201)
 
+    @action(detail=True, methods=["post"], url_path="unfollow", url_name="unfollow", permission_classes=[IsAuthenticated])
+    def unfollow(self, request: Request, pk: Optional[str] = None) -> Response:
+        viewer = get_request_viewer(request)
+        if request.user.is_anonymous or viewer is None:
+            return Response(
+                {"error": "User must be authenticated and linked to an author."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        target_author = self.get_object()
+        if target_author not in viewer.following.all():
+            return Response(
+                {"error": "You are not following this author."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        viewer.following.remove(target_author)
+        return Response({"detail": "Unfollowed successfully."}, status=status.HTTP_200_OK)
 
 class FollowRequestViewSet(viewsets.ModelViewSet[FollowRequest]):
     # suggested by copilot: lookup_field/lookup_url_kwarg/lookup_value_regex to change the lookup field to an encoded fqid
