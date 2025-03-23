@@ -187,7 +187,7 @@ class Post(AuthoredApiObject):
     """
     title = models.CharField(max_length=255)
     description = models.CharField(max_length=255, blank=True)
-    content = models.TextField()
+    content = models.TextField(null=True, blank=True)
 
     post_type: models.CharField[str, str] = models.CharField(
         max_length=4, choices=PostTypes.choices, default=PostTypes.PLAINTEXT
@@ -201,6 +201,8 @@ class Post(AuthoredApiObject):
 
     author: models.ForeignKey[Author, Author] = models.ForeignKey(
         Author, on_delete=models.CASCADE, related_name='all_posts')
+
+    image: models.ImageField = models.ImageField(upload_to="post_images/", null=True, blank=True)
 
     if TYPE_CHECKING:
         comments: models.QuerySet[Comment]
@@ -252,12 +254,21 @@ class Post(AuthoredApiObject):
         return Post.visible_posts.get_posts_visible_to_author(viewer).filter(uuid=self.uuid).exists()
 
     def clean(self) -> None:
-        if self.post_type in [PostTypes.IMAGE, PostTypes.VIDEO]:
-            # if the post type is an image or video, the content must be a URL
-            URLValidator()(self.content)
-            if self.post_type == PostTypes.IMAGE:
-                validate_url_returns_image(self.content)
-
+        if self.post_type in [PostTypes.PLAINTEXT, PostTypes.MARKDOWN]:
+            # make sure the content is the only non-null field
+            if not self.content:
+                raise ValidationError("Content must be specified")
+            if self.image:
+                raise ValidationError("Image field must be empty for plaintext and markdown posts")
+        elif self.post_type == PostTypes.IMAGE:
+            # make sure the image field is the only non-null field
+            if not self.image:
+                raise ValidationError("Image must be specified")
+            if self.content:
+                raise ValidationError("Content field must be empty for image posts")
+        elif self.post_type == PostTypes.VIDEO:
+            # TODO fill this in and add to the if statements above
+            ...
         super().clean()
 
     def get_template_name(self) -> str:
@@ -278,3 +289,14 @@ class Post(AuthoredApiObject):
 
     def node2node_get_deletion_url(self) -> str:
         return self.node2node_get_update_url()
+
+    @property
+    def markdown_image_link(self) -> str | None:
+        """
+        Returns a MD img link for the uploaded image, if present.
+        expl of this: ![title](http://127.0.0.1:8000/media/post_images/abc.png)
+        """
+        if self.post_type != PostTypes.IMAGE:
+            raise ValidationError("This post is not an image post")
+        assert self.image is not None
+        return f"![{self.title}]({self.image.url})"

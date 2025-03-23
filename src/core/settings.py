@@ -155,3 +155,6 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "core.utils.pagination.CustomPageNumberPagination",
     "PAGE_SIZE": 10,
 }
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"

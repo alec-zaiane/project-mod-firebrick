@@ -46,10 +46,19 @@ urlpatterns += router.urls
 # suggested by copilot: register explicit approve/deny endpoints because the regex is matching the / as part of the FQID
 # for some reason, percent decoding is done before the regex is matched, making all FQIDs either break themselves, or break any trailing URL
 urlpatterns += [
+    # For Authors:
+    path("api/authors/<str:fqid>/unfollow",
+         AuthorViewSet.as_view({"post": "unfollow"}),
+         name="node2node_authors-unfollow"),
+
+    # For Follow requests:
     path("api/follow-requests/<str:fqid>/approve",
          FollowRequestViewSet.as_view({"post": "approve_follow_request"}),
          name="node2node_follow_requests-approve"),
     path("api/follow-requests/<str:fqid>/deny",
          FollowRequestViewSet.as_view({"post": "deny_follow_request"}),
-         name="node2node_follow_requests-deny")
+         name="node2node_follow_requests-deny"),
+    path("api/follow-requests/pending-count",
+         FollowRequestViewSet.as_view({"get": "pending_count"}),
+         name="node2node_follow_requests-pending-count"),
 ]

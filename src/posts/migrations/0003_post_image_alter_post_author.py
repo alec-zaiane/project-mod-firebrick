@@ -5,16 +5,21 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('posts', '0002_initial'),
         ('user_management', '0008_node_host_site_url'),
     ]
 
     operations = [
+        migrations.AddField(
+            model_name='post',
+            name='image',
+            field=models.ImageField(blank=True, null=True, upload_to='post_images/'),
+        ),
         migrations.AlterField(
             model_name='post',
             name='author',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='all_posts', to='user_management.author'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE,
+                                    related_name='all_posts', to='user_management.author'),
         ),
     ]
