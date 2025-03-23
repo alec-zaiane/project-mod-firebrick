@@ -737,6 +737,7 @@ a:link:active, a:visited:active  {
 
 .post-card .share-icon {
     width: 20px;
+    margin: -4px;
 }
 
 .post-card .copy-icon {
@@ -767,7 +768,7 @@ a:link:active, a:visited:active  {
     text-align: center;
 }
 
-.post-full .likes-comments {
+.post-full .likes-comments-share {
     margin: 20px 0 10px 0;
     padding: 12px;
     border-top: 1px solid #242729;
