@@ -123,7 +123,7 @@
         </div>
         {% if full %}
             <section class="comments-section">
-                <form id="comment-form" class="add-comment" name="generic-form" action="">
+                <form id="comment-form" class="add-comment" name="generic-form" action="{% url 'comments:internal_comment' post.fqid|urlencode:"" %}">
                     {% csrf_token %}
                     <input type="hidden" name="_method" value="POST">
                     <input type="hidden" name="_after_action" value="reload">
@@ -133,17 +133,9 @@
                     <textarea class="add-comment-text" name="comment" placeholder="Add a comment..."></textarea>
                     <button class="submit-comment" type="submit">Comment</button>
                 </form>
-                <!-- {#% for comment in post.comments %#}
-                    <div class="post-comment">
-                        <a href="" class="names">
-                            {% if comment.author.profile_image %}
-                            <img class="profile-image" src="{{ comment.author.profile_image }}"/>
-                            {% endif %}
-                            <h3 class="display-name">{{ comment.author.display_name }}</h3>
-                        </a>
-                        <span class="comment-content">{{ comment.comment }}</span>
-                    </div>
-                {#% endfor %#} -->
+                {% for comment in post.comments.all %}
+                    {% include 'components/comment-card.html' %}
+                {% endfor %}
             </section>
         {% endif %}
     </footer>

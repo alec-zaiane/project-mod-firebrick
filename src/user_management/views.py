@@ -1,6 +1,7 @@
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.views.generic import View
+from django.urls import reverse
 
 from user_management.forms import AuthorModifyForm, JoinRequestForm
 from user_management.models import LocalAuthor
@@ -8,6 +9,7 @@ from core.utils.request_viewer import get_request_viewer
 from posts.models import Post, VisibilityTypes
 
 # ========= Frontend Views only! =========
+
 
 class JoinView(View):
     def get(self, request: HttpRequest) -> HttpResponse:
@@ -24,6 +26,10 @@ class JoinView(View):
         On success, it will render the join_success.html template, but not change the url.
         """
         form = JoinRequestForm(request.POST)
+        viewer = get_request_viewer(request)
+        if viewer is not None and not viewer.user.is_superuser:
+            # If the user is already logged in, they should not be able to make a join request (unless they are an admin)
+            return HttpResponseRedirect(reverse("posts:stream"))
         if form.is_valid():
             form.save()
             return render(request, "registration/join_success.html")

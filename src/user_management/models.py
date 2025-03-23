@@ -208,6 +208,10 @@ class Author(ApiObject):
     def user(self) -> Optional[User]:
         return self._user
 
+    @property
+    def friends(self) -> "QuerySet[Author]":
+        return self.following.filter(pk__in=self.followers.all())
+
     def clean(self) -> None:
         super().clean()
         # make sure that the fqid starts with the host
@@ -355,7 +359,7 @@ class NodeManager(models.Manager["Node"]):
 
 class ExternalNodeManager(NodeManager):
     def get_queryset(self) -> models.QuerySet[Node]:
-        return super().get_queryset().filter(is_local_node=False)
+        return super().get_queryset().filter(is_local_node=False, is_disabled=False)
 
     def create(self, *args: Any, **kwargs: Any) -> Node:
         return super().create(*args, is_local_node=False, **kwargs)
