@@ -1,4 +1,4 @@
 <fieldset class="or-segment">
     <legend class="or-text">OR</legend>
-    <a class="login" href="{% url 'user_management:join' %}">Request to Join</a>
+    <a class="login" href="{% url 'user_management:join' %}?next={{request.GET.next}}">Request to Join</a>
 </fieldset>
