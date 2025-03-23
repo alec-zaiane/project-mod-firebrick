@@ -1,3 +1,4 @@
+from typing import Any
 from django import forms
 from django.forms.widgets import TextInput
 from django.utils.translation import gettext_lazy as _
@@ -13,7 +14,7 @@ class CreatePostForm(forms.ModelForm[Post]):
     image = forms.ImageField(
         required=False,
         label="Upload Image",
-        help_text="Optional: Upload an image file"
+        help_text="Upload an image file"
     )
 
     title = forms.CharField(error_messages={
@@ -34,3 +35,19 @@ class CreatePostForm(forms.ModelForm[Post]):
     visibility_type = forms.ChoiceField(error_messages={
         "required": "Please choose a visibility type.",
     }, choices=VisibilityTypes.choices)
+
+    def clean(self) -> (dict[str, Any] | None):
+        cleaned_data = super().clean()
+        if cleaned_data is not None:
+            post_type = cleaned_data.get("post_type")
+            if post_type == PostTypes.IMAGE or post_type == PostTypes.VIDEO:
+                cleaned_data["content"] = ""
+                if post_type == PostTypes.IMAGE:
+                    self.fields["content"].required = False
+                    self.fields["image"].required = True
+            else:
+                cleaned_data["image"] = None
+                self.fields["content"].required = True
+                self.fields["image"].required = False
+
+        return cleaned_data

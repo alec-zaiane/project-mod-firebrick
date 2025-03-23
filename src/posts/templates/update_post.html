@@ -19,10 +19,15 @@
                 {{ form.description.errors }}
                 {{ form.description }}
             </div>
-            <div class="field-wrapper">
+            <div class="field-wrapper" id="content-field">
                 <label for="id_content">Content <span class="required">∗</span></label>
                 {{ form.content.errors }}
                 {{ form.content }}
+            </div>
+            <div class="field-wrapper" id="image-field">
+                <label for="id_image">Image <span class="required">∗</span></label>
+                {{ form.image.errors }}
+                {{ form.image }}
             </div>
         </section>
         <section class="create-post-tags">

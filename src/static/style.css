@@ -1178,6 +1178,10 @@ a:link:active, a:visited:active  {
     cursor: pointer;
 }
 
+.update-post #image-field {
+    display: none;
+}
+
 #author-modification-form label {
     color: var(--color-sub);
 }

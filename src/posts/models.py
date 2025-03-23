@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from comments.models import Comment
@@ -57,11 +57,13 @@ class VisibilityTypes(models.TextChoices):
 class VisibilityTypeResolver:
     """Modified an existing Q object with a visibility type"""
     @staticmethod
-    def modify_q(existing_q: Q, visibility_type: VisibilityTypes, author: Author) -> Q:
+    def modify_q(existing_q: Q, visibility_type: VisibilityTypes, author: Optional[Author]) -> Q:
         match visibility_type:
             case VisibilityTypes.PUBLIC:
                 return existing_q | Q(visibility_type=VisibilityTypes.PUBLIC)
             case VisibilityTypes.FRIENDS_ONLY:
+                if author == None:
+                    return existing_q
                 return existing_q | (Q(visibility_type=VisibilityTypes.FRIENDS_ONLY) & Q(
                     author__followers__in=[author]) & Q(author__following__in=[author]))
             case VisibilityTypes.UNLISTED:
@@ -148,7 +150,7 @@ class VisiblePostManager(PostManager):
     def get_queryset(self) -> models.QuerySet[Post]:
         return super().get_queryset().filter(is_soft_deleted=False)
 
-    def get_posts_visible_to_author(self, author: Author) -> models.QuerySet[Post]:
+    def get_posts_visible_to_author(self, author: Optional[Author]) -> models.QuerySet[Post]:
         """Get all the posts that an author is allowed to see (either in stream or by a direct link)"""
         # we don't have to worry about deleted posts because of self.get_queryset()
         # see the visibility User stories: https://uofa-cmput404.github.io/general/project.html#user-stories
