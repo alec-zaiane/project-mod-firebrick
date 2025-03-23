@@ -658,7 +658,9 @@ a:link:active, a:visited:active  {
     max-width: 100%;
     border-radius: 20px;
     border: 0.1px solid #242729;
-    margin: 15px 0;
+    margin: 15px auto;
+    pointer-events: all;
+    display: flex;
 }
 
 .post-card .post-title {
@@ -686,7 +688,7 @@ a:link:active, a:visited:active  {
     z-index: 1;
 }
 
-.post-card .post-content:not(.post-full .post-content) {
+.post-card .post-content:not(.post-full .post-content):not(.post-preview) {
     pointer-events: none;
 }
 
@@ -784,6 +786,7 @@ a:link:active, a:visited:active  {
     display: flex;
     flex-direction: column;
     align-items: center;
+    max-height: calc(600px - 31px);
 }
 
 .post-card .markdown-box {
@@ -1178,8 +1181,12 @@ a:link:active, a:visited:active  {
     cursor: pointer;
 }
 
-.update-post #image-field {
-    display: none;
+.update-post .invisible {
+    height: 0;
+    overflow: hidden;
+    padding: 0 !important;
+    border: 0 !important;
+    margin-top: -40px !important;
 }
 
 #author-modification-form label {

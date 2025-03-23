@@ -4,11 +4,15 @@ import DOMPurify from "dompurify";
 window.addEventListener('load', () => {
     let content = document.querySelector("[name='content']");
     let type_selector = document.querySelector("[name='post_type']");
+    let image_selector = document.getElementById("id_image");
     view_or_hide_content();
     view_or_hide_visibility();
     // Eventually, video_field
     // Initialization for edit posts
     apply_preview();
+    apply_image_preview();
+    apply_title_preview();
+    apply_description_preview();
     // On change of text
     content.addEventListener("input", () => {
         apply_preview();
@@ -17,18 +21,21 @@ window.addEventListener('load', () => {
     type_selector.addEventListener("change", () => {
         view_or_hide_content();
         apply_preview();
+        apply_image_preview();
+    });
+
+    image_selector.addEventListener("change", () => {
+        apply_image_preview();
     });
 
     let title = document.querySelector("[name='title']");
     title.addEventListener("input", () => {
-        let title_preview = document.getElementById("preview-title");
-        title_preview.innerText = title.value;
+        apply_title_preview();
     });
 
     let description = document.querySelector("[name='description']");
     description.addEventListener("input", () => {
-        let description_preview = document.getElementById("preview-description");
-        description_preview.innerText = description.value;
+        apply_description_preview();
     });
 
     let visibility_selector = document.querySelector("[name='visibility_type']");
@@ -51,31 +58,49 @@ function apply_preview() {
         preview.innerHTML = "";
         if (type_selector.value == "IMG") {
             let img = document.createElement("img");
-            img.classList.add("preview-image")
+            img.classList.add("post-image")
             img.id = "preview-image";
             preview.appendChild(img);
             if (image.files[0]) {
                 img.src = URL.createObjectURL(image.files[0]);
             }
-
         }
 
     }
+}
 
+function apply_title_preview() {
+    let title = document.querySelector("[name='title']");
+    let title_preview = document.getElementById("preview-title");
+    title_preview.innerText = title.value;
+}
+
+function apply_description_preview() {
+    let description = document.querySelector("[name='description']");
+    let description_preview = document.getElementById("preview-description");
+    description_preview.innerText = description.value;
+}
+
+function apply_image_preview() {
+    let img_preview = document.getElementById("preview-image");
+    let image_selector = document.getElementById("id_image");
+    if (img_preview && image_selector.files[0]) {
+        img_preview.src = URL.createObjectURL(image_selector.files[0]);
+    }
 }
 
 function view_or_hide_content() {
-    let content_field = document.querySelector("#content-field");
-    let image_field = document.querySelector("#image-field");
+    let content_field = document.getElementById("content-field");
+    let image_field = document.getElementById("image-field");
     let type_selector = document.querySelector("[name='post_type']");
     if (type_selector.value == "PT" || type_selector.value == "MD") {
-        content_field.style.display = "flex";
-        image_field.style.display = "none";
+        content_field.classList.toggle("invisible", false);
+        image_field.classList.toggle("invisible", true);
         // video
     } else {
-        content_field.style.display = "none";
+        content_field.classList.toggle("invisible", true);
         if (type_selector.value == "IMG") {
-            image_field.style.display = "flex";
+            image_field.classList.toggle("invisible", false);
         }
         // video
     }

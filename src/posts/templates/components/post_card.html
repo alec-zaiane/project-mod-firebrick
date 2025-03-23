@@ -98,16 +98,20 @@
                 <div class="settings-dropdown-content share-dropdown-content">
                     {% url 'posts:view_post' post.uuid as view_post_url %}
                     <a id="copy-button" class="copy-button setting-container">
-                        <input type="hidden" id="copy-contents" value="{{ post.content }}" />
+                        {% if post.post_type == "PT" or post.post_type == "MD" %}
+                            <input type="hidden" id="copy-contents" value="{{ post.content }}" />
+                        {% else %}
+                            <input type="hidden" id="copy-contents" value="{{ post.markdown_image_link }}" />
+                        {% endif %}
                         <div class="setting">
                             <img class="copy-icon" title="Copy Contents" src="{% static 'svg/copy.svg' %}" />
                             <span id="copy-contents-field">
                             {% if post.post_type == "PT" or post.post_type == "MD"  %}
                             Copy Contents
                             {% elif post.post_type == "VID" %}
-                            Copy Video Media Link
-                            {% elif post.post_type == "MD" %}
-                            Copy Image Media Link
+                            Copy Video Markdown
+                            {% elif post.post_type == "IMG" %}
+                            Copy Image Markdown
                             {% endif %}
                             </span>
                         </div>
