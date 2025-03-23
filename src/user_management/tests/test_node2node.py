@@ -7,6 +7,8 @@ from core.utils.testing_utils import GeneralUserStoryApiTest
 
 from user_management.models import FollowRequest, Author, Node, User
 
+import base64
+
 
 @tag("node2node")
 class TestNode2NodeAuthors(GeneralUserStoryApiTest):
@@ -109,6 +111,31 @@ class TestNode2NodeAuthors(GeneralUserStoryApiTest):
         external_node_user = User.nodes.create_user("nodeaaaa", password="password")
         Node.external_nodes.create_node("Node a", "http://nodeaaaa.abc/api/", external_node_user)
         response = self.client.post(reverse("user_management:node2node_authors-list"), data)
+        self.assertEqual(response.status_code, 201)
+        author = Author.objects.get_by_fqid(data["id"])
+        self.assertEqual(author.display_name, data["displayName"])
+
+    def test_basic_auth(self) -> None:
+        """Test that you can create an author with Http Basic Auth (so long as AuthorViewset doesn't have any special treatment it should work for all Node2Node views)"""
+        data = {
+            "type": "author",
+            "id": "http://nodeaaaa.abc/api/authors/111",
+            "host": "http://nodeaaaa.abc/api/",
+            "displayName": "Greg Johnson",
+            "github": "http://github.com/gjohnson",
+            "profileImage": "https://i.imgur.com/k7XVwpB.jpeg",
+            "page": "http://nodeaaaa.abc/authors/greg"
+        }
+        external_node_user = User.nodes.create_user("nodeaaaa", password="password")
+        Node.external_nodes.create_node("Node a", "http://nodeaaaa.abc/api/", external_node_user)
+
+        # modified from https://stackoverflow.com/questions/5495452/using-basic-http-access-authentication-in-django-testing-framework
+        self.client.logout()
+        response = self.client.post(
+            reverse("user_management:node2node_authors-list"), data,
+            format="json",
+            HTTP_AUTHORIZATION="Basic " + base64.b64encode(b"nodeaaaa:password").decode("utf-8"))
+
         self.assertEqual(response.status_code, 201)
         author = Author.objects.get_by_fqid(data["id"])
         self.assertEqual(author.display_name, data["displayName"])
