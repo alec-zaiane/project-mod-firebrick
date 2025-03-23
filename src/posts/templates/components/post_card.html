@@ -33,7 +33,7 @@
                         Edit Post
                     </div>
                 </a>
-                <form class="setting-container" name="generic-form" action="{% url 'posts:api_posts-detail' post.uuid %}" method="post">
+                <form class="setting-container" name="generic-form" action="{% url 'posts:api_posts-detail' post.get_encoded_fqid %}" method="post">
                     {% csrf_token %}
                     <input type="hidden" name="_method" value="DELETE">
                     <input type="hidden" name="_after_action" value="url:{{request.get_host}} url:{{request.GET.next}} reload confirm">
@@ -123,27 +123,19 @@
         </div>
         {% if full %}
             <section class="comments-section">
-                <form id="comment-form" class="add-comment" name="generic-form" action="">
+                <form id="comment-form" class="add-comment" name="generic-form" action="{% url 'comments:internal_comment' post.fqid|urlencode:"" %}">
                     {% csrf_token %}
                     <input type="hidden" name="_method" value="POST">
                     <input type="hidden" name="_after_action" value="reload">
                     {% if viewer.profile_image %}
                         <img class="profile-image" src="{{ viewer.profile_image }}"/>
                     {% endif %}
-                    <textarea class="add-comment-text" name="comment" placeholder="Add a comment..."></textarea>
-                    <button class="submit-comment" type="submit">Comment</button>
+                    <textarea class="add-comment-text" name="comment" placeholder="Add a comment..." id="add-comment-area"></textarea>
+                    <button class="submit-comment" type="submit" id="submit-comment">Comment</button>
                 </form>
-                <!-- {#% for comment in post.comments %#}
-                    <div class="post-comment">
-                        <a href="" class="names">
-                            {% if comment.author.profile_image %}
-                            <img class="profile-image" src="{{ comment.author.profile_image }}"/>
-                            {% endif %}
-                            <h3 class="display-name">{{ comment.author.display_name }}</h3>
-                        </a>
-                        <span class="comment-content">{{ comment.comment }}</span>
-                    </div>
-                {#% endfor %#} -->
+                {% for comment in post.comments.all %}
+                    {% include 'components/comment-card.html' %}
+                {% endfor %}
             </section>
         {% endif %}
     </footer>

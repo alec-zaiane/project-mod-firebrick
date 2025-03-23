@@ -5,6 +5,7 @@ from typing import Any, TYPE_CHECKING
 if TYPE_CHECKING:
     from comments.models import Comment
     from likes.models import Like
+    from user_management.models import Node
 
 from django.urls import reverse
 from django.core.exceptions import ValidationError
@@ -267,6 +268,20 @@ class Post(AuthoredApiObject):
         # each inner-content template can be customized based on what kind of content it is
         return f"components/post_inner_content/{self.post_type}.html"
 
+
+    def node2node_encode_as_class_json_dict(self) -> dict[str, Any]:
+        from posts.serializers import PostSerializer
+        return PostSerializer().to_representation(self)
+
+    def node2node_get_creation_url(self) -> str:
+        return reverse("posts:api_posts-list")
+
+    def node2node_get_update_url(self) -> str:
+        return reverse("posts:api_posts-detail", kwargs={"fqid": self.get_encoded_fqid()})
+
+    def node2node_get_deletion_url(self) -> str:
+        return self.node2node_get_update_url()
+    
     @property
     def markdown_image_link(self) -> str | None:
         """
@@ -277,3 +292,5 @@ class Post(AuthoredApiObject):
             return f"![{self.title}]({self.image.url})"
         return None
 
+
+    

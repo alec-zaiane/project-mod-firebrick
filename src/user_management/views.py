@@ -1,6 +1,16 @@
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.views.generic import View
+from django.db.models import Q
+
+from typing import Any
+from rest_framework.views import APIView
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from user_management.models import Author
+from user_management.serializers import AuthorSerializer
+
 from django.urls import reverse
 
 from user_management.forms import AuthorModifyForm, JoinRequestForm
@@ -110,3 +120,14 @@ class AuthorModifyView(View):
             "author": target_author,
             "form": form
         })
+
+class AuthorSearchAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        query = request.query_params.get("q", "")
+        authors = Author.objects.filter(
+            Q(username__icontains=query) | Q(display_name__icontains=query)
+        )
+        serializer = AuthorSerializer(authors, many=True)
+        return Response(serializer.data)

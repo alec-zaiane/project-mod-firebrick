@@ -26,6 +26,7 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path("", include("posts.urls")),
     path("", include("user_management.urls")),
     path("", include("likes.urls")),
+    path("", include("comments.urls")),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

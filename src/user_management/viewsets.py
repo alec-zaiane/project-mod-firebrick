@@ -16,11 +16,26 @@ from user_management.serializers import AuthorSerializer, FollowRequestSerialize
 from user_management.permissions import AuthorPermission
 from core.utils.request_viewer import get_request_viewer
 
+from urllib.parse import unquote
+
 
 class AuthorViewSet(viewsets.ModelViewSet[Author]):
+    # suggested by copilot: lookup_field/lookup_url_kwarg/lookup_value_regex to change the lookup field to an encoded fqid
+    lookup_field = "fqid"
+    lookup_url_kwarg = "fqid"
+    lookup_value_regex = ".+"
     queryset = Author.objects.all()
     serializer_class = AuthorSerializer
     permission_classes = [IsAuthenticated, AuthorPermission]
+
+    def get_object(self) -> Author:
+        """Allow for encoded fqid based lookup"""
+        fqid = self.kwargs.get("fqid", None)
+        if fqid is not None:
+            lookup_field = "fqid"
+            lookup_value = unquote(fqid)
+            return self.get_queryset().get(**{lookup_field: lookup_value})
+        return super().get_object()
 
     def list(self, request: Request) -> Response:
         super_data = super().list(request).data
@@ -50,11 +65,40 @@ class AuthorViewSet(viewsets.ModelViewSet[Author]):
         author = serializer.create(validated_data)
         return Response(serializer.to_representation(author), status=201)
 
+    @action(detail=True, methods=["post"], url_path="unfollow", url_name="unfollow", permission_classes=[IsAuthenticated])
+    def unfollow(self, request: Request, pk: Optional[str] = None) -> Response:
+        viewer = get_request_viewer(request)
+        if request.user.is_anonymous or viewer is None:
+            return Response(
+                {"error": "User must be authenticated and linked to an author."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        target_author = self.get_object()
+        if target_author not in viewer.following.all():
+            return Response(
+                {"error": "You are not following this author."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        viewer.following.remove(target_author)
+        return Response({"detail": "Unfollowed successfully."}, status=status.HTTP_200_OK)
 
 class FollowRequestViewSet(viewsets.ModelViewSet[FollowRequest]):
+    # suggested by copilot: lookup_field/lookup_url_kwarg/lookup_value_regex to change the lookup field to an encoded fqid
+    lookup_field = "fqid"
+    lookup_url_kwarg = "fqid"
+    lookup_value_regex = ".+"
     queryset = FollowRequest.objects.all()
     serializer_class = FollowRequestSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_object(self) -> FollowRequest:
+        """Allow for encoded fqid based lookup"""
+        fqid = self.kwargs.get("fqid", None)
+        if fqid is not None:
+            lookup_field = "fqid"
+            lookup_value = unquote(fqid)
+            return self.get_queryset().get(**{lookup_field: lookup_value})
+        return super().get_object()
 
     def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         viewer = get_request_viewer(request)
@@ -73,7 +117,8 @@ class FollowRequestViewSet(viewsets.ModelViewSet[FollowRequest]):
         return Response(self.get_serializer(follow_request).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["post"], url_path="approve", url_name="approve")
-    def approve_follow_request(self, request: Request, pk: Optional[str] = None) -> Response:
+    def approve_follow_request(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        print("HERE!")
         # ensure user is authenticated and has an associated author
         if request.user.is_anonymous or not hasattr(request.user, "author"):
             return Response({"error": "User must be authenticated and linked to an author."},
@@ -94,7 +139,7 @@ class FollowRequestViewSet(viewsets.ModelViewSet[FollowRequest]):
         return Response({"detail": "Follow request approved."}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["post"], url_path="deny", url_name="deny")
-    def deny_follow_request(self, request: Request, pk: Optional[str] = None) -> Response:
+    def deny_follow_request(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         if request.user.is_anonymous or not hasattr(request.user, "author"):
             return Response({"error": "User must be authenticated and linked to an author."},
                             status=status.HTTP_401_UNAUTHORIZED)
@@ -108,3 +153,14 @@ class FollowRequestViewSet(viewsets.ModelViewSet[FollowRequest]):
             )
         follow_request.delete()
         return Response({"detail": "Follow request denied."}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["get"], url_path="pending-count", url_name="pending-count")
+    def pending_count(self, request: Request) -> Response:
+        viewer = get_request_viewer(request)
+        if not viewer:
+            # not logged in or not linked to an Author will return 0
+            return Response({"count": 0}, status=status.HTTP_200_OK)
+
+        # all FollowRequest rows that have the viewer as the followee are pending
+        count = FollowRequest.objects.filter(followee=viewer).count()
+        return Response({"count": count}, status=status.HTTP_200_OK)

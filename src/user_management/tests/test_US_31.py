@@ -28,7 +28,7 @@ class TestUserStory31(GeneralUserStoryApiTest):
 
         # author0 sends a follow request to author1 via the API endpoint
         self.client.force_authenticate(user=author0.user)
-        url = reverse("user_management:follow-requests-list")
+        url = reverse("user_management:node2node_follow_requests-list")
         response = self.client.post(url, follow_json, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)

@@ -6,8 +6,9 @@ from rest_framework.serializers import ValidationError
 from comments.models import Comment
 from likes.models import Like
 from posts.models import Post, CONTENT_TYPE_WEB_MAP_REVERSE
-from user_management.serializers import AuthorSerializer
 from likes.serializers import LikeSerializer
+from user_management.models import Author, Node
+from user_management.serializers import AuthorSerializer
 
 
 class CommentSerializer(serializers.ModelSerializer[Comment]):
@@ -103,7 +104,9 @@ class CommentSerializer(serializers.ModelSerializer[Comment]):
         if comment_type is None:
             raise ValidationError(
                 f"Unsupported content type {data['contentType']}, expected one of {list(CONTENT_TYPE_WEB_MAP_REVERSE.keys())}")
-        if Post.visible_posts.find_by_fqid(data["post"]) is None:
+
+        found_post = Post.visible_posts.find_by_encoded_fqid(data["post"])
+        if found_post is None:
             raise ValidationError(f"Could not find post with id {data['post']}")
 
         # before returning, make sure all `likes` are accounted for in our database
@@ -112,11 +115,22 @@ class CommentSerializer(serializers.ModelSerializer[Comment]):
                 like_dict = LikeSerializer().to_internal_value(like)
                 Like.objects.get_or_create(**like_dict)
 
+        found_author = Author.objects.find_by_encoded_fqid(data["author"]["id"])
+        if found_author is None:
+            raise ValidationError(f"Could not find author with id {data['author']['id']}")
+
+
         return {
-            "author": data["author"],
+            "author": found_author,
             "content": data["comment"],
             "content_type": comment_type,
             "created_at": data["published"],
-            "post": data["post"],
+            "post": found_post,
             "fqid": data["id"],
         }
+
+    def create(self, validated_data: dict[str, Any]) -> Comment:
+        if "host_node" not in validated_data:
+            # TODO this doesn't feel right, but maybe it works?
+            validated_data["host_node"] = Node.objects.get_local_node()
+        return Comment.objects.create(**validated_data)

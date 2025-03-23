@@ -16,6 +16,11 @@
                         <h5 id="navbar-username" class="username">{{ user.author.username }}</h5></span>
                     </a>
                 {% endif %}
+                <form id="search-form" class="search-bar">
+                    <input type="text" id="search-input" placeholder="Search authors...">
+                    <button type="submit">Search</button>
+                </form>
+                <div id="search-results" class="search-results"></div>
                 {% block navbar %}{% endblock %}
             </section>
         </div>
@@ -26,5 +31,6 @@
 
         {% block right_panel %} {% endblock %}
     </section>
+    <script src="{% static 'scripts/search.js' %}"></script>
 </body>
 {% endblock %}

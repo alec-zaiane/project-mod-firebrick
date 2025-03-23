@@ -77,12 +77,6 @@ class TestUserStory39(GeneralUserStoryApiTest):
         self.assertEqual(self.sample_posts[0][0].likes.count(), 0)
         self.assertEqual(Like.objects.count(), 0)
 
-    @tag("check-slow", "security")
-    @skip("Waiting for implmentation of following")
-    def test_can_like_friends_only_post_if_friends(self) -> None:
-        """Test that an author can like a friends-only post if they are friends"""
-        ...
-
     @tag("check-fast")
     def test_can_like_comment(self) -> None:
         """Test that an author can like a comment"""
@@ -115,14 +109,4 @@ class TestUserStory39(GeneralUserStoryApiTest):
         self.assertEqual(first_like.author.uuid, self.sample_authors[0].uuid)
         self.assertEqual(first_like.target.uuid, comment.uuid)
 
-    @tag("check-slow", "security")
-    @skip("Waiting for implmentation of comments")
-    def test_cannot_like_inaccessible_comment(self) -> None:
-        """Test that an author cannot like a comment they cannot access"""
-        ...
 
-    @tag("check-slow", "security")
-    @skip("Waiting for implmentation of comments")
-    def test_can_like_friends_only_comment_if_allowed(self) -> None:
-        """Test that an author can like a friends-only comment if they are allowed to"""
-        ...

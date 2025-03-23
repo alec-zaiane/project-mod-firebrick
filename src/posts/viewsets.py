@@ -1,4 +1,5 @@
 from typing import Any, Optional
+from urllib.parse import unquote
 
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.auth.decorators import login_required
@@ -28,11 +29,23 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
        - Update: only allows authors to modify their own post
        - Destroy: performs soft delete instead of a hard delete
     """
-
+    # suggested by copilot: lookup_field/lookup_url_kwarg/lookup_value_regex to change the lookup field to an encoded fqid
+    lookup_field = "fqid"
+    lookup_url_kwarg = "fqid"
+    lookup_value_regex = ".+"
     queryset = Post.visible_posts.all()
     serializer_class = PostSerializer
     permission_classes = [IsAuthenticated, PostPermission]
     parser_classes = (MultiPartParser, FormParser)
+
+    def get_object(self) -> Post:
+        """Allow for encoded fqid based lookup"""
+        fqid = self.kwargs.get("fqid", None)
+        if fqid is not None:
+            lookup_field = "fqid"
+            lookup_value = unquote(fqid)
+            return self.get_queryset().get(**{lookup_field: lookup_value})
+        return super().get_object()
 
     @login_required
     def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
@@ -82,7 +95,7 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
             )
         return super().update(request, *args, **kwargs)
 
-    def destroy(self, request: Request, pk: Optional[str] = None) -> Response:
+    def destroy(self, request: Request, **kwargs:Any) -> Response:
         """
         Soft delete the specified post.
 

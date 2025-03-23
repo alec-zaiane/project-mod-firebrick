@@ -10,6 +10,9 @@ from rest_framework.request import Request
 from rest_framework.serializers import Serializer
 
 from likes.serializers import LikeSerializer
+from comments.serializers import CommentSerializer
+from posts.models import Post
+
 
 from core.utils.request_viewer import get_request_viewer
 
@@ -134,3 +137,37 @@ class LikesInboxHandler(InboxHandler):
 
 
 register_inbox_handler(LikesInboxHandler())
+
+
+class CommentInboxHandler(InboxHandler):
+    """
+    - URL: ://service/api/authors/{AUTHOR_SERIAL}/inbox
+        - POST [remote]: comment on a post by AUTHOR_SERIAL
+        - Body is a comment object
+    """
+
+    def __init__(self) -> None:
+        super().__init__("comment")
+
+    @property
+    def serializer(self) -> type[CommentSerializer]:
+        return CommentSerializer
+
+    def post(self, request: Request) -> Response:
+        viewer = get_request_viewer(request)
+        serializer = CommentSerializer(data=request.data)
+        if viewer is None:
+            return Response("User must be authenticated", 401)
+        if serializer.is_valid():
+            # double check that the viewer has access to the target object
+            target = serializer.validated_data["post"]
+            if not isinstance(target, Post):
+                return Response("Target post is malformed", 404)
+            if not target.check_can_be_seen_by(viewer):
+                return Response("Viewer does not have access to the target post", 403)
+            comment = serializer.create(serializer.validated_data)
+            return Response({"detail": "Comment created", "comment": serializer.to_representation(comment)}, 201)
+        return Response({"error": "Error creating comment", "comment": serializer.errors}, 400)
+
+
+register_inbox_handler(CommentInboxHandler())
