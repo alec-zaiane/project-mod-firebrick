@@ -268,12 +268,16 @@ class Post(AuthoredApiObject):
                 raise ValidationError("Content must be specified")
             if self.image:
                 raise ValidationError("Image field must be empty for plaintext and markdown posts")
+            if self.video:
+                raise ValidationError("Video field must be empty for plaintext and markdown posts")
         elif self.post_type == PostTypes.IMAGE:
             # make sure the image field is the only non-null field
             if not self.image:
                 raise ValidationError("Image must be specified")
             if self.content:
                 raise ValidationError("Content field must be empty for image posts")
+            if self.video:
+                raise ValidationError("Video field must be empty for image posts")
         elif self.post_type == PostTypes.VIDEO:
             # make sure the video field is the only non-null field
             if not self.video:
@@ -284,10 +288,10 @@ class Post(AuthoredApiObject):
                 raise ValidationError("Image field must be empty for video posts")
 
             # validate the video duration
+            video = None
             try:
                 video = VideoFileClip(self.video.path)
                 if video.duration > 4:
-                    video.close()
                     raise ValidationError("Video must be 4 seconds or shorter")
             except (IOError, OSError) as e:
                 raise ValidationError(f"Could not read video file: {str(e)}")
