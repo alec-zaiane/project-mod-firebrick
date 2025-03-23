@@ -7,8 +7,9 @@ from rest_framework import status
 
 from core.utils.testing_utils import GeneralUserStoryApiTest, UITestCase
 
-from posts.models import Post, VisibilityTypes
+from posts.models import Post, VisibilityTypes, PostTypes
 from comments.models import Comment
+from likes.models import Like
 from user_management.serializers import AuthorSerializer
 from user_management.models import Node
 
@@ -122,3 +123,30 @@ class TestUserStory38UI(UITestCase):
         comment_card = self.find_element_by_id(f"comment-{comment.uuid}")
         self.assertIn("My cool comment", comment_card.element.text)
         self.end_test()
+
+    def test_can_like_post_comment(self) -> None:
+        self.initialize_sample_authors(2)
+        self.initialize_sample_text_posts(posts_per_author=1)
+        comment = Comment.objects.create_comment(self.sample_authors[0], self.sample_posts[1][0], "My cool comment", PostTypes.PLAINTEXT)
+
+        # try to like a comment
+        self.login_as(self.sample_authors[1])
+        self.visit(reverse("posts:view_post", args=[self.sample_posts[1][0].uuid]))
+        comment_card = self.find_element_by_id(f"comment-{comment.uuid}")
+        comment_card.find_element_by_selector("button.like-button").click()
+
+        # make sure the like exists
+        self.assertEqual(Like.objects.count(), 1)
+        like = Like.objects.first()
+        assert like is not None # for mypy
+        self.assertEqual(like.target, comment)
+        self.assertEqual(like.author, self.sample_authors[1])
+
+        # now unlike it
+        comment_card = self.find_element_by_id(f"comment-{comment.uuid}")
+        comment_card.find_element_by_selector("button.like-button").click()
+
+        # make sure the like is gone
+        self.assertEqual(Like.objects.count(), 0)
+        self.end_test()
+
