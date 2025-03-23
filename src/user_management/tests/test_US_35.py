@@ -21,6 +21,10 @@ class TestUserStory35(GeneralUserStoryApiTest):
         author0 = self.sample_authors[0]
         author1 = self.sample_authors[1]
 
+        # control: confirm that they are not friends before following each other
+        self.assertNotIn(author1, author0.friends)
+        self.assertNotIn(author0, author1.friends)
+
         # author0 sends follow request to author1
         self.client.force_authenticate(user=author0.user)
         follow_requests_url = reverse("user_management:follow-requests-list")
@@ -52,6 +56,13 @@ class TestUserStory35(GeneralUserStoryApiTest):
         }
         resp_1_to_0 = self.client.post(follow_requests_url, follow_json_1_to_0, format="json")
         self.assertEqual(resp_1_to_0.status_code, status.HTTP_201_CREATED)
+
+        # right before author0 approves, they should still not be friends
+        author0.refresh_from_db()
+        author1.refresh_from_db()
+        self.assertNotIn(author1, author0.friends)
+        self.assertNotIn(author0, author1.friends)
+
 
         # author0 approves
         self.client.force_authenticate(user=author0.user)
