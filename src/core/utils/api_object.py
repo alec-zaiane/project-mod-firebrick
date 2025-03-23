@@ -92,13 +92,14 @@ class ApiObject(models.Model):
         self._propagate_post_save_to_other_nodes(created=kwargs.get("force_insert", False))
 
     def _propagate_post_save_to_other_nodes(self, created:bool) -> None:
+        if not self.host_node.is_local_node:
+            return
         from user_management.models import Node # janky but needed for circular import prevention
-        if self.host_node.is_local_node:
-            for node in Node.external_nodes.all():
-                if created:
-                    node.send_create(self.encode_as_class_json_dict())
-                else:
-                    node.send_update(self.encode_as_class_json_dict())
+        for node in Node.external_nodes.all():
+            if created:
+                node.send_create(self.encode_as_class_json_dict())
+            else:
+                node.send_update(self.encode_as_class_json_dict())
 
     def delete(self, *args: Any, **kwargs: Any) -> tuple[int, dict[str, Any]]:
         self._propagate_deletion_to_other_nodes()
@@ -106,10 +107,11 @@ class ApiObject(models.Model):
 
 
     def _propagate_deletion_to_other_nodes(self) -> None:
+        if not self.host_node.is_local_node:
+            return
         from user_management.models import Node
-        if self.host_node.is_local_node:
-            for node in Node.external_nodes.all():
-                self.send_deletion_to_node(node)
+        for node in Node.external_nodes.all():
+            self.send_deletion_to_node(node)
 
     def send_deletion_to_node(self, node: "Node") -> None:
         raise NotImplementedError(f"send_deletion_to_node must be implemented by subclasses, perhaps in `{self.__class__}`?")
