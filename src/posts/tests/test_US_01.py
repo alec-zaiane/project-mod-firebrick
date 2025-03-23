@@ -26,16 +26,16 @@ class TestUserStory01(GeneralUserStoryApiTest):
         # check that the post was created
         self.assertEqual(self.sample_authors[0].posts.count(), 1)
         self.assertFalse(self.sample_authors[0].posts.get().is_soft_deleted)
-        post_uuid = self.sample_authors[0].posts.get().uuid
+        post = self.sample_authors[0].posts.get()
         # delete the post
         url = reverse("posts:api_posts-detail",
-                      args=[post_uuid])
+                      kwargs={"fqid": post.get_encoded_fqid()})
         self.client.force_authenticate(user=self.sample_authors[0].user)
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
         # check that the post was deleted
-        self.assertTrue(Post.objects.get(uuid=post_uuid).is_soft_deleted)
+        self.assertTrue(Post.objects.get(uuid=post.uuid).is_soft_deleted)
         # make sure it no longer exists in author.posts
         self.assertEqual(self.sample_authors[0].posts.count(), 0)
 
@@ -46,7 +46,7 @@ class TestUserStory01(GeneralUserStoryApiTest):
         self.initialize_sample_text_posts(posts_per_author=1)
 
         url = reverse("posts:api_posts-detail",
-                      args=[self.sample_authors[0].posts.get().uuid])
+                      kwargs={"fqid": self.sample_authors[0].posts.get().get_encoded_fqid()})
         self.client.force_authenticate(user=self.sample_authors[1].user)
         response = self.client.delete(url)
         self.assertEqual(response.status_code, 403)

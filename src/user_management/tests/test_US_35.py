@@ -27,7 +27,7 @@ class TestUserStory35(GeneralUserStoryApiTest):
 
         # author0 sends follow request to author1
         self.client.force_authenticate(user=author0.user)
-        follow_requests_url = reverse("user_management:follow-requests-list")
+        follow_requests_url = reverse("user_management:node2node_follow_requests-list")
 
         follow_json_0_to_1 = {
             "type": "follow",
@@ -42,7 +42,7 @@ class TestUserStory35(GeneralUserStoryApiTest):
         self.client.force_authenticate(user=author1.user)
         fr_0_to_1 = FollowRequest.objects.get_follow_request(author0, author1)
         approve_url_0_to_1 = reverse(
-            "user_management:follow-requests-approve", args=[str(fr_0_to_1.uuid)])
+            "user_management:node2node_follow_requests-approve", kwargs={"fqid": fr_0_to_1.get_encoded_fqid()})
         approve_resp_0_to_1 = self.client.post(approve_url_0_to_1)
         self.assertEqual(approve_resp_0_to_1.status_code, status.HTTP_200_OK)
 
@@ -63,12 +63,11 @@ class TestUserStory35(GeneralUserStoryApiTest):
         self.assertNotIn(author1, author0.friends)
         self.assertNotIn(author0, author1.friends)
 
-
         # author0 approves
         self.client.force_authenticate(user=author0.user)
         fr_1_to_0 = FollowRequest.objects.get_follow_request(author1, author0)
         approve_url_1_to_0 = reverse(
-            "user_management:follow-requests-approve", args=[str(fr_1_to_0.uuid)])
+            "user_management:node2node_follow_requests-approve", kwargs={"fqid": fr_1_to_0.get_encoded_fqid()})
         approve_resp_1_to_0 = self.client.post(approve_url_1_to_0)
         self.assertEqual(approve_resp_1_to_0.status_code, status.HTTP_200_OK)
 

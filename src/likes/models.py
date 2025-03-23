@@ -4,12 +4,14 @@ from typing import Any, cast, Optional
 
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.urls import reverse
 
 from user_management.models import Author
 from posts.models import Post
 from comments.models import Comment
 
 from core.utils.api_object import AuthoredApiObject, ApiObjectManager
+
 
 
 class LikeManager(ApiObjectManager["Like"]):
@@ -96,6 +98,22 @@ class Like(AuthoredApiObject):
 
     def generate_fqid(self) -> str:
         return f"{self.host_node.host_url}likes/{self.uuid}"  # TODO replace with reverse() call :)
+
+
+        # node2node stuff
+    def node2node_encode_as_class_json_dict(self) -> dict[str,Any]:
+        from likes.serializers import LikeSerializer
+        return LikeSerializer().to_representation(self)
+
+    def node2node_get_creation_url(self) -> str:
+        return reverse("likes:node2node_likes-list")
+
+    def node2node_get_update_url(self) -> str:
+        return reverse("likes:node2node_likes-detail", kwargs={"fqid": self.get_encoded_fqid()})
+
+    def node2node_get_deletion_url(self) -> str:
+        return self.node2node_get_update_url()
+
 
 
 class PostLike(Like):
