@@ -154,6 +154,10 @@ LOGOUT_REDIRECT_URL = "/"
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "core.utils.pagination.CustomPageNumberPagination",
     "PAGE_SIZE": 10,
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "user_management.authentication.NodeUserBasicAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+    ],
 }
 
 MEDIA_URL = "/media/"
