@@ -83,6 +83,22 @@ a:link:active, a:visited:active  {
     color: firebrick;
 }
 
+.field-wrapper:focus-within {
+    border-color: firebrick !important;
+}
+
+.field-wrapper:focus-within label {
+    color: firebrick;
+}
+
+.field-wrapper:focus-within input {
+    caret-color: firebrick;
+}
+
+.field-wrapper:focus-within label {
+    caret-color: firebrick;
+}
+
 /*
  ===========
   LOGIN
@@ -412,7 +428,7 @@ a:link:active, a:visited:active  {
     position: fixed;
     bottom: 10%;
     right: auto;
-    margin-left: 700px;
+    margin-left: 500px;
     width: 60px;
     height: 60px;
     border-radius: 100%;
@@ -675,7 +691,7 @@ a:link:active, a:visited:active  {
 .post-card footer {
     position: relative;
     z-index: 1;
-    margin-top: 6px;
+    margin-top: 12px;
     pointer-events: none;
 }
 
@@ -685,7 +701,7 @@ a:link:active, a:visited:active  {
 }
 
 .post-card.post-full footer .post-info {
-    margin-top: 12px;
+    margin-top: 6px;
     margin-bottom: 12px;
 }
 
@@ -1002,14 +1018,6 @@ a:link:active, a:visited:active  {
     outline: 0;
 }
 
-#author-modification-form .field-wrapper:focus-within {
-    border-color: firebrick;
-}
-
-#author-modification-form .field-wrapper:focus-within label {
-    color: firebrick;
-}
-
 #author-modification-form .field-wrapper.url input {
     font-family: monospace;
     font-size: 14px;
@@ -1117,14 +1125,6 @@ a:link:active, a:visited:active  {
     padding: 14px 16px;
 }
 
-.update-post .field-wrapper:focus-within {
-    border-color: firebrick;
-}
-
-.update-post .field-wrapper:focus-within label {
-    color: firebrick;
-}
-
 .update-post .field-wrapper.url input {
     font-family: monospace;
     font-size: 14px;
@@ -1145,6 +1145,70 @@ a:link:active, a:visited:active  {
 
 .update-post .visibility-icon.public {
     display: block;
+}
+
+/*
+ ===========
+  SEARCH
+ ===========
+*/
+.search {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    width: calc((100% - 600px) / 2);
+    height: 100%;
+    right: 0;
+}
+
+.search .search-form {
+    padding: 40px;
+    padding-bottom: 20px;
+}
+
+.search .search-bar {
+    border: 1px solid #242729;
+    border-radius: 20px;
+    padding: 10px;
+    display: flex;
+    gap: 6px;
+    max-width: 360px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.search .search-bar:hover {
+    border-color: #686868;
+    cursor: text;
+}
+
+.search .search-bar:focus-within {
+    border-color: firebrick;
+}
+
+.search .search-bar:focus-within input {
+    caret-color: firebrick;
+}
+
+.search .search-bar input {
+    width: 100%;
+    border: 0;
+    background: 0;
+    color: var(--color);
+}
+
+.search .search-bar input:focus {
+    outline: 0;
+}
+
+.search-icon {
+    width: 15px;
+}
+
+.search .search-results {
+    display: grid;
+    grid: "a a";
+    justify-items: center;
 }
 
 /*
