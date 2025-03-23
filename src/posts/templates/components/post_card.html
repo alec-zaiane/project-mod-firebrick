@@ -2,6 +2,7 @@
 
 {% load static %}
 {% load check_liked %}
+{% load check_interaction_eligibility %}
 
 <article class="post-card{% if full %} post-full{% endif %}">
     {% if not full %}
@@ -69,6 +70,7 @@
                 {% include 'components/post-meta.html' with full=True %}
             </div>
         {% endif %}
+        {% check_interaction_eligibility viewer post as interactable%}
         <div class="likes-comments-share">
             <div class="comments-box">
                 <img class="comments-icon" src="{% static 'svg/comment.svg' %}" />
@@ -79,7 +81,7 @@
                     {% csrf_token %}
                     <input type="hidden" name="_method" value="POST">
                     <input type="hidden" name="_after_action" value="reload">
-                    <button class="like-button" type="submit" {% if not viewer %}disabled{% endif %}>
+                    <button class="like-button" type="submit" {% if not interactable %}disabled{% endif %}>
                         {% check_liked viewer post as liked %}
                         {% if liked %}
                             <img class="like-icon liked" src="{% static 'svg/liked.svg' %}" />
@@ -123,16 +125,18 @@
         </div>
         {% if full %}
             <section class="comments-section">
-                <form id="comment-form" class="add-comment" name="generic-form" action="{% url 'comments:internal_comment' post.fqid|urlencode:"" %}">
-                    {% csrf_token %}
-                    <input type="hidden" name="_method" value="POST">
-                    <input type="hidden" name="_after_action" value="reload">
-                    {% if viewer.profile_image %}
-                        <img class="profile-image" src="{{ viewer.profile_image }}"/>
-                    {% endif %}
-                    <textarea class="add-comment-text" name="comment" placeholder="Add a comment..." id="add-comment-area"></textarea>
-                    <button class="submit-comment" type="submit" id="submit-comment">Comment</button>
-                </form>
+                {% if interactable %}
+                    <form id="comment-form" class="add-comment" name="generic-form" action="{% url 'comments:internal_comment' post.fqid|urlencode:"" %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="_method" value="POST">
+                        <input type="hidden" name="_after_action" value="reload">
+                        {% if viewer.profile_image %}
+                            <img class="profile-image" src="{{ viewer.profile_image }}"/>
+                        {% endif %}
+                        <textarea class="add-comment-text" name="comment" placeholder="Add a comment..." id="add-comment-area"></textarea>
+                        <button class="submit-comment" type="submit" id="submit-comment">Comment</button>
+                    </form>
+                {% endif %}
                 {% for comment in post.comments.all %}
                     {% include 'components/comment-card.html' %}
                 {% endfor %}

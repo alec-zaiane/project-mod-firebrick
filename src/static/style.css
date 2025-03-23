@@ -360,6 +360,7 @@ a:link:active, a:visited:active  {
     font-weight: bold;
     border: 0;
     cursor: pointer;
+    width: fit-content;
 }
 
 .navbar-contents .logout {
@@ -503,7 +504,7 @@ a:link:active, a:visited:active  {
     pointer-events: all;
     align-items: center;
     color: var(--color-sub);
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .post-card .post-meta .edit-pencil {
@@ -684,7 +685,8 @@ a:link:active, a:visited:active  {
 }
 
 .post-card.post-full footer .post-info {
-    margin-bottom: 6px;
+    margin-top: 12px;
+    margin-bottom: 12px;
 }
 
 .post-card .likes-comments-share {
@@ -709,15 +711,23 @@ a:link:active, a:visited:active  {
     gap: 6px;
 }
 
+.post-comment .likes-box {
+    justify-content: flex-end;
+    margin-right: 80px;
+}
+
 .post-card .like-button {
     border: 0;
     background: 0;
     padding: 0;
     pointer-events: all;
+}
+
+.post-card .like-button:not(:disabled) {
     cursor: pointer;
 }
 
-.post-card .like-button:hover {
+.post-card .like-button:hover:not(:disabled) {
     filter: drop-shadow(0 0 5px firebrick);
 }
 
