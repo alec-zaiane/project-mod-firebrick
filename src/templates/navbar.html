@@ -13,6 +13,19 @@
             Follow Requests<span id="follow-request-count"></span>
         </span>
     </a>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        fetch("/api/follow-requests/pending-count/")
+        .then(response => response.json())
+        .then(data => {
+            const countSpan = document.getElementById("follow-request-count");
+            if (countSpan && typeof data.count === "number") {
+            countSpan.textContent = data.count;
+            }
+        })
+        .catch(err => console.error("Error fetching pending follow requests count:", err));
+    });
+    </script>
 {% endif %}
 {% if user.is_authenticated %}
 <form id="navbar-logout" class="logout-signup-container" action="{% url 'user_management:logout' %}" method="post">

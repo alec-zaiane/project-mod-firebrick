@@ -108,3 +108,14 @@ class FollowRequestViewSet(viewsets.ModelViewSet[FollowRequest]):
             )
         follow_request.delete()
         return Response({"detail": "Follow request denied."}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["get"], url_path="pending-count", url_name="pending-count")
+    def pending_count(self, request: Request) -> Response:
+        viewer = get_request_viewer(request)
+        if not viewer:
+            # not logged in or not linked to an Author will return 0
+            return Response({"count": 0}, status=status.HTTP_200_OK)
+
+        # all FollowRequest rows that have the viewer as the followee are pending
+        count = FollowRequest.objects.filter(followee=viewer).count()
+        return Response({"count": count}, status=status.HTTP_200_OK)
