@@ -405,6 +405,14 @@ class Node(models.Model):
     def get_hosted_users(self) -> models.QuerySet[Author]:
         return Author.objects.filter(host_node=self)
 
+    def send_update(self, json: dict[str, Any]) -> None:
+        """Send an object update to this node"""
+        print(f"Sending update to {self.name}: {json}")
+
+    def send_create(self, json: dict[str, Any]) -> None:
+        """Send an object creation to this node"""
+        print(f"Sending create to {self.name}: {json}")
+
 
 # =============================================================================
 # Join requests

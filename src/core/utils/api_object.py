@@ -17,6 +17,8 @@ from django.utils.translation import gettext_lazy as _
 
 ModelT = TypeVar("ModelT", bound="ApiObject")
 
+# Signal structure from ChatGPT: "I want to implement signals on a django abstract class, what is the best way to do this?"
+# model: o3-mini, date: 2025-03-23, reasoning: enabled
 
 class ApiObjectManager(models.Manager[ModelT], Generic[ModelT]):
     def create(self, *args: Any, **kwargs: Any) -> ModelT:
@@ -68,6 +70,15 @@ class ApiObject(models.Model):
         """Get a percent-encoded fqid"""
         return quote(self.fqid, safe="")
 
+    def encode_as_class_json_dict(self) -> dict[str, Any]:
+        """
+        Encode this object as a dictionary that can be converted to JSON, following the class's example schema
+        https://uofa-cmput404.github.io/general/project.html#api-objects
+        """
+        raise NotImplementedError(
+            f"encode_as_json must be implemented by subclasses (perhaps in `{self.__class__}`?)")
+
+
     def clean(self) -> None:
         super().clean()
         if not self.fqid:
@@ -78,7 +89,17 @@ class ApiObject(models.Model):
     def save(self, *args: Any, **kwargs: Any) -> None:
         self.full_clean()
         super().save(*args, **kwargs)
+        self._propagate_post_save_to_other_nodes(created=kwargs.get("force_insert", False))
 
+
+    def _propagate_post_save_to_other_nodes(self, created:bool) -> None:
+        from user_management.models import Node # janky but needed for circular import prevention
+        if self.host_node.is_local_node:
+            for node in Node.external_nodes.all():
+                if created:
+                    node.send_create(self.encode_as_class_json_dict())
+                else:
+                    node.send_update(self.encode_as_class_json_dict())
 
 class AuthoredApiObject(ApiObject):
     """An API object with an author attribute
