@@ -34,7 +34,7 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
     lookup_value_regex = ".+"
     queryset = Post.visible_posts.all()
     serializer_class = PostSerializer
-    permission_classes = [IsAuthenticated, PostPermission]
+    # permission_classes = [IsAuthenticated, PostPermission]
     parser_classes = (MultiPartParser, FormParser)
 
     def get_object(self) -> Post:

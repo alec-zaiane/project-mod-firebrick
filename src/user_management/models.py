@@ -10,6 +10,7 @@ if TYPE_CHECKING:
 
 import uuid
 import requests
+from requests.auth import HTTPBasicAuth
 
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -61,7 +62,7 @@ class ExternalNodeUserManager(UserManagerBase):
         return super().get_queryset().filter(type=User.Types.NODE)
 
     def create_user(self, username: str, email: Optional[str] = None, password: Optional[str] = None, **extra_fields: Any) -> User:
-        return super().create_user(username, email, password, type=User.Types.NODE, **extra_fields)
+        return super().create_user(username, email, password, type=User.Types.NODE, **extra_fields, password_plain=password)
 
     def create_superuser(self, username: str, email: Optional[str] = None, password: Optional[str] = None, **extra_fields: Any) -> User:
         raise ValidationError("Cannot create superuser for external node")
@@ -74,7 +75,7 @@ class AuthorUserManager(UserManagerBase):
         return super().get_queryset().filter(type=User.Types.AUTHOR)
 
     def create_user(self, username: str, email: Optional[str] = None, password: Optional[str] = None, **extra_fields: Any) -> User:
-        return super().create_user(username, email, password, type=User.Types.AUTHOR, **extra_fields)
+        return super().create_user(username, email, password, type=User.Types.AUTHOR, **extra_fields, password_plain=None)
 
 
 class User(AbstractUser):
@@ -88,12 +89,18 @@ class User(AbstractUser):
     type = models.CharField(
         _("User Type"), max_length=6, choices=Types.choices, blank=False, null=False)
     email = models.EmailField(_("Email Address"), blank=True)
+    password_plain = models.CharField(_("Password Plain"), max_length=255, blank=True, null=True)
 
     # manager
     # since we're overriding parent class' `objects`, have to type ignore
     objects: UserManagerBase = UserManagerBase()  # type: ignore
     authors = AuthorUserManager()
     nodes = ExternalNodeUserManager()
+
+    def clean(self) -> None:
+        super().clean()
+        if not self.password.startswith("pbkdf2_sha256$"):
+            self.set_password(self.password)
 
 
 # =============================================================================
@@ -447,21 +454,23 @@ class Node(models.Model):
     # HTTP METHODS ====== IF YOU ADD ONE MAKE SURE TO ADD TO user_management.tests.mock_node.py AS WELL
     def _post(self, json: dict[str, Any], full_url: str) -> requests.Response:
         """Send a POST request to the given URL with the given JSON"""
-        if self.internal_user is None:
+        if self.internal_user is None or self.internal_user.password_plain is None:
             raise ValidationError("This node has no internal_user set (required for auth")
-        return requests.post(full_url, json=json, auth=(self.internal_user.username, self.internal_user.password))
+        print(
+            f"[Node {self.name}] Sending POST to {full_url}, {self.internal_user.username}:{self.internal_user.password_plain}")
+        return requests.post(full_url, json=json, auth=HTTPBasicAuth(self.internal_user.username, self.internal_user.password_plain))
 
     def _put(self, json: dict[str, Any], full_url: str) -> requests.Response:
         """Send a PUT request to the given URL with the given JSON"""
-        if self.internal_user is None:
+        if self.internal_user is None or self.internal_user.password_plain is None:
             raise ValidationError("This node has no internal_user set (required for auth")
-        return requests.put(full_url, json=json, auth=(self.internal_user.username, self.internal_user.password))
+        return requests.put(full_url, json=json, auth=HTTPBasicAuth(self.internal_user.username, self.internal_user.password_plain))
 
     def _delete(self, full_url: str) -> requests.Response:
         """Send a DELETE request to the given URL"""
-        if self.internal_user is None:
+        if self.internal_user is None or self.internal_user.password_plain is None:
             raise ValidationError("This node has no internal_user set (required for auth")
-        return requests.delete(full_url, auth=(self.internal_user.username, self.internal_user.password))
+        return requests.delete(full_url, auth=HTTPBasicAuth(self.internal_user.username, self.internal_user.password_plain))
 
     def _make_absolute_url(self, url: str) -> str:
         host_url_no_slash = self.host_url.rstrip("/")
