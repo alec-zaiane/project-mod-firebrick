@@ -36,9 +36,9 @@ jobs:
     - name: Run the Docker containers
       run: |
         docker compose up -d
-    - name: Install dev dependencies in the Docker container
+    - name: Install tblib in the container
       run: |
-        docker compose exec socialnetwork pip install -r requirements-dev.txt
+        docker compose exec socialnetwork pip install tblib
     - name: Run all tests
       run: |
         docker compose exec socialnetwork python manage.py test --parallel --exclude-tag=ui
