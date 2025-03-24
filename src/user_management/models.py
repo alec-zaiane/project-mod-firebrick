@@ -124,7 +124,7 @@ class LocalAuthorManager(AuthorManager):
     def create(self, *args: Any, **kwargs: Any) -> LocalAuthor:
         """
         Create a new local author
-        Raises ValidationError if user is not provided
+        Raises ValidationError if user is not proviaded
         """
         if "_user" not in kwargs:
             raise ValidationError(
@@ -474,8 +474,9 @@ class Node(models.Model):
 
     def _make_absolute_url(self, url: str) -> str:
         host_url_no_slash = self.host_url.rstrip("/")
-        to_no_slash = url.replace("api", "/").lstrip("/")
-        return f"{host_url_no_slash}/{to_no_slash}"
+        to_no_slash = url.lstrip("/")
+        # horrible but worky
+        return f"{host_url_no_slash}/{to_no_slash}".replace("/api/api", "/api")
 
     def send_update(self, json: dict[str, Any], to: str) -> None:
         """Send an object update to this node via the given `to` URL"""
