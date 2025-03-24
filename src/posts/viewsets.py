@@ -4,7 +4,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiRespon
 from django.contrib.auth.models import AnonymousUser
 
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
 from rest_framework import viewsets, status
 from rest_framework.request import Request
@@ -33,8 +33,8 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
     lookup_value_regex = ".+"
     queryset = Post.visible_posts.all()
     serializer_class = PostSerializer
-    permission_classes = [IsAuthenticated, PostPermission]
-    parser_classes = (MultiPartParser, FormParser)
+    # permission_classes = [IsAuthenticated, PostPermission]
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
 
     def get_object(self) -> Post:
         """Allow for encoded fqid based lookup"""
@@ -99,12 +99,15 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
         if isinstance(request.user, AnonymousUser):
             return API_UNAUTHORIZED()
         viewer = get_request_viewer(request)
-        viewer_as_node = Node.objects.find_by_user(request.user)
+        viewer_as_node = Node.objects.is_user_node(request.user)
         if viewer is None and viewer_as_node is None:
             return API_UNAUTHORIZED()
 
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            print(serializer.errors)
+            print(request.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         author: Author = serializer.validated_data["author"]
         if not isinstance(author, Author):
@@ -112,7 +115,7 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
             raise ValueError("validated_data[author] must be an instance of Author")
 
         # make sure the author is either the viewer, or the node viewing is the host of this author
-        if viewer != author and author.host_node != viewer_as_node:
+        if viewer != author and not viewer_as_node:
             return Response(
                 {"error": "You do not have permission to create a post for this author."},
                 status=status.HTTP_403_FORBIDDEN
@@ -168,14 +171,14 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
         if isinstance(request.user, AnonymousUser):
             return API_UNAUTHORIZED()
         viewer = get_request_viewer(request)
-        viewer_as_node = Node.objects.find_by_user(request.user)
+        viewer_as_node = Node.objects.is_user_node(request.user)
         if viewer is None and viewer_as_node is None:
             return API_UNAUTHORIZED()
 
         post: Post = self.get_object()
 
         # if the viewer is not the author, and the author is not hosted by the viewer, deny access
-        if viewer != post.author and post.author.host_node != viewer_as_node:
+        if viewer != post.author and not viewer_as_node:
             return Response(
                 {"error": "You do not have permission to edit this post."},
                 status=status.HTTP_403_FORBIDDEN
@@ -235,14 +238,14 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
         if isinstance(request.user, AnonymousUser):
             return API_UNAUTHORIZED()
         viewer = get_request_viewer(request)
-        viewer_as_node = Node.objects.find_by_user(request.user)
+        viewer_as_node = Node.objects.is_user_node(request.user)
         if viewer is None and viewer_as_node is None:
             return API_UNAUTHORIZED()
 
         post: Post = self.get_object()
 
         # if the viewer is not the author, and the author is not hosted by the viewer, deny access
-        if viewer != post.author and post.author.host_node != viewer_as_node:
+        if viewer != post.author and not viewer_as_node:
             return Response(
                 {"error": "You do not have permission to edit this post."},
                 status=status.HTTP_403_FORBIDDEN

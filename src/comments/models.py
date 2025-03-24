@@ -38,7 +38,7 @@ class Comment(AuthoredApiObject):
 
     def generate_fqid(self) -> str:
         # TODO replace with reverse() call :)
-        return f"{self.host_node.host_url}comments/{self.uuid}"
+        return f"{self.host_node.host_url}comments/{self.uuid}".replace("/api/api", "/api")
 
     def clean(self) -> None:
         super().clean()
@@ -50,7 +50,7 @@ class Comment(AuthoredApiObject):
         return self.post.check_can_be_seen_by(viewer)
 
     # node2node stuff
-    def node2node_encode_as_class_json_dict(self) -> dict[str,Any]:
+    def node2node_encode_as_class_json_dict(self) -> dict[str, Any]:
         from comments.serializers import CommentSerializer
         return CommentSerializer().to_representation(self)
 
@@ -62,4 +62,3 @@ class Comment(AuthoredApiObject):
 
     def node2node_get_deletion_url(self) -> str:
         return self.node2node_get_update_url()
-

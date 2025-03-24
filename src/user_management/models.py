@@ -9,6 +9,8 @@ if TYPE_CHECKING:
     from likes.models import Like
 
 import uuid
+import requests
+from requests.auth import HTTPBasicAuth
 
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -60,7 +62,7 @@ class ExternalNodeUserManager(UserManagerBase):
         return super().get_queryset().filter(type=User.Types.NODE)
 
     def create_user(self, username: str, email: Optional[str] = None, password: Optional[str] = None, **extra_fields: Any) -> User:
-        return super().create_user(username, email, password, type=User.Types.NODE, **extra_fields)
+        return super().create_user(username, email, password, type=User.Types.NODE, **extra_fields, password_plain=password)
 
     def create_superuser(self, username: str, email: Optional[str] = None, password: Optional[str] = None, **extra_fields: Any) -> User:
         raise ValidationError("Cannot create superuser for external node")
@@ -73,7 +75,7 @@ class AuthorUserManager(UserManagerBase):
         return super().get_queryset().filter(type=User.Types.AUTHOR)
 
     def create_user(self, username: str, email: Optional[str] = None, password: Optional[str] = None, **extra_fields: Any) -> User:
-        return super().create_user(username, email, password, type=User.Types.AUTHOR, **extra_fields)
+        return super().create_user(username, email, password, type=User.Types.AUTHOR, **extra_fields, password_plain=None)
 
 
 class User(AbstractUser):
@@ -87,12 +89,18 @@ class User(AbstractUser):
     type = models.CharField(
         _("User Type"), max_length=6, choices=Types.choices, blank=False, null=False)
     email = models.EmailField(_("Email Address"), blank=True)
+    password_plain = models.CharField(_("Password Plain"), max_length=255, blank=True, null=True)
 
     # manager
     # since we're overriding parent class' `objects`, have to type ignore
     objects: UserManagerBase = UserManagerBase()  # type: ignore
     authors = AuthorUserManager()
     nodes = ExternalNodeUserManager()
+
+    def clean(self) -> None:
+        super().clean()
+        if not self.password.startswith("pbkdf2_sha256$"):
+            self.set_password(self.password)
 
 
 # =============================================================================
@@ -116,7 +124,7 @@ class LocalAuthorManager(AuthorManager):
     def create(self, *args: Any, **kwargs: Any) -> LocalAuthor:
         """
         Create a new local author
-        Raises ValidationError if user is not provided
+        Raises ValidationError if user is not proviaded
         """
         if "_user" not in kwargs:
             raise ValidationError(
@@ -247,7 +255,7 @@ class Author(ApiObject):
 
     def generate_fqid(self) -> str:
         # TODO replace with reverse() call :)
-        return f"{self.host_node.host_url}/authors/{self.uuid}"
+        return f"{self.host_node.host_url}/authors/{self.uuid}".replace("/api/api", "/api")
 
     def generate_page_url(self) -> str:
         # TODO replace with reverse() call :)
@@ -334,7 +342,7 @@ class FollowRequest(ApiObject):
 
     def generate_fqid(self) -> str:
         """Generate a unique FQID for the follow request"""
-        return f"{self.host_node.host_url}/authors/{self.follower.uuid}/followers/{self.followee.uuid}"
+        return f"{self.host_node.host_url}/authors/{self.follower.uuid}/followers/{self.followee.uuid}".replace("/api/api", "/api")
 
     # node2node stuff
     def node2node_encode_as_class_json_dict(self) -> dict[str, Any]:
@@ -379,12 +387,12 @@ class NodeManager(models.Manager["Node"]):
                 is_local_node=True
             )
 
-    def find_by_user(self, user: User) -> Optional[Node]:
-        """Find the node that the Node typed user is associated with
-        Returns None if the user is not a `Node` typed user
+    def is_user_node(self, user: User) -> Optional[bool]:
+        """TODO fix this
+        returns true if the user is a node, None otherwise
         """
         if user.type == User.Types.NODE:
-            return self.filter(internal_user=user).first()
+            return True
         return None
 
 
@@ -441,27 +449,68 @@ class Node(models.Model):
     def get_hosted_users(self) -> models.QuerySet[Author]:
         return Author.objects.filter(host_node=self)
 
-    def _confirm_url_is_valid(self, url: str) -> bool:
-        """Make sure the given URL is on the host API"""
-        return url.startswith(self.host_url)
+    # Node2Node communication
+
+    # HTTP METHODS ====== IF YOU ADD ONE MAKE SURE TO ADD TO user_management.tests.mock_node.py AS WELL
+    def _post(self, json: dict[str, Any], full_url: str) -> requests.Response:
+        """Send a POST request to the given URL with the given JSON"""
+        if self.internal_user is None or self.internal_user.password_plain is None:
+            raise ValidationError("This node has no internal_user set (required for auth")
+        print(
+            f"[Node {self.name}] Sending POST to {full_url}, {self.internal_user.username}:{self.internal_user.password_plain}")
+        return requests.post(full_url, json=json, auth=HTTPBasicAuth(self.internal_user.username, self.internal_user.password_plain))
+
+    def _put(self, json: dict[str, Any], full_url: str) -> requests.Response:
+        """Send a PUT request to the given URL with the given JSON"""
+        if self.internal_user is None or self.internal_user.password_plain is None:
+            raise ValidationError("This node has no internal_user set (required for auth")
+        return requests.put(full_url, json=json, auth=HTTPBasicAuth(self.internal_user.username, self.internal_user.password_plain))
+
+    def _delete(self, full_url: str) -> requests.Response:
+        """Send a DELETE request to the given URL"""
+        if self.internal_user is None or self.internal_user.password_plain is None:
+            raise ValidationError("This node has no internal_user set (required for auth")
+        return requests.delete(full_url, auth=HTTPBasicAuth(self.internal_user.username, self.internal_user.password_plain))
+
+    def _make_absolute_url(self, url: str) -> str:
+        host_url_no_slash = self.host_url.rstrip("/")
+        to_no_slash = url.lstrip("/")
+        # horrible but worky
+        return f"{host_url_no_slash}/{to_no_slash}".replace("/api/api", "/api")
 
     def send_update(self, json: dict[str, Any], to: str) -> None:
         """Send an object update to this node via the given `to` URL"""
-        if not self._confirm_url_is_valid(to):
-            raise ValidationError(f"URL {to} is not on this node's host URL ({self.host_url})")
-        print(f"Sending update to {self.name}: {json}")
+        if self.internal_user is None:
+            raise ValidationError("This node has no internal_user set (required for auth)")
+
+        try:
+            response = self._put(json, self._make_absolute_url(to))
+            response.raise_for_status()
+            print(f"[Node {self.name}] Update sent to {to}")
+        except requests.RequestException as e:
+            print(f"[Node {self.name}] Failed to send UPDATE to {to}: {e}")
 
     def send_create(self, json: dict[str, Any], to: str) -> None:
         """Send an object creation to this node via the given `to` URL"""
-        if not self._confirm_url_is_valid(to):
-            raise ValidationError(f"URL {to} is not on this node's host URL ({self.host_url})")
-        print(f"Sending create to {self.name}: {json}")
+        if self.internal_user is None:
+            raise ValidationError("This node has no internal_user set (required for auth)")
+        try:
+            response = self._post(json, self._make_absolute_url(to))
+            response.raise_for_status()
+        except requests.RequestException as e:
+            print(f"[Node {self.name}] Failed to send CREATE to {to}: {e}")
 
     def send_delete(self, to: str) -> None:
         """Send a delete request to this node via the given `to` URL"""
-        if not self._confirm_url_is_valid(to):
-            raise ValidationError(f"URL {to} is not on this node's host URL ({self.host_url})")
-        print(f"Sending delete to {self.name}")
+        if self.internal_user is None:
+            raise ValidationError("This node has no internal_user set (required for auth)")
+
+        try:
+            response = self._delete(self._make_absolute_url(to))
+            response.raise_for_status()
+            print(f"[Node {self.name}] Delete sent to {to}")
+        except requests.RequestException as e:
+            print(f"[Node {self.name}] Failed to send DELETE to {to}: {e}")
 
 
 # =============================================================================

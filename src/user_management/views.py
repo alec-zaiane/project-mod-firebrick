@@ -207,7 +207,7 @@ class AuthorFollowInfoView(View):
 
 
 class AuthorSearchAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @extend_schema(
         summary="Search Authors",

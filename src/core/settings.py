@@ -21,7 +21,7 @@ django_stubs_ext.monkeypatch()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # The url to the root of the site, and the URL to the API
-SITE_URL = "http://127.0.0.1:63207"
+SITE_URL = os.getenv("SITE_URL", "http://localhost:8000")
 SITE_API_URL = f"{SITE_URL}/api"
 
 # Quick-start development settings - unsuitable for production
@@ -160,9 +160,17 @@ LOGOUT_REDIRECT_URL = "/"
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "core.utils.pagination.CustomPageNumberPagination",
     "PAGE_SIZE": 10,
+    "DEFAULT_PARSER_CLASSES": [
+        "rest_framework.parsers.JSONParser",
+        "rest_framework.parsers.MultiPartParser",
+        "rest_framework.parsers.FormParser",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.AllowAny",
+    ],
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "user_management.authentication.NodeUserBasicAuthentication",
-        "rest_framework.authentication.SessionAuthentication",
+        # "rest_framework.authentication.SessionAuthentication",
     ],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }

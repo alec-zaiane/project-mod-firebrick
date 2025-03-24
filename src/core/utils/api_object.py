@@ -20,6 +20,7 @@ ModelT = TypeVar("ModelT", bound="ApiObject")
 # Signal structure from ChatGPT: "I want to implement signals on a django abstract class, what is the best way to do this?"
 # model: o3-mini, date: 2025-03-23, reasoning: enabled
 
+
 class ApiObjectManager(models.Manager[ModelT], Generic[ModelT]):
     def create(self, *args: Any, **kwargs: Any) -> ModelT:
         instance = self.model(**kwargs)
@@ -36,7 +37,7 @@ class ApiObjectManager(models.Manager[ModelT], Generic[ModelT]):
         """Find by a percent-encoded fqid"""
         return self.find_by_fqid(unquote(fqid))
 
-    def find_by_uuid(self, uuid:str) -> Optional[ModelT]:
+    def find_by_uuid(self, uuid: str) -> Optional[ModelT]:
         return self.filter(uuid=uuid).first()
 
 
@@ -73,8 +74,6 @@ class ApiObject(models.Model):
         """Get a percent-encoded fqid"""
         return quote(self.fqid, safe="")
 
-
-
     def clean(self) -> None:
         super().clean()
         if not self.fqid:
@@ -84,23 +83,25 @@ class ApiObject(models.Model):
 
     def save(self, *args: Any, **kwargs: Any) -> None:
         self.full_clean()
+        self.currently_adding = self._state.adding
         super().save(*args, **kwargs)
-        self._propagate_post_save_to_other_nodes(created=kwargs.get("force_insert", False))
+        self._propagate_post_save_to_other_nodes(created=self.currently_adding)
 
-    def _propagate_post_save_to_other_nodes(self, created:bool) -> None:
+    def _propagate_post_save_to_other_nodes(self, created: bool) -> None:
         if not self.host_node.is_local_node:
             return
-        from user_management.models import Node # janky but needed for circular import prevention
+        from user_management.models import Node  # janky but needed for circular import prevention
         for node in Node.external_nodes.all():
             if created:
-                node.send_create(self.node2node_encode_as_class_json_dict(), to=self.node2node_get_creation_url())
+                node.send_create(self.node2node_encode_as_class_json_dict(),
+                                 to=self.node2node_get_creation_url())
             else:
-                node.send_update(self.node2node_encode_as_class_json_dict(), to=self.node2node_get_update_url())
+                node.send_update(self.node2node_encode_as_class_json_dict(),
+                                 to=self.node2node_get_update_url())
 
     def delete(self, *args: Any, **kwargs: Any) -> tuple[int, dict[str, Any]]:
         self._propagate_deletion_to_other_nodes()
         return super().delete(*args, **kwargs)
-
 
     def _propagate_deletion_to_other_nodes(self) -> None:
         if not self.host_node.is_local_node:
@@ -119,6 +120,7 @@ class ApiObject(models.Model):
         """
         raise NotImplementedError(
             f"encode_as_json must be implemented by subclasses (perhaps in `{self.__class__}`?)")
+
     def node2node_get_creation_url(self) -> str:
         raise NotImplementedError(
             f"node2node_get_creation_url must be implemented by subclasses (perhaps in `{self.__class__}`?)")
@@ -131,6 +133,7 @@ class ApiObject(models.Model):
         raise NotImplementedError(
             f"node2node_get_deletion_url must be implemented by subclasses (perhaps in `{self.__class__}`?)")
     # =====================================
+
 
 class AuthoredApiObject(ApiObject):
     """An API object with an author attribute

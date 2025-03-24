@@ -110,25 +110,23 @@ class PostSerializer(serializers.ModelSerializer[Post]):
                 like_dict = LikeSerializer().to_internal_value(like)
                 Like.objects.get_or_create(**like_dict)
 
+        author = AuthorSerializer().get_or_create(data["author"])
+
         return {
             "title": data["title"],
             "fqid": data["id"],
             "description": data["description"],
             "post_type": post_type,  # contentType
             "content": data["content"],
-            "author": Author.objects.get_by_fqid(data["author"]["id"]),
+            "author": author,
             "visibility_type": data["visibility"],
         }
-
-    def validate(self, data: dict[str, Any]) -> dict[str, Any]:
-        """Perform additional validation on incoming data."""
-        if data["visibility_type"] not in {"PUBLIC", "FRIENDS", "UNLISTED"}:
-            raise ValidationError("Invalid visibility type")
-        return data
 
     def create(self, validated_data: dict[str, Any]) -> Post:
         """Create a new Post object from validated data."""
         fqid = validated_data.pop("fqid")
         if not fqid:
             raise ValidationError("Post must have a valid FQID.")
-        return Post.objects.create(fqid=fqid, **validated_data)
+        author: Author = validated_data["author"]
+        host_node = author.host_node
+        return Post.objects.create(fqid=fqid, **validated_data, host_node=host_node)
