@@ -51,7 +51,7 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
         if isinstance(request.user, AnonymousUser):
             return API_UNAUTHORIZED()
         viewer = get_request_viewer(request)
-        viewer_as_node = Node.objects.find_by_user(request.user)
+        viewer_as_node = Node.objects.is_user_node(request.user)
         if viewer is None and viewer_as_node is None:
             return API_UNAUTHORIZED()
 
@@ -64,7 +64,7 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
             raise ValueError("validated_data[author] must be an instance of Author")
 
         # make sure the author is either the viewer, or the node viewing is the host of this author
-        if viewer != author and author.host_node != viewer_as_node:
+        if viewer != author and not viewer_as_node:
             return Response(
                 {"error": "You do not have permission to create a post for this author."},
                 status=status.HTTP_403_FORBIDDEN
@@ -78,14 +78,14 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
         if isinstance(request.user, AnonymousUser):
             return API_UNAUTHORIZED()
         viewer = get_request_viewer(request)
-        viewer_as_node = Node.objects.find_by_user(request.user)
+        viewer_as_node = Node.objects.is_user_node(request.user)
         if viewer is None and viewer_as_node is None:
             return API_UNAUTHORIZED()
 
         post: Post = self.get_object()
 
         # if the viewer is not the author, and the author is not hosted by the viewer, deny access
-        if viewer != post.author and post.author.host_node != viewer_as_node:
+        if viewer != post.author and not viewer_as_node:
             return Response(
                 {"error": "You do not have permission to edit this post."},
                 status=status.HTTP_403_FORBIDDEN
@@ -102,14 +102,14 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
         if isinstance(request.user, AnonymousUser):
             return API_UNAUTHORIZED()
         viewer = get_request_viewer(request)
-        viewer_as_node = Node.objects.find_by_user(request.user)
+        viewer_as_node = Node.objects.is_user_node(request.user)
         if viewer is None and viewer_as_node is None:
             return API_UNAUTHORIZED()
 
         post: Post = self.get_object()
 
         # if the viewer is not the author, and the author is not hosted by the viewer, deny access
-        if viewer != post.author and post.author.host_node != viewer_as_node:
+        if viewer != post.author and not viewer_as_node:
             return Response(
                 {"error": "You do not have permission to edit this post."},
                 status=status.HTTP_403_FORBIDDEN

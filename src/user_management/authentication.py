@@ -18,12 +18,14 @@ class NodeUserBasicAuthentication(authentication.BasicAuthentication):
     def authenticate_credentials(self, userid: str, password: str, request: Optional[Request] = None) -> tuple[User, None]:
         # print(f"{userid=}, {password=}")
         user = User.objects.filter(username=userid).first()
+        print("User ", user)
         if not user:
             print("Invalid username")
             raise AuthenticationFailed('Invalid username')
-        # if not user.check_password(password):
-        #     print("Invalid password")
-        #     raise AuthenticationFailed('Invalid password.')
+        if not user.check_password(password):
+            print("Invalid password")
+            raise AuthenticationFailed('Invalid password.')
+        print("Password successful")
         # if user.type != User.Types.NODE:
         #     print("Not a Node")
         #     raise AuthenticationFailed('Not a Node')
