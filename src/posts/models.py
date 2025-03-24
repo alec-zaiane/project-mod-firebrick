@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+import tempfile
 from typing import Any, TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
@@ -291,17 +293,23 @@ class Post(AuthoredApiObject):
 
             # validate the video duration
             video = None
+            temp_video_path = ""
+            with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+                for chunk in self.video.chunks():
+                    temp_file.write(chunk)
+                temp_video_path = temp_file.name
+
             try:
-                video = VideoFileClip(self.video.path)
-                if video.duration > 4:
+                video = VideoFileClip(temp_video_path)
+                if video.duration > 4.0:
                     raise ValidationError("Video must be 4 seconds or shorter")
             except (IOError, OSError) as e:
                 raise ValidationError(f"Could not read video file: {str(e)}")
-            except Exception as e:
-                raise ValidationError(f"Invalid video file: {str(e)}")
             finally:
                 if video is not None:
                     video.close()
+                if temp_video_path and os.path.exists(temp_video_path):
+                    os.remove(temp_video_path)
         super().clean()
 
     # https://stackoverflow.com/a/8342249

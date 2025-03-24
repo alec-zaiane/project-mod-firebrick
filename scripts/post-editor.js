@@ -5,12 +5,13 @@ window.addEventListener('load', () => {
     let content = document.querySelector("[name='content']");
     let type_selector = document.querySelector("[name='post_type']");
     let image_selector = document.getElementById("id_image");
+    let video_selector = document.getElementById("id_video");
     view_or_hide_content();
     view_or_hide_visibility();
-    // Eventually, video_field
     // Initialization for edit posts
     apply_preview();
     apply_image_preview();
+    apply_video_preview();
     apply_title_preview();
     apply_description_preview();
     // On change of text
@@ -27,6 +28,10 @@ window.addEventListener('load', () => {
     image_selector.addEventListener("change", () => {
         apply_image_preview();
     });
+
+    video_selector.addEventListener("change", () => {
+        apply_video_preview();
+    })
 
     let title = document.querySelector("[name='title']");
     title.addEventListener("input", () => {
@@ -49,6 +54,7 @@ function apply_preview() {
     let type_selector = document.querySelector("[name='post_type']");
     let content = document.querySelector("[name='content']");
     let image = document.querySelector("[name='image']");
+    let video = document.querySelector("[name='video']");
     if (type_selector.value == "PT" || type_selector.value == "MD") {
         preview.innerText = content.value;
         if (type_selector.value == "MD") {
@@ -64,8 +70,16 @@ function apply_preview() {
             if (image.files[0]) {
                 img.src = URL.createObjectURL(image.files[0]);
             }
+        } else if (type_selector.value == "VID") {
+            let vid = document.createElement("video");
+            vid.classList.add("post-video");
+            vid.id = "preview-video";
+            vid.controls = true;
+            preview.appendChild(vid);
+            if (video.files[0]) {
+                vid.src = URL.createObjectURL(video.files[0]);
+            }
         }
-
     }
 }
 
@@ -94,16 +108,31 @@ function apply_image_preview() {
     }
 }
 
+function apply_video_preview() {
+    let vid_preview = document.getElementById("preview-video");
+    let video_selector = document.getElementById("id_video");
+    let video_link = document.getElementById("video-field").querySelector("a");
+    if (vid_preview) {
+        if (video_selector.files[0]) {
+            vid_preview.src = URL.createObjectURL(video_selector.files[0]);
+        } else if (video_link?.href) {
+            vid_preview.src = video_link.href;
+        }
+    }
+}
+
 function view_or_hide_content() {
     let content_field = document.getElementById("content-field");
     let image_field = document.getElementById("image-field");
+    let video_field = document.getElementById("video-field");
     let type_selector = document.querySelector("[name='post_type']");
     if (type_selector.value == "PT" || type_selector.value == "MD") {
         content_field.classList.toggle("invisible", false);
         content_field.querySelector("#id_content").required = true;
         image_field.classList.toggle("invisible", true);
         image_field.querySelector("#id_image").required = false;
-        // video
+        video_field.classList.toggle("invisible", true);
+        video_field.querySelector("#id_video").required = false;
     } else {
         content_field.classList.toggle("invisible", true);
         content_field.querySelector("#id_content").required = false;
@@ -111,8 +140,15 @@ function view_or_hide_content() {
             image_field.classList.toggle("invisible", false);
             let current_image_link = image_field.querySelector("a");
             image_field.querySelector("#id_image").required = !current_image_link;
+            video_field.classList.toggle("invisible", true);
+            video_field.querySelector("#id_video").required = false;
+        } else if (type_selector.value == "VID") {
+            video_field.classList.toggle("invisible", false);
+            let current_video_link = video_field.querySelector("a");
+            video_field.querySelector("#id_video").required = !current_video_link;
+            image_field.classList.toggle("invisible", true);
+            image_field.querySelector("#id_image").required = false;
         }
-        // video
     }
 }
 

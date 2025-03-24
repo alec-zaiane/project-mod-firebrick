@@ -31,7 +31,7 @@ class CreatePostForm(forms.ModelForm[Post]):
         help_text="Optional: Upload a video file (max 4 seconds)",
         widget=forms.FileInput(
             attrs={
-                "accept": "video/*", 
+                "accept": "video/*",
                 "class": "form-control",
             }
         ),
@@ -61,12 +61,9 @@ class CreatePostForm(forms.ModelForm[Post]):
 
         post_type = self.data.get("post_type") if self.data else None
         if post_type:
-            if post_type == PostTypes.IMAGE or post_type == PostTypes.VIDEO:
-                self.fields["content"].required = False
-                self.fields["image"].required = True
-            else:
-                self.fields["content"].required = True
-                self.fields["image"].required = False
+            self.fields["content"].required = post_type == PostTypes.PLAINTEXT or post_type == PostTypes.MARKDOWN
+            self.fields["image"].required = post_type == PostTypes.IMAGE
+            self.fields["video"].required = post_type == PostTypes.VIDEO
 
     def clean(self) -> (dict[str, Any] | None):
         cleaned_data = super().clean()

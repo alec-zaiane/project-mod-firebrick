@@ -1,3 +1,3 @@
-<div class="IMG">
+<a {% if not full %}href="{% url 'posts:view_post' post.uuid %}?next={{ request.path|urlencode }}"{% endif %} class="IMG">
     <img id="post-image-{{ post.uuid }}" class="post-image" src="{{ post.image.url }}" />
-</div>
+</a>

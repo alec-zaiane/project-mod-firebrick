@@ -27,8 +27,15 @@
             <div class="field-wrapper invisible" id="image-field">
                 <label for="id_image">Image <span class="required">∗</span></label>
                 {{ form.image.errors }}
-                <div class="image-upload-field">
+                <div class="upload-field">
                     {{ form.image }}
+                </div>
+            </div>
+            <div class="field-wrapper invisible" id="video-field">
+                <label for="id_video">Video <span class="required">∗</span></label>
+                {{ form.video.errors }}
+                <div class="upload-field">
+                    {{ form.video }}
                 </div>
             </div>
         </section>

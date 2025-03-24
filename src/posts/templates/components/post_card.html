@@ -100,8 +100,10 @@
                     <a id="copy-button" class="copy-button setting-container">
                         {% if post.post_type == "PT" or post.post_type == "MD" %}
                             <input type="hidden" id="copy-contents" value="{{ post.content }}" />
-                        {% else %}
+                        {% elif post.post_type == "IMG" %}
                             <input type="hidden" id="copy-contents" value="{{ post.markdown_image_link }}" />
+                        {% elif post.post_type == "VID" %}
+                            <input type="hidden" id="copy-contents" value="{{ post.markdown_video_link }}" />
                         {% endif %}
                         <div class="setting">
                             <img class="copy-icon" title="Copy Contents" src="{% static 'svg/copy.svg' %}" />
