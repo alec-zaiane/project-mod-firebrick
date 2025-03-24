@@ -1,5 +1,5 @@
 
-name: Run Django Tests
+name: Run Django Tests (Docker)
 
 on:
   pull_request:
@@ -17,9 +17,6 @@ jobs:
       with:
         python-version: '3.13'
 
-    - name: Install geckodriver
-      uses: browser-actions/setup-geckodriver@latest
-
     - name: Install dependencies
       run: |
         pip install -r src/requirements.txt
@@ -29,7 +26,19 @@ jobs:
     - name: Collect static files
       run: |
         python src/manage.py collectstatic --noinput
+    - name: Build the Docker image
+      run: |
+        docker compose build
+    - name: Copy the env files
+      run: |
+        cp .dockerenv/.django.env.example .dockerenv/.django.env
+        cp .dockerenv/.postgres.env.example .dockerenv/.postgres.env
+    - name: Run the Docker containers
+      run: |
+        docker compose up -d
+    - name: Install dev dependencies in the Docker container
+      run: |
+        docker compose exec socialnetwork pip install -r requirements-dev.txt
     - name: Run all tests
       run: |
-        cd src
-        python manage.py test --parallel
+        docker compose exec socialnetwork python manage.py test --parallel --exclude-tag=ui
