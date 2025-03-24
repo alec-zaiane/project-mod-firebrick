@@ -38,7 +38,7 @@ class Comment(AuthoredApiObject):
 
     def generate_fqid(self) -> str:
         # TODO replace with reverse() call :)
-        return f"{self.host_node.host_url}comments/{self.uuid}"
+        return f"{self.host_node.host_url}comments/{self.uuid}".replace("/api", "")
 
     def clean(self) -> None:
         super().clean()

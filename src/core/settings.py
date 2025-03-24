@@ -160,6 +160,11 @@ LOGOUT_REDIRECT_URL = "/"
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "core.utils.pagination.CustomPageNumberPagination",
     "PAGE_SIZE": 10,
+    "DEFAULT_PARSER_CLASSES": [
+        "rest_framework.parsers.JSONParser",
+        "rest_framework.parsers.MultiPartParser",
+        "rest_framework.parsers.FormParser",
+    ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.AllowAny",
     ],

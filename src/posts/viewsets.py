@@ -4,7 +4,7 @@ from urllib.parse import unquote
 from django.contrib.auth.models import AnonymousUser
 
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework import viewsets, status
@@ -35,7 +35,7 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
     queryset = Post.visible_posts.all()
     serializer_class = PostSerializer
     # permission_classes = [IsAuthenticated, PostPermission]
-    parser_classes = (MultiPartParser, FormParser)
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
 
     def get_object(self) -> Post:
         """Allow for encoded fqid based lookup"""

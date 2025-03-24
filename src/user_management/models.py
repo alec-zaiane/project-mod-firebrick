@@ -255,7 +255,7 @@ class Author(ApiObject):
 
     def generate_fqid(self) -> str:
         # TODO replace with reverse() call :)
-        return f"{self.host_node.host_url}/authors/{self.uuid}"
+        return f"{self.host_node.host_url}/authors/{self.uuid}".replace("/api", "")
 
     def generate_page_url(self) -> str:
         # TODO replace with reverse() call :)
@@ -342,7 +342,7 @@ class FollowRequest(ApiObject):
 
     def generate_fqid(self) -> str:
         """Generate a unique FQID for the follow request"""
-        return f"{self.host_node.host_url}/authors/{self.follower.uuid}/followers/{self.followee.uuid}"
+        return f"{self.host_node.host_url}/authors/{self.follower.uuid}/followers/{self.followee.uuid}".replace("/api", "")
 
     # node2node stuff
     def node2node_encode_as_class_json_dict(self) -> dict[str, Any]:

@@ -13,7 +13,6 @@ from comments.models import Comment
 from core.utils.api_object import AuthoredApiObject, ApiObjectManager
 
 
-
 class LikeManager(ApiObjectManager["Like"]):
     def create(self, *args: Any, **kwargs: Any) -> Like:
         author = kwargs.get("author")
@@ -97,11 +96,11 @@ class Like(AuthoredApiObject):
         super().clean()
 
     def generate_fqid(self) -> str:
-        return f"{self.host_node.host_url}likes/{self.uuid}"  # TODO replace with reverse() call :)
-
+        # TODO replace with reverse() call :)
+        return f"{self.host_node.host_url}likes/{self.uuid}".replace("/api", "")
 
         # node2node stuff
-    def node2node_encode_as_class_json_dict(self) -> dict[str,Any]:
+    def node2node_encode_as_class_json_dict(self) -> dict[str, Any]:
         from likes.serializers import LikeSerializer
         return LikeSerializer().to_representation(self)
 
@@ -113,7 +112,6 @@ class Like(AuthoredApiObject):
 
     def node2node_get_deletion_url(self) -> str:
         return self.node2node_get_update_url()
-
 
 
 class PostLike(Like):
