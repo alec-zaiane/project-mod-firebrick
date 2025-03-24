@@ -16,7 +16,6 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.13'
-
     - name: Install dependencies
       run: |
         pip install -r src/requirements.txt
@@ -35,7 +34,7 @@ jobs:
         cp .dockerenv/.postgres.env.example .dockerenv/.postgres.env
     - name: Run the Docker containers
       run: |
-        docker compose up -d
+        docker compose up -d --memory=2g
     - name: Install tblib in the container
       run: |
         docker compose exec socialnetwork pip install tblib
