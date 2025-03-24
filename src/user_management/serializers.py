@@ -3,7 +3,7 @@ from typing import Any
 from rest_framework import serializers
 from rest_framework.serializers import ValidationError
 
-from user_management.models import Author, FollowRequest
+from user_management.models import Author, FollowRequest, Node
 
 
 class AuthorSerializer(serializers.ModelSerializer[Author]):
@@ -55,6 +55,22 @@ class AuthorSerializer(serializers.ModelSerializer[Author]):
             "profile_image": data["profileImage"],
             "page_url": data["page"],
         }
+
+    def get_or_create(self, data: dict[str, Any]) -> Author:
+        try:
+            return Author.objects.get_by_fqid(data["id"])
+        except Author.DoesNotExist:
+            print(data["host"])
+            print(data)
+            host_node = Node.external_nodes.find_node(data["host"])
+            assert host_node is not None
+            return Author.objects.create(
+                fqid=data["id"],
+                host_node=host_node,
+                display_name=data["displayName"],
+                profile_image=data["profileImage"],
+                page_url=data["page"],
+            )
 
 
 class FollowRequestSerializer(serializers.ModelSerializer[FollowRequest]):

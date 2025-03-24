@@ -21,7 +21,7 @@ django_stubs_ext.monkeypatch()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # The url to the root of the site, and the URL to the API
-SITE_URL = "http://127.0.0.1:63207"
+SITE_URL = os.getenv("SITE_URL", "http://localhost:8000")
 SITE_API_URL = f"{SITE_URL}/api"
 
 # Quick-start development settings - unsuitable for production

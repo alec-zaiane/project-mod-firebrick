@@ -56,7 +56,10 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
             return API_UNAUTHORIZED()
 
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            print(serializer.errors)
+            print(request.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         author: Author = serializer.validated_data["author"]
         if not isinstance(author, Author):
