@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
-
+from typing import Any
 import os
 from pathlib import Path
 
@@ -28,12 +28,13 @@ SITE_API_URL = f"{SITE_URL}/api"
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-7t(24@)fq-1&(+-i0m-yhvh)442ef&jb_1_a=-$z4p@9@!ux+-"
+SECRET_KEY = os.getenv(
+    "DJANGO_SECRET_KEY", "django-insecure-7t(24@)fq-1&(+-i0m-yhvh)442ef&jb_1_a=-$z4p@9@!ux+-")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DJANGO_DEBUG", str(True)) == "True"
 
-ALLOWED_HOSTS: list[str] = []
+ALLOWED_HOSTS: list[str] = os.getenv("DJANGO_ALLOWED_HOSTS", "*").split(" ")
 
 
 AUTH_USER_MODEL = "user_management.User"
@@ -57,6 +58,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -90,10 +92,14 @@ WSGI_APPLICATION = "core.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+DATABASES: dict[str, dict[str, Any]] = {
+    'default': {
+        'ENGINE': str(os.getenv("DJANGO_DB_ENGINE", 'django.db.backends.sqlite3')),
+        'NAME': str(os.environ.get("POSTGRES_NAME", BASE_DIR / 'db.sqlite3')),
+        'USER': str(os.environ.get("POSTGRES_USER", 'user')),
+        'PASSWORD': str(os.environ.get("POSTGRES_PASSWORD", 'password')),
+        'HOST': str(os.environ.get("DJANGO_DB_HOST", 'localhost')),
+        'PORT': str(os.environ.get("DJANGO_DB_PORT", '5432')),
     }
 }
 
