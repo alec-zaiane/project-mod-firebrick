@@ -69,8 +69,11 @@ class CreatePostForm(forms.ModelForm[Post]):
         cleaned_data = super().clean()
         if cleaned_data is not None:
             post_type = cleaned_data.get("post_type")
-            cleaned_data["content"] = "" if post_type != PostTypes.PLAINTEXT and post_type != PostTypes.MARKDOWN else cleaned_data["content"]
-            cleaned_data["image"] = None if post_type != PostTypes.IMAGE else cleaned_data["image"]
-            cleaned_data["video"] = None if post_type != PostTypes.VIDEO else cleaned_data["video"]
+            if "content" in cleaned_data:
+                cleaned_data["content"] = "" if post_type != PostTypes.PLAINTEXT and post_type != PostTypes.MARKDOWN else cleaned_data["content"]
+            if "image" in cleaned_data:
+                cleaned_data["image"] = None if post_type != PostTypes.IMAGE else cleaned_data["image"]
+            if "video" in cleaned_data:
+                cleaned_data["video"] = None if post_type != PostTypes.VIDEO else cleaned_data["video"]
 
         return cleaned_data
