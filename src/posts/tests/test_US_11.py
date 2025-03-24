@@ -8,7 +8,6 @@ from posts.models import Post
 from unittest import skip
 
 
-@skip("Not implemented")
 @tag("US-Posting")
 class TestUserStory11(GeneralUserStoryApiTest):
     """
@@ -32,11 +31,19 @@ class TestUserStory11(GeneralUserStoryApiTest):
 
         # authenticate as the post's author
         self.client.force_authenticate(user=author.user)
+        assert author.user is not None  # for mypy
+        self.client.force_login(author.user)
 
         # call api to edit the Post
-        url = reverse("posts:TODO_FIGURE_OUT", args=[post.uuid])
-        response = self.client.put(
-            url, {"content": new_content}, format="json")
+        url = reverse("posts:edit_post", args=[post.uuid])
+        updated_post = {
+            "title": post.title,
+            "description": post.description,
+            "content": new_content,
+            "post_type": post.post_type,
+            "visibility_type": post.visibility_type,
+        }
+        response = self.client.put(url, updated_post, format="json")
 
         # check response
         self.assertEqual(response.status_code, 200)
