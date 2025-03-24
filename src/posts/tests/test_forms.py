@@ -20,6 +20,8 @@ class CreatePostFormUnitTests(TestCase):
         self.override_settings.enable()
         self.image = dummies.create_dummy_post_image()
         self.invalid_image = dummies.create_dummy_invalid_post_image()
+        self.video = dummies.create_dummy_post_video()
+        self.invalid_video = dummies.create_dummy_invalid_post_video()
 
     def test_create_post_form_valid(self) -> None:
         """Test that the form is valid with valid data"""
@@ -225,6 +227,27 @@ class CreatePostFormUnitTests(TestCase):
         self.assertTrue(Post.objects.filter(title="Test Title").exists())
         self.assertFalse(Post.objects.get(title="Test Title").content)
 
+    def test_video_removed_from_image_post(self) -> None:
+        """Tests that a valid image post will remove appended video"""
+        form = CreatePostForm(data={
+            "title": "Test Title",
+            "description": "Test Description",
+            "content": "Test Content",
+            "post_type": PostTypes.IMAGE,
+            "visibility_type": VisibilityTypes.PUBLIC,
+        }, files={
+            "video": self.video,
+            "image": self.image
+        })
+        author = user_dummies.create_dummy_local_author("test_author", "abc@a.com")
+        form.instance.author = author
+        form.instance.host_node = author.host_node
+        print(form.errors)
+        self.assertTrue(form.is_valid())
+        form.save()
+        self.assertTrue(Post.objects.filter(title="Test Title").exists())
+        self.assertFalse(Post.objects.get(title="Test Title").video)
+
     def test_image_removed_from_plaintext_post(self) -> None:
         """Tests that a valid plaintext post will remove appended image"""
         form = CreatePostForm(data={
@@ -262,6 +285,234 @@ class CreatePostFormUnitTests(TestCase):
         form.save()
         self.assertTrue(Post.objects.filter(title="Test Title").exists())
         self.assertFalse(Post.objects.get(title="Test Title").image)
+
+    def test_video_and_content_removed_from_image_post(self) -> None:
+        """Tests that a valid image post will remove appended video and content"""
+        form = CreatePostForm(data={
+            "title": "Test Title",
+            "description": "Test Description",
+            "post_type": PostTypes.IMAGE,
+            "visibility_type": VisibilityTypes.PUBLIC,
+        }, files={
+            "video": self.video,
+            "image": self.image
+        })
+        author = user_dummies.create_dummy_local_author("test_author", "abc@a.com")
+        form.instance.author = author
+        form.instance.host_node = author.host_node
+        self.assertTrue(form.is_valid())
+        form.save()
+        self.assertTrue(Post.objects.filter(title="Test Title").exists())
+        post = Post.objects.get(title="Test Title")
+        self.assertFalse(post.video)
+        self.assertFalse(post.content)
+
+    def test_create_valid_video_post(self) -> None:
+        """Tests that the form can create a valid video post"""
+        form = CreatePostForm(data={
+            "title": "Test Title",
+            "description": "Test Description",
+            "post_type": PostTypes.VIDEO,
+            "visibility_type": VisibilityTypes.PUBLIC,
+        }, files={
+            "video": self.video
+        })
+        author = user_dummies.create_dummy_local_author("test_author", "abc@a.com")
+        form.instance.author = author
+        form.instance.host_node = author.host_node
+        self.assertTrue(form.is_valid())
+        form.save()
+        self.assertTrue(Post.objects.filter(title="Test Title").exists())
+        self.assertTrue(Post.objects.get(title="Test Title").video)
+
+    def test_create_minimal_video_post(self) -> None:
+        """Tests that a video post can be made with the minimum required fields"""
+        form = CreatePostForm(data={
+            "title": "Test Title",
+            "post_type": PostTypes.VIDEO,
+            "visibility_type": VisibilityTypes.PUBLIC,
+        }, files={
+            "video": self.video
+        })
+        author = user_dummies.create_dummy_local_author("test_author", "abc@a.com")
+        form.instance.author = author
+        form.instance.host_node = author.host_node
+        self.assertTrue(form.is_valid())
+        form.save()
+        self.assertTrue(Post.objects.filter(title="Test Title").exists())
+        self.assertTrue(Post.objects.get(title="Test Title").video)
+
+    def test_invalid_video_post(self) -> None:
+        """Tests that the form is invalid with an invalid video"""
+        form = CreatePostForm(data={
+            "title": "Test Title",
+            "description": "Test Description",
+            "post_type": PostTypes.VIDEO,
+            "visibility_type": VisibilityTypes.PUBLIC,
+        }, files={
+            "video": self.invalid_video
+        })
+        author = user_dummies.create_dummy_local_author("test_author", "abc@a.com")
+        form.instance.author = author
+        form.instance.host_node = author.host_node
+        self.assertFalse(form.is_valid())
+        self.assertIn("Could not read video file",
+                      form.non_field_errors()[0])
+
+    def test_no_video_post(self) -> None:
+        """Tests that the form is invalid with no video"""
+        form = CreatePostForm(data={
+            "title": "Test Title",
+            "description": "Test Description",
+            "post_type": PostTypes.VIDEO,
+            "visibility_type": VisibilityTypes.PUBLIC,
+        })
+        author = user_dummies.create_dummy_local_author("test_author", "abc@a.com")
+        form.instance.author = author
+        form.instance.host_node = author.host_node
+        self.assertFalse(form.is_valid())
+        self.assertEqual(form.errors["video"], ["This field is required."])
+
+    def test_content_removed_from_video_post(self) -> None:
+        """Tests that a valid video post will remove appended content"""
+        form = CreatePostForm(data={
+            "title": "Test Title",
+            "description": "Test Description",
+            "content": "Test Content",
+            "post_type": PostTypes.VIDEO,
+            "visibility_type": VisibilityTypes.PUBLIC,
+        }, files={
+            "video": self.video
+        })
+        author = user_dummies.create_dummy_local_author("test_author", "abc@a.com")
+        form.instance.author = author
+        form.instance.host_node = author.host_node
+        self.assertTrue(form.is_valid())
+        form.save()
+        self.assertTrue(Post.objects.filter(title="Test Title").exists())
+        self.assertFalse(Post.objects.get(title="Test Title").content)
+
+    def test_image_removed_from_video_post(self) -> None:
+        """Tests that a valid video post will remove appended image"""
+        form = CreatePostForm(data={
+            "title": "Test Title",
+            "description": "Test Description",
+            "post_type": PostTypes.VIDEO,
+            "visibility_type": VisibilityTypes.PUBLIC,
+        }, files={
+            "video": self.video,
+            "image": self.image
+        })
+        author = user_dummies.create_dummy_local_author("test_author", "abc@a.com")
+        form.instance.author = author
+        form.instance.host_node = author.host_node
+        self.assertTrue(form.is_valid())
+        form.save()
+        self.assertTrue(Post.objects.filter(title="Test Title").exists())
+        self.assertFalse(Post.objects.get(title="Test Title").image)
+
+    def test_video_removed_from_plaintext_post(self) -> None:
+        """Tests that a valid plaintext post will remove appended video"""
+        form = CreatePostForm(data={
+            "title": "Test Title",
+            "description": "Test Description",
+            "content": "Test Content",
+            "post_type": PostTypes.PLAINTEXT,
+            "visibility_type": VisibilityTypes.PUBLIC,
+        }, files={
+            "video": self.video
+        })
+        author = user_dummies.create_dummy_local_author("test_author", "abc@a.com")
+        form.instance.author = author
+        form.instance.host_node = author.host_node
+        self.assertTrue(form.is_valid())
+        form.save()
+        self.assertTrue(Post.objects.filter(title="Test Title").exists())
+        self.assertFalse(Post.objects.get(title="Test Title").video)
+
+    def test_video_removed_from_markdown_post(self) -> None:
+        """Tests that a valid markdown post will remove appended video"""
+        form = CreatePostForm(data={
+            "title": "Test Title",
+            "description": "Test Description",
+            "content": "Test Content",
+            "post_type": PostTypes.MARKDOWN,
+            "visibility_type": VisibilityTypes.PUBLIC,
+        }, files={
+            "video": self.video
+        })
+        author = user_dummies.create_dummy_local_author("test_author", "abc@a.com")
+        form.instance.author = author
+        form.instance.host_node = author.host_node
+        self.assertTrue(form.is_valid())
+        form.save()
+        self.assertTrue(Post.objects.filter(title="Test Title").exists())
+        self.assertFalse(Post.objects.get(title="Test Title").video)
+
+    def test_image_and_video_removed_from_plaintext_post(self) -> None:
+        """Tests that a valid plaintext post will remove appended image and video"""
+        form = CreatePostForm(data={
+            "title": "Test Title",
+            "description": "Test Description",
+            "content": "Test Content",
+            "post_type": PostTypes.PLAINTEXT,
+            "visibility_type": VisibilityTypes.PUBLIC,
+        }, files={
+            "video": self.video,
+            "image": self.image
+        })
+        author = user_dummies.create_dummy_local_author("test_author", "abc@a.com")
+        form.instance.author = author
+        form.instance.host_node = author.host_node
+        self.assertTrue(form.is_valid())
+        form.save()
+        self.assertTrue(Post.objects.filter(title="Test Title").exists())
+        post = Post.objects.get(title="Test Title")
+        self.assertFalse(post.image)
+        self.assertFalse(post.video)
+
+    def test_image_and_video_removed_from_markdown_post(self) -> None:
+        """Tests that a valid markdown post will remove appended image and video"""
+        form = CreatePostForm(data={
+            "title": "Test Title",
+            "description": "Test Description",
+            "content": "Test Content",
+            "post_type": PostTypes.MARKDOWN,
+            "visibility_type": VisibilityTypes.PUBLIC,
+        }, files={
+            "video": self.video,
+            "image": self.image
+        })
+        author = user_dummies.create_dummy_local_author("test_author", "abc@a.com")
+        form.instance.author = author
+        form.instance.host_node = author.host_node
+        self.assertTrue(form.is_valid())
+        form.save()
+        self.assertTrue(Post.objects.filter(title="Test Title").exists())
+        post = Post.objects.get(title="Test Title")
+        self.assertFalse(post.image)
+        self.assertFalse(post.video)
+
+    def test_image_and_content_removed_from_video_post(self) -> None:
+        """Tests that a valid video post will remove appended image and content"""
+        form = CreatePostForm(data={
+            "title": "Test Title",
+            "description": "Test Description",
+            "post_type": PostTypes.VIDEO,
+            "visibility_type": VisibilityTypes.PUBLIC,
+        }, files={
+            "video": self.video,
+            "image": self.image
+        })
+        author = user_dummies.create_dummy_local_author("test_author", "abc@a.com")
+        form.instance.author = author
+        form.instance.host_node = author.host_node
+        self.assertTrue(form.is_valid())
+        form.save()
+        self.assertTrue(Post.objects.filter(title="Test Title").exists())
+        post = Post.objects.get(title="Test Title")
+        self.assertFalse(post.image)
+        self.assertFalse(post.content)
 
     def test_modify_post(self) -> None:
         """Tests that a post can be modified"""
