@@ -247,6 +247,8 @@ class Post(AuthoredApiObject):
         return self.host_node.host_url + reverse('posts:view_post', kwargs={'post_uuid': self.uuid})
 
     def get_absolute_url(self) -> str:
+        if self.visibility_type == VisibilityTypes.FRIENDS_ONLY:
+            raise ValidationError("Friends-only posts do not have shareable links")
         if self.host_node.is_local_node:
             return self.host_node.host_site_url+reverse('posts:view_post', kwargs={'post_uuid': self.uuid})
         else:

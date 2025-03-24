@@ -164,6 +164,7 @@ REST_FRAMEWORK = {
         "user_management.authentication.NodeUserBasicAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 MEDIA_URL = "/media/"
