@@ -474,7 +474,7 @@ class Node(models.Model):
 
     def _make_absolute_url(self, url: str) -> str:
         host_url_no_slash = self.host_url.rstrip("/")
-        to_no_slash = url.lstrip("api/").lstrip("/")
+        to_no_slash = url.replace("api", "/").lstrip("/")
         return f"{host_url_no_slash}/{to_no_slash}"
 
     def send_update(self, json: dict[str, Any], to: str) -> None:
