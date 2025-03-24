@@ -248,7 +248,7 @@ class Author(ApiObject):
 
     def generate_fqid(self) -> str:
         # TODO replace with reverse() call :)
-        return f"{self.host_node.host_url}authors/{self.uuid}"
+        return f"{self.host_node.host_url}/authors/{self.uuid}"
 
     def generate_page_url(self) -> str:
         # TODO replace with reverse() call :)

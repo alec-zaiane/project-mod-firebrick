@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import Any, TYPE_CHECKING
+import os
+import tempfile
+from typing import Any, TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from comments.models import Comment
@@ -17,6 +19,7 @@ from django.core.validators import URLValidator
 from user_management.models import Author
 from core.utils.api_object import ApiObjectManager, AuthoredApiObject
 from core.utils.validators import validate_url_returns_image
+from moviepy.editor import VideoFileClip
 
 
 # === These are enums for the types of posts ===
@@ -36,7 +39,7 @@ CONTENT_TYPE_WEB_MAP: dict[str, str] = {
     # check back on this
     PostTypes.IMAGE: "image/png;base64",
     # this isn't implemented yet
-    PostTypes.VIDEO: "application/base64"
+    PostTypes.VIDEO: "video/mp4;base64",
 }
 
 CONTENT_TYPE_WEB_MAP_REVERSE: dict[str, str] = {
@@ -44,7 +47,7 @@ CONTENT_TYPE_WEB_MAP_REVERSE: dict[str, str] = {
     "text/markdown": PostTypes.MARKDOWN,
     "image/png;base64": PostTypes.IMAGE,
     "image/jpeg;base64": PostTypes.IMAGE,
-    "application/base64": PostTypes.VIDEO,
+    "video/mp4;base64": PostTypes.VIDEO,
 }
 
 
@@ -57,11 +60,13 @@ class VisibilityTypes(models.TextChoices):
 class VisibilityTypeResolver:
     """Modified an existing Q object with a visibility type"""
     @staticmethod
-    def modify_q(existing_q: Q, visibility_type: VisibilityTypes, author: Author) -> Q:
+    def modify_q(existing_q: Q, visibility_type: VisibilityTypes, author: Optional[Author]) -> Q:
         match visibility_type:
             case VisibilityTypes.PUBLIC:
                 return existing_q | Q(visibility_type=VisibilityTypes.PUBLIC)
             case VisibilityTypes.FRIENDS_ONLY:
+                if author == None:
+                    return existing_q
                 return existing_q | (Q(visibility_type=VisibilityTypes.FRIENDS_ONLY) & Q(
                     author__followers__in=[author]) & Q(author__following__in=[author]))
             case VisibilityTypes.UNLISTED:
@@ -148,7 +153,7 @@ class VisiblePostManager(PostManager):
     def get_queryset(self) -> models.QuerySet[Post]:
         return super().get_queryset().filter(is_soft_deleted=False)
 
-    def get_posts_visible_to_author(self, author: Author) -> models.QuerySet[Post]:
+    def get_posts_visible_to_author(self, author: Optional[Author]) -> models.QuerySet[Post]:
         """Get all the posts that an author is allowed to see (either in stream or by a direct link)"""
         # we don't have to worry about deleted posts because of self.get_queryset()
         # see the visibility User stories: https://uofa-cmput404.github.io/general/project.html#user-stories
@@ -157,7 +162,7 @@ class VisiblePostManager(PostManager):
             query = VisibilityTypeResolver.modify_q(query, visibility_type, author)
 
         # also, always show your own posts
-        query = query | Q(author=author)
+        query = query | Q(author=author, is_soft_deleted=False)
 
         return self.get_queryset().filter(query)
 
@@ -204,6 +209,13 @@ class Post(AuthoredApiObject):
 
     image: models.ImageField = models.ImageField(upload_to="post_images/", null=True, blank=True)
 
+    video: models.FileField = models.FileField(
+        upload_to="post_videos/",
+        null=True,
+        blank=True,
+        help_text="Video must be shorter than 4 seconds",
+    )
+
     if TYPE_CHECKING:
         comments: models.QuerySet[Comment]
         likes: models.QuerySet[Like]
@@ -235,6 +247,8 @@ class Post(AuthoredApiObject):
         return self.host_node.host_url + reverse('posts:view_post', kwargs={'post_uuid': self.uuid})
 
     def get_absolute_url(self) -> str:
+        if self.visibility_type == VisibilityTypes.FRIENDS_ONLY:
+            raise ValidationError("Friends-only posts do not have shareable links")
         if self.host_node.is_local_node:
             return self.host_node.host_site_url+reverse('posts:view_post', kwargs={'post_uuid': self.uuid})
         else:
@@ -260,16 +274,62 @@ class Post(AuthoredApiObject):
                 raise ValidationError("Content must be specified")
             if self.image:
                 raise ValidationError("Image field must be empty for plaintext and markdown posts")
+            if self.video:
+                raise ValidationError("Video field must be empty for plaintext and markdown posts")
         elif self.post_type == PostTypes.IMAGE:
             # make sure the image field is the only non-null field
             if not self.image:
                 raise ValidationError("Image must be specified")
             if self.content:
                 raise ValidationError("Content field must be empty for image posts")
+            if self.video:
+                raise ValidationError("Video field must be empty for image posts")
         elif self.post_type == PostTypes.VIDEO:
-            # TODO fill this in and add to the if statements above
-            ...
+            # make sure the video field is the only non-null field
+            if not self.video:
+                raise ValidationError("Video must be specified")
+            if self.content:
+                raise ValidationError("Content field must be empty for video posts")
+            if self.image:
+                raise ValidationError("Image field must be empty for video posts")
+
+            # validate the video duration
+            video = None
+            temp_video_path = ""
+            with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+                for chunk in self.video.chunks():
+                    temp_file.write(chunk)
+                temp_video_path = temp_file.name
+
+            try:
+                video = VideoFileClip(temp_video_path)
+                if video.duration > 4.0:
+                    raise ValidationError("Video must be 4 seconds or shorter")
+            except (IOError, OSError) as e:
+                raise ValidationError(f"Could not read video file: {str(e)}")
+            finally:
+                if video is not None:
+                    video.close()
+                if temp_video_path and os.path.exists(temp_video_path):
+                    os.remove(temp_video_path)
         super().clean()
+
+    # https://stackoverflow.com/a/8342249
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        """Clears the old image if it exists before saving"""
+        try:
+            this = Post.objects.get(uuid=self.uuid)
+            if this.image != self.image:
+                this.image.delete(save=False)
+        except:
+            pass
+        super(Post, self).save(*args, **kwargs)
+
+    def delete(self, *args: Any, **kwargs: Any) -> tuple[int, dict[str, Any]]:
+        """Deletes the image before deleting the post, only for hard deletion. Soft-deletion
+        does not delete images."""
+        self.image.delete()
+        return super(Post, self).delete(*args, **kwargs)
 
     def get_template_name(self) -> str:
         """Get the template name for this post's inner-content"""
@@ -300,3 +360,14 @@ class Post(AuthoredApiObject):
             raise ValidationError("This post is not an image post")
         assert self.image is not None
         return f"![{self.title}]({self.image.url})"
+
+    @property
+    def markdown_video_link(self) -> str | None:
+        """
+        Returns markdown link for video, similar to image link
+        Example: ![title](http://127.0.0.1:8000/media/post_videos/abc.mp4)
+        """
+        if self.post_type != PostTypes.VIDEO:
+            raise ValidationError("This post is not a video post")
+        assert self.video is not None
+        return f"<video alt='{self.title}' src='{self.video.url}' controls>"

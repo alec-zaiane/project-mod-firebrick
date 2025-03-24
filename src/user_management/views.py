@@ -8,10 +8,14 @@ from rest_framework.views import APIView
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from user_management.models import Author
-from user_management.serializers import AuthorSerializer
+from user_management.models import Author, FollowRequest
+from user_management.serializers import AuthorSerializer, FollowRequestSerializer
 
 from django.urls import reverse
+
+from django.template import loader
+
+from drf_spectacular.utils import extend_schema
 
 from user_management.forms import AuthorModifyForm, JoinRequestForm
 from user_management.models import LocalAuthor
@@ -61,6 +65,14 @@ class AuthorView(View):
             author=target_author, visibility_type=VisibilityTypes.PUBLIC
         ).order_by("-created_at")
 
+        is_following = target_author in viewer.following.all() if viewer is not None else False
+        is_follow_requested = viewer.follow_requests_sent.filter(
+            followee=target_author).exists() if viewer is not None else False
+
+        following = target_author.following.all()
+        followers = target_author.followers.all()
+        friends = target_author.friends.all()
+
         return render(
             request,
             "author_profile.html",
@@ -68,6 +80,11 @@ class AuthorView(View):
                 "author": target_author,
                 "viewer": viewer,
                 "posts": public_posts,
+                "is_following": is_following,
+                "is_follow_requested": is_follow_requested,
+                "following": following,
+                "followers": followers,
+                "friends": friends
             },
         )
 
@@ -121,6 +138,74 @@ class AuthorModifyView(View):
             "form": form
         })
 
+
+class AuthorFollowRequests(View):
+    def get(self, request: HttpRequest) -> HttpResponse:
+        """
+        The view for viewing all of the follow requests that belong to an author.
+        """
+
+        viewer = get_request_viewer(request)
+
+        if viewer == None:
+            if request.GET.get('next') == None:
+                return HttpResponseRedirect(reverse("user_management:login") + "?next=" + reverse("user_management:follow_requests"))
+            return HttpResponseRedirect(reverse("user_management:login") + "?next=" + reverse("user_management:follow_requests") + "?next=" + request.GET.get('next', ''))
+
+        follow_requests = viewer.follow_requests_received.all()
+
+        return render(
+            request,
+            "follow_requests.html",
+            {
+                "author": viewer,
+                "viewer": viewer,
+                "follow_requests": follow_requests
+            },
+        )
+
+
+class AuthorFollowInfoView(View):
+    follow_type: str = ""
+
+    def get(self, request: HttpRequest, target_author_uuid: str) -> HttpResponse:
+        """
+        The view for viewing all of the follow info that belongs to an author.
+        Represents all three main types, since they all use the same template and are otherwise extremely similar.
+        That is: following, followers, and friends.
+        """
+
+        target_author = get_object_or_404(
+            LocalAuthor, uuid=target_author_uuid)
+
+        viewer = get_request_viewer(request)
+
+        if viewer == None:
+            if request.GET.get('next') == None:
+                return HttpResponseRedirect(reverse("user_management:login") + "?next=" + reverse("user_management:author_following", args=[target_author.uuid]))
+            return HttpResponseRedirect(reverse("user_management:login") + "?next=" + reverse("user_management:author_following", args=[target_author.uuid]) + "?next=" + request.GET.get('next', ''))
+
+        if self.follow_type == "following":
+            follow_info = target_author.following.all()
+        elif self.follow_type == "followers":
+            follow_info = target_author.followers.all()
+        elif self.follow_type == "friends":
+            follow_info = target_author.friends.all()
+        else:
+            return HttpResponse(status=404)
+
+        return render(
+            request,
+            "follow_info.html",
+            {
+                "author": target_author,
+                "viewer": viewer,
+                "follow_info": follow_info,
+                "follow_type": self.follow_type.capitalize()
+            },
+        )
+
+
 class AuthorSearchAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -131,3 +216,45 @@ class AuthorSearchAPIView(APIView):
         )
         serializer = AuthorSerializer(authors, many=True)
         return Response(serializer.data)
+
+
+class FollowRequestByViewer(APIView):
+    @extend_schema(
+        summary="[Internal] create a follow request for an author by the viewer",
+        description="Create a follow request for an author by the viewer. Cannot create a follow request for an author that has already been followed by the viewer.",
+        responses={201: None, 400: None, 401: None, 404: None},
+    )
+    def post(self, request: Request, target_fqid: str) -> Response:
+        """Create a follow request for an author by the viewer.
+        Cannot create a follow request for an author that has already been followed by the viewer.
+        """
+        viewer = get_request_viewer(request)
+        if viewer is None:
+            return Response({"error": "Log in as a user to follow an author"}, status=401)
+
+        target_author = Author.objects.find_by_encoded_fqid(target_fqid)
+        if target_author is None:
+            return Response({"error": f"Could not find author with id {target_fqid}"}, status=404)
+        if viewer.following.filter(fqid=target_fqid).exists():
+            return Response({"error": "You are already following this author"}, status=400)
+        if viewer.follow_requests_sent.filter(followee=target_author).exists():
+            return Response({"error": "You have already requested to follow this author"}, status=400)
+        # deserialize and validate the incoming follow request data
+        FollowRequest.objects.create_follow_request(viewer, target_author)
+        return Response(status=201)
+
+    def delete(self, request: Request, target_fqid: str) -> Response:
+        """Delete a follow request for an author by the viewer.
+        Cannot delete a follow request for an author that has not been requested to be followed by the viewer.
+        """
+        viewer = get_request_viewer(request)
+        if viewer is None:
+            return Response({"error": "Log in as a user to remove a follow request from an author"}, status=401)
+
+        target_author = Author.objects.find_by_encoded_fqid(target_fqid)
+        if target_author is None:
+            return Response({"error": f"Could not find author with id {target_fqid}"}, status=404)
+        if not viewer.follow_requests_sent.filter(followee=target_author).exists():
+            return Response({"error": "You have not requested to follow this author"}, status=404)
+        viewer.follow_requests_sent.filter(followee=target_author).delete()
+        return Response(status=204)

@@ -47,6 +47,8 @@
 - https://www.django-rest-framework.org/api-guide/
 - https://stackoverflow.com/questions/14547491/url-encoding-on-django-template
 - https://stackoverflow.com/questions/16566069/url-decode-utf-8-in-python
+- https://stackoverflow.com/a/8342249
+- https://gist.github.com/dmlap/5643609
 
 ##GPT/Copilot Documentation:
 1. Copilot auto-complete was used in VS Code

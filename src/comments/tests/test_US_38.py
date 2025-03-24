@@ -12,7 +12,6 @@ from user_management.serializers import AuthorSerializer
 from user_management.models import Node
 
 
-
 @tag("US-comments/likes")
 class TestUserStory38(GeneralUserStoryApiTest):
     """API tests for US 38
@@ -50,7 +49,8 @@ class TestUserStory38(GeneralUserStoryApiTest):
     def test_cannot_comment_on_inaccessible_post(self) -> None:
         """Test that an author cannot comment on an inaccessible post"""
         self.initialize_sample_authors(2)
-        self.initialize_sample_text_posts(posts_per_author=1, visibility_type=VisibilityTypes.FRIENDS_ONLY)
+        self.initialize_sample_text_posts(
+            posts_per_author=1, visibility_type=VisibilityTypes.FRIENDS_ONLY)
 
         self.client.force_authenticate(user=self.sample_authors[0].user)
         url = reverse("user_management:node2node_inbox", args=[self.sample_authors[1].uuid])
@@ -71,7 +71,8 @@ class TestUserStory38(GeneralUserStoryApiTest):
     def test_can_comment_on_unlisted_post(self) -> None:
         """Test that an author can comment on an unlisted post"""
         self.initialize_sample_authors(2)
-        self.initialize_sample_text_posts(posts_per_author=1, visibility_type=VisibilityTypes.UNLISTED)
+        self.initialize_sample_text_posts(
+            posts_per_author=1, visibility_type=VisibilityTypes.UNLISTED)
 
         self.client.force_authenticate(user=self.sample_authors[0].user)
         url = reverse("user_management:node2node_inbox", args=[self.sample_authors[1].uuid])
@@ -92,6 +93,7 @@ class TestUserStory38(GeneralUserStoryApiTest):
         self.assertEqual(comment.content, "Comment")
         self.assertEqual(getattr(comment.author, "uuid", None),
                          self.sample_authors[0].uuid)
+
 
 class TestUserStory38UI(UITestCase):
     """UI tests for US 38
@@ -114,11 +116,10 @@ class TestUserStory38UI(UITestCase):
         # make sure it exists
         self.assertEqual(Comment.objects.count(), 1)
         comment = Comment.objects.first()
-        assert comment is not None # for mypy
+        assert comment is not None  # for mypy
         self.assertEqual(comment.content, "My cool comment")
         self.assertEqual(comment.author.uuid, self.sample_authors[0].uuid)
         # make sure it is rendered
         comment_card = self.find_element_by_id(f"comment-{comment.uuid}")
         self.assertIn("My cool comment", comment_card.element.text)
         self.end_test()
-

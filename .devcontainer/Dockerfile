@@ -5,16 +5,18 @@ ARG USER_GID=$USER_UID
 
 # Install needed packages
 RUN apk update && apk upgrade
-RUN apk add bash git fish curl sudo nodejs npm
+RUN apk add bash git fish curl sudo nodejs npm docker docker-cli-compose
 
 # Create a new non-root user
 RUN apk add shadow
 RUN groupadd --gid $USER_GID $USERNAME \
-    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
+    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
+    && usermod -aG docker $USERNAME
 
 # install firefox and some fonts # https://wiki.alpinelinux.org/wiki/Fonts
 RUN apk add font-terminus font-inconsolata font-dejavu font-noto font-noto-cjk font-awesome font-noto-extra
 RUN apk add firefox
+RUN apk add ffmpeg
 
 # let dev sudo without password
 RUN echo "$USERNAME ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/$USERNAME

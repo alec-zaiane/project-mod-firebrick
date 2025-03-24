@@ -1,0 +1,26 @@
+{% extends 'return-base.html' %}
+
+{% load static %}
+
+{% block title %}{{ author.display_name }}'s {{follow_type}}{% endblock %}
+
+{% url 'user_management:author_profile' author.uuid as author_url %}
+{% block return_href %}{% if request.GET.next %}{{ request.GET.next }}{% else %}{% url 'user_management:author_profile' author.uuid %}{% endif %}{% endblock %}
+{% block return_title %}Return to {{author.display_name}}{% endblock %}
+
+{% block content %}
+<div class="follow-infos">
+    <h1>{{ follow_type }}</h1>
+    {% for follow in follow_info %}
+    <div class="follow">
+        <a id="post-profile-select" href="{% url 'user_management:author_profile' follow.uuid %}{% if request.GET.next %}?next={{ request.get_full_path }}{% endif %}" class="names">
+            {% if follow.profile_image %}
+            <img class="profile-image" src="{{ follow.profile_image }}"/>
+            {% endif %}
+            <h3 class="display-name">{{ follow.display_name }}</h3>
+            <h5 class="username">{{ follow.username }}</h5>
+        </a>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}

@@ -17,16 +17,32 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include, URLPattern, URLResolver
+from django.views.generic import RedirectView
 
 from django.conf import settings
 from django.conf.urls.static import static
 
+from drf_spectacular import views as spectacular_views
+
 urlpatterns: list[URLPattern | URLResolver] = [
+    path("", RedirectView.as_view(url="stream")),
     path("admin/", admin.site.urls),
     path("", include("posts.urls")),
     path("", include("user_management.urls")),
     path("", include("likes.urls")),
     path("", include("comments.urls")),
+
+
+    # Schema views
+    path("api/schema/",
+         spectacular_views.SpectacularAPIView.as_view(),
+         name="schema"),
+    path("api/schema/swagger-ui/",
+         spectacular_views.SpectacularSwaggerView.as_view(url_name="schema"),
+         name="swagger-ui"),
+    path("api/schema/redoc/",
+         spectacular_views.SpectacularRedocView.as_view(url_name="schema"),
+         name="redoc"),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

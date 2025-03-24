@@ -4,7 +4,7 @@
 
 {% block title %}Modfying {{ author.display_name }}'s Profile{% endblock %}
 
-{% block return_href %}{% url 'user_management:author_profile' author.uuid %}{% endblock %}
+{% block return_href %}{% if request.GET.next %}{{ request.GET.next }}{% else %}{% url 'user_management:author_profile' author.uuid %}{% endif %}{% endblock %}
 {% block return_title %}Return to {{author.display_name}}{% endblock %}
 
 {% block content %}

@@ -4,7 +4,7 @@
     {% load static %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src *">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src * blob: data:; media-src * blob: data:">
     <link id="_stylesheet" rel="stylesheet" type="text/css" href="{% static 'style.css' %}" />
     <title>{% block title %}{% endblock %} | Firebrick</title>
     {% block head %}{% endblock %}

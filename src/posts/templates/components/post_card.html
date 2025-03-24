@@ -2,13 +2,15 @@
 
 {% load static %}
 {% load check_liked %}
+{% load check_interaction_eligibility %}
 
 <article class="post-card{% if full %} post-full{% endif %}">
     {% if not full %}
         <a id="post-select" class="post-view" href="{% url 'posts:view_post' post.uuid %}?next={{ request.path|urlencode }}"></a>
     {% endif %}
     <header>
-        <a id="post-profile-select" href="{% url 'user_management:author_profile' post.author.uuid %}" class="names">
+        {% url 'user_management:author_profile' post.author.uuid as author_url %}
+        <a id="post-profile-select" href="{% if request.path == author_url %}{{ request.get_full_path }}{% else %}{{ author_url }}?next={{ request.get_full_path }}{% endif %}" class="names">
             {% if post.author.profile_image %}
             <img class="profile-image" src="{{ post.author.profile_image }}"/>
             {% endif %}
@@ -69,6 +71,7 @@
                 {% include 'components/post-meta.html' with full=True %}
             </div>
         {% endif %}
+        {% check_interaction_eligibility viewer post as interactable%}
         <div class="likes-comments-share">
             <div class="comments-box">
                 <img class="comments-icon" src="{% static 'svg/comment.svg' %}" />
@@ -79,7 +82,7 @@
                     {% csrf_token %}
                     <input type="hidden" name="_method" value="POST">
                     <input type="hidden" name="_after_action" value="reload">
-                    <button class="like-button" type="submit" {% if not viewer %}disabled{% endif %}>
+                    <button class="like-button" type="submit" {% if not interactable %}disabled{% endif %}>
                         {% check_liked viewer post as liked %}
                         {% if liked %}
                             <img class="like-icon liked" src="{% static 'svg/liked.svg' %}" />
@@ -95,16 +98,22 @@
                 <div class="settings-dropdown-content share-dropdown-content">
                     {% url 'posts:view_post' post.uuid as view_post_url %}
                     <a id="copy-button" class="copy-button setting-container">
-                        <input type="hidden" id="copy-contents" value="{{ post.content }}" />
+                        {% if post.post_type == "PT" or post.post_type == "MD" %}
+                            <input type="hidden" id="copy-contents" value="{{ post.content }}" />
+                        {% elif post.post_type == "IMG" %}
+                            <input type="hidden" id="copy-contents" value="{{ post.markdown_image_link }}" />
+                        {% elif post.post_type == "VID" %}
+                            <input type="hidden" id="copy-contents" value="{{ post.markdown_video_link }}" />
+                        {% endif %}
                         <div class="setting">
                             <img class="copy-icon" title="Copy Contents" src="{% static 'svg/copy.svg' %}" />
                             <span id="copy-contents-field">
                             {% if post.post_type == "PT" or post.post_type == "MD"  %}
                             Copy Contents
                             {% elif post.post_type == "VID" %}
-                            Copy Video Media Link
-                            {% elif post.post_type == "MD" %}
-                            Copy Image Media Link
+                            Copy Video Markdown
+                            {% elif post.post_type == "IMG" %}
+                            Copy Image Markdown
                             {% endif %}
                             </span>
                         </div>
@@ -123,16 +132,18 @@
         </div>
         {% if full %}
             <section class="comments-section">
-                <form id="comment-form" class="add-comment" name="generic-form" action="{% url 'comments:internal_comment' post.fqid|urlencode:"" %}">
-                    {% csrf_token %}
-                    <input type="hidden" name="_method" value="POST">
-                    <input type="hidden" name="_after_action" value="reload">
-                    {% if viewer.profile_image %}
-                        <img class="profile-image" src="{{ viewer.profile_image }}"/>
-                    {% endif %}
-                    <textarea class="add-comment-text" name="comment" placeholder="Add a comment..." id="add-comment-area"></textarea>
-                    <button class="submit-comment" type="submit" id="submit-comment">Comment</button>
-                </form>
+                {% if interactable %}
+                    <form id="comment-form" class="add-comment" name="generic-form" action="{% url 'comments:internal_comment' post.fqid|urlencode:"" %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="_method" value="POST">
+                        <input type="hidden" name="_after_action" value="reload">
+                        {% if viewer.profile_image %}
+                            <img class="profile-image" src="{{ viewer.profile_image }}"/>
+                        {% endif %}
+                        <textarea class="add-comment-text" name="comment" placeholder="Add a comment..." id="add-comment-area"></textarea>
+                        <button class="submit-comment" type="submit" id="submit-comment">Comment</button>
+                    </form>
+                {% endif %}
                 {% for comment in post.comments.all %}
                     {% include 'components/comment-card.html' %}
                 {% endfor %}

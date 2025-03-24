@@ -29,10 +29,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
                     if (uuid) {
                         const link = document.createElement("a");
-                        link.href = `/authors/${uuid}/`;  
-                        link.textContent = author.displayName;
-                        link.style.display = "block";
-                        link.style.marginTop = "5px";
+                        link.href = `/authors/${uuid}/`;
+                        link.classList.add("names");
+                        if (author.profileImage) {
+                            const img = document.createElement("img");
+                            img.src = author.profileImage;
+                            img.classList.add("profile-image");
+                            link.appendChild(img);
+                        }
+                        const displayName = document.createElement("h3");
+                        displayName.classList.add("display-name");
+                        displayName.textContent = author.displayName;
+                        link.appendChild(displayName);
                         resultsContainer.appendChild(link);
                     }
                 });
