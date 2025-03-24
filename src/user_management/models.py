@@ -442,46 +442,38 @@ class Node(models.Model):
     def get_hosted_users(self) -> models.QuerySet[Author]:
         return Author.objects.filter(host_node=self)
 
-    def _confirm_url_is_valid(self, url: str) -> bool:
-        """Make sure the given URL is on the host API"""
-        return url.startswith(self.host_url)
-
     def send_update(self, json: dict[str, Any], to: str) -> None:
         """Send an object update to this node via the given `to` URL"""
-        if not self._confirm_url_is_valid(to):
-            raise ValidationError(f"URL {to} is not on this node's host URL ({self.host_url})")
         if self.internal_user is None:
             raise ValidationError("This node has no internal_user set (required for auth)")
 
         try:
-            response = requests.post(to, json=json, auth=(self.internal_user.username, self.internal_user.password))
+            response = requests.post(to, json=json, auth=(
+                self.internal_user.username, self.internal_user.password))
             response.raise_for_status()
             print(f"[Node {self.name}] Update sent to {to}")
         except requests.RequestException as e:
             print(f"[Node {self.name}] Failed to send UPDATE to {to}: {e}")
 
-
     def send_create(self, json: dict[str, Any], to: str) -> None:
         """Send an object creation to this node via the given `to` URL"""
-        if not self._confirm_url_is_valid(to):
-            raise ValidationError(f"URL {to} is not on this node's host URL ({self.host_url})")
         if self.internal_user is None:
             raise ValidationError("This node has no internal_user set (required for auth)")
         try:
-            response = requests.post(to, json=json, auth=(self.internal_user.username, self.internal_user.password))
+            response = requests.post(to, json=json, auth=(
+                self.internal_user.username, self.internal_user.password))
             response.raise_for_status()
         except requests.RequestException as e:
             print(f"[Node {self.name}] Failed to send CREATE to {to}: {e}")
 
     def send_delete(self, to: str) -> None:
         """Send a delete request to this node via the given `to` URL"""
-        if not self._confirm_url_is_valid(to):
-            raise ValidationError(f"URL {to} is not on this node's host URL ({self.host_url})")
         if self.internal_user is None:
             raise ValidationError("This node has no internal_user set (required for auth)")
 
         try:
-            response = requests.delete(to, auth=(self.internal_user.username, self.internal_user.password))
+            response = requests.delete(
+                to, auth=(self.internal_user.username, self.internal_user.password))
             response.raise_for_status()
             print(f"[Node {self.name}] Delete sent to {to}")
         except requests.RequestException as e:
