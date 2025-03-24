@@ -12,7 +12,7 @@ services:
   socialnetwork:
     image: socialnetwork:latest
     build: ./src
-    command: gunicorn project_firebrick.wsgi:application --bind 0.0.0.0:8080
+    command: gunicorn core.wsgi:application --bind 0.0.0.0:8080
     ports:
       - "8080:8080"
     env_file:
@@ -27,8 +27,7 @@ services:
     ports:
       - "80:80"
       - "443:443"
-    volumes:
-      - ./src/caddyfile:/etc/caddy/Caddyfile
+    command: caddy reverse-proxy --from :80 --to socialnetwork:8080
     depends_on:
       - socialnetwork
 

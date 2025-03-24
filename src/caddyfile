@@ -1,3 +1,0 @@
-:80, :443 {
-    reverse_proxy socialnetwork:8080
-}
