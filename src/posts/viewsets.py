@@ -2,7 +2,6 @@ from typing import Any, Optional
 from urllib.parse import unquote
 
 from django.contrib.auth.models import AnonymousUser
-from django.contrib.auth.decorators import login_required
 
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -47,7 +46,6 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
             return self.get_queryset().get(**{lookup_field: lookup_value})
         return super().get_object()
 
-    @login_required
     def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """Override create to correctly attach author while allowing external nodes to create posts."""
         if isinstance(request.user, AnonymousUser):
@@ -75,7 +73,6 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
         post = serializer.save()
         return Response(self.get_serializer(post).data, status=status.HTTP_201_CREATED)
 
-    @login_required
     def update(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """Override update to ensure only authors can modify their posts"""
         if isinstance(request.user, AnonymousUser):
@@ -95,7 +92,7 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
             )
         return super().update(request, *args, **kwargs)
 
-    def destroy(self, request: Request, **kwargs:Any) -> Response:
+    def destroy(self, request: Request, **kwargs: Any) -> Response:
         """
         Soft delete the specified post.
 

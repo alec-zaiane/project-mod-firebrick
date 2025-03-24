@@ -1,6 +1,8 @@
+import json
+from typing import Any
+
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
-from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from django.views import View
 from django.template import loader
@@ -9,8 +11,10 @@ from posts.models import Post, PostTypes
 from core.utils.redirects import REDIRECT_TO_LOGIN
 from core.utils.request_viewer import get_request_viewer
 
+from drf_spectacular.utils import extend_schema
 
 # # Create your views here.
+
 
 class CreatePostView(View):
     def get(self, request: HttpRequest) -> HttpResponse:
@@ -81,6 +85,40 @@ class EditPostView(View):
             return HttpResponseRedirect(request.GET.get('next', '/'))
 
         return render(request, "edit_post.html", {"form": form, "author": viewer})
+
+    @extend_schema(
+        summary="Edit a post via the API",
+        description="Edit a post via the API. Only the author of the post can edit it, and only plaintext and markdown posts can be edited.",
+        request={"content": str, "title": str, "description": str},
+        responses={200: None, 403: None})
+    def put(self, request: HttpRequest, post_uuid: str) -> HttpResponse:
+        """
+        Partial update of a post via the API.
+        This is quite janky, but it shouldn't be a very supported use case.
+        """
+        viewer = get_request_viewer(request)
+        if viewer is None:
+            return REDIRECT_TO_LOGIN(request)
+
+        post = get_object_or_404(Post, uuid=post_uuid)
+        if post.author != viewer:
+            response = loader.render_to_string(
+                "no-permission.html", {"error": "You do not have permission to edit this post.", "user": request.user, "post": post, "viewer": viewer})
+            return HttpResponse(response, status=403)
+
+        if not post.post_type in [PostTypes.PLAINTEXT, PostTypes.MARKDOWN]:
+            return HttpResponse("Only plain text and markdown posts can be edited via the API.", status=400)
+
+        # only partial updates are allowed
+        data: dict[str, Any] = json.loads(request.body)
+        content = data.get("content", post.content)
+        title = data.get("title", post.title)
+        description = data.get("description", post.description)
+        post.content = content
+        post.title = title
+        post.description = description
+        post.save()
+        return HttpResponse(status=200)
 
 
 class ViewPostView(View):
