@@ -34,10 +34,7 @@ jobs:
         cp .dockerenv/.postgres.env.example .dockerenv/.postgres.env
     - name: Run the Docker containers
       run: |
-        docker compose up -d --memory=2g
-    - name: Install tblib in the container
-      run: |
-        docker compose exec socialnetwork pip install tblib
+        docker compose up -d
     - name: Run all tests
       run: |
         docker compose exec socialnetwork python manage.py test --parallel --exclude-tag=ui
