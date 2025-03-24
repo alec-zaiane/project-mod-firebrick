@@ -442,14 +442,39 @@ class Node(models.Model):
     def get_hosted_users(self) -> models.QuerySet[Author]:
         return Author.objects.filter(host_node=self)
 
+    # Node2Node communication
+
+    # HTTP METHODS ====== IF YOU ADD ONE MAKE SURE TO ADD TO user_management.tests.mock_node.py AS WELL
+    def _post(self, json: dict[str, Any], full_url: str) -> requests.Response:
+        """Send a POST request to the given URL with the given JSON"""
+        if self.internal_user is None:
+            raise ValidationError("This node has no internal_user set (required for auth")
+        return requests.post(full_url, json=json, auth=(self.internal_user.username, self.internal_user.password))
+
+    def _put(self, json: dict[str, Any], full_url: str) -> requests.Response:
+        """Send a PUT request to the given URL with the given JSON"""
+        if self.internal_user is None:
+            raise ValidationError("This node has no internal_user set (required for auth")
+        return requests.put(full_url, json=json, auth=(self.internal_user.username, self.internal_user.password))
+
+    def _delete(self, full_url: str) -> requests.Response:
+        """Send a DELETE request to the given URL"""
+        if self.internal_user is None:
+            raise ValidationError("This node has no internal_user set (required for auth")
+        return requests.delete(full_url, auth=(self.internal_user.username, self.internal_user.password))
+
+    def _make_absolute_url(self, url: str) -> str:
+        host_url_no_slash = self.host_url.rstrip("/")
+        to_no_slash = url.lstrip("/")
+        return f"{host_url_no_slash}/{to_no_slash}"
+
     def send_update(self, json: dict[str, Any], to: str) -> None:
         """Send an object update to this node via the given `to` URL"""
         if self.internal_user is None:
             raise ValidationError("This node has no internal_user set (required for auth)")
 
         try:
-            response = requests.post(to, json=json, auth=(
-                self.internal_user.username, self.internal_user.password))
+            response = self._put(json, self._make_absolute_url(to))
             response.raise_for_status()
             print(f"[Node {self.name}] Update sent to {to}")
         except requests.RequestException as e:
@@ -460,8 +485,7 @@ class Node(models.Model):
         if self.internal_user is None:
             raise ValidationError("This node has no internal_user set (required for auth)")
         try:
-            response = requests.post(to, json=json, auth=(
-                self.internal_user.username, self.internal_user.password))
+            response = self._post(json, self._make_absolute_url(to))
             response.raise_for_status()
         except requests.RequestException as e:
             print(f"[Node {self.name}] Failed to send CREATE to {to}: {e}")
@@ -472,8 +496,7 @@ class Node(models.Model):
             raise ValidationError("This node has no internal_user set (required for auth)")
 
         try:
-            response = requests.delete(
-                to, auth=(self.internal_user.username, self.internal_user.password))
+            response = self._delete(self._make_absolute_url(to))
             response.raise_for_status()
             print(f"[Node {self.name}] Delete sent to {to}")
         except requests.RequestException as e:

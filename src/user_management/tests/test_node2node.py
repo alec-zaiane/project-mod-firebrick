@@ -6,6 +6,16 @@ from django.urls import reverse
 from core.utils.testing_utils import GeneralUserStoryApiTest
 
 from user_management.models import FollowRequest, Author, Node, User
+from user_management.tests.mock_node import MockNode, Action, ActionType
+from posts.models import Post, PostTypes, VisibilityTypes
+from comments.models import Comment
+from likes.models import Like
+
+
+from posts.serializers import PostSerializer
+from comments.serializers import CommentSerializer
+from likes.serializers import LikeSerializer
+from user_management.serializers import AuthorSerializer, FollowRequestSerializer
 
 import base64
 
@@ -139,3 +149,217 @@ class TestNode2NodeAuthors(GeneralUserStoryApiTest):
         self.assertEqual(response.status_code, 201)
         author = Author.objects.get_by_fqid(data["id"])
         self.assertEqual(author.display_name, data["displayName"])
+
+
+@tag("node2node")
+class TestNode2NodeProperSending(GeneralUserStoryApiTest):
+    """Tests for whether Node2node communication is properly sent"""
+
+    def setUp(self) -> None:
+        super().setUp()
+        # monkeypatch the mock nodes into the Node.external_nodes manager
+        Node.external_nodes = MockNode.mock_nodes  # type: ignore
+
+    # CRUD FOR AUTHORS ========================================================
+
+    def test_creation_of_author(self) -> None:
+        """Test that when an author is created, any external nodes are notified"""
+        node_user = User.nodes.create_user("node_user", password="password")
+        node = MockNode.mock_nodes.create_node(
+            host_url="http://example.com/api/", internal_user=node_user)
+        self.initialize_sample_authors(1)
+        self.assertEqual(len(node.actions_log), 1)
+        action = node.actions_log[0]
+        self.assertEqual(action.action_type, ActionType.POST)
+        self.assertEqual(
+            action.url, f"http://example.com/api{reverse('user_management:node2node_authors-list')}", action)
+        self.assertEqual(action.json, AuthorSerializer().to_representation(self.sample_authors[0]))
+
+    def test_update_of_author(self) -> None:
+        """Test that when an author is updated, any external nodes are notified"""
+        node_user = User.nodes.create_user("node_user", password="password")
+        node = MockNode.mock_nodes.create_node(
+            host_url="http://example.com/api/", internal_user=node_user)
+        self.initialize_sample_authors(1)
+        node.clear_action_log()
+        self.sample_authors[0].display_name = "New Name"
+        self.sample_authors[0].save()
+        self.assertEqual(len(node.actions_log), 1)
+        action = node.actions_log[0]
+        self.assertEqual(action.action_type, ActionType.PUT)
+        self.assertEqual(
+            action.url, f"http://example.com/api{reverse('user_management:node2node_authors-detail', kwargs={'fqid': self.sample_authors[0].get_encoded_fqid()})}")
+        self.assertEqual(action.json, AuthorSerializer().to_representation(self.sample_authors[0]))
+
+    def test_deletion_of_author(self) -> None:
+        """Test that when an author is deleted, any external nodes are notified"""
+        node_user = User.nodes.create_user("node_user", password="password")
+        node = MockNode.mock_nodes.create_node(
+            host_url="http://example.com/api/", internal_user=node_user)
+        self.initialize_sample_authors(1)
+        node.clear_action_log()
+        self.sample_authors[0].delete()
+        self.assertEqual(len(node.actions_log), 1)
+        action = node.actions_log[0]
+        self.assertEqual(action.action_type, ActionType.DELETE)
+        self.assertEqual(
+            action.url, f"http://example.com/api{reverse('user_management:node2node_authors-detail', kwargs={'fqid': self.sample_authors[0].get_encoded_fqid()})}")
+
+    # CRUD FOR FOLLOW REQUESTS =================================================
+    def test_creation_of_follow_request(self) -> None:
+        """Test that when a follow request is created, any external nodes are notified"""
+        node_user = User.nodes.create_user("node_user", password="password")
+        node = MockNode.mock_nodes.create_node(
+            host_url="http://example.com/api/", internal_user=node_user)
+        self.initialize_sample_authors(2)
+        node.clear_action_log()
+        # author 0 follows author 1
+        follow_request = FollowRequest.objects.create_follow_request(
+            self.sample_authors[0], self.sample_authors[1])
+        self.assertEqual(len(node.actions_log), 1)
+        action = node.actions_log[0]
+        self.assertEqual(action.action_type, ActionType.POST)
+        self.assertEqual(
+            action.url, f"http://example.com/api{reverse('user_management:node2node_follow_requests-list')}")
+        self.assertEqual(action.json, FollowRequestSerializer().to_representation(follow_request))
+
+    # CRUD FOR POSTS ===========================================================
+    def test_creation_of_post(self) -> None:
+        """Test that when a post is created, any external nodes are notified"""
+        node_user = User.nodes.create_user("node_user", password="password")
+        node = MockNode.mock_nodes.create_node(
+            host_url="http://example.com/api/", internal_user=node_user)
+        self.initialize_sample_authors(1)
+        node.clear_action_log()
+        post = Post.objects.create_post(
+            self.sample_authors[0], "My post title", "my post description", "content", PostTypes.PLAINTEXT, VisibilityTypes.PUBLIC)
+        self.assertEqual(len(node.actions_log), 1)
+        action = node.actions_log[0]
+        self.assertEqual(action.action_type, ActionType.POST)
+        self.assertEqual(
+            action.url, f"http://example.com/api{reverse('posts:api_posts-list')}")
+        self.assertEqual(action.json, PostSerializer().to_representation(post))
+
+    def test_update_of_post(self) -> None:
+        """Test that when a post is updated, any external nodes are notified"""
+        node_user = User.nodes.create_user("node_user", password="password")
+        node = MockNode.mock_nodes.create_node(
+            host_url="http://example.com/api/", internal_user=node_user)
+        self.initialize_sample_authors(1)
+        post = Post.objects.create_post(
+            self.sample_authors[0], "My post title", "my post description", "content", PostTypes.PLAINTEXT, VisibilityTypes.PUBLIC)
+        node.clear_action_log()
+        post.title = "New Title"
+        post.visibility_type = VisibilityTypes.UNLISTED
+        post.save()
+        self.assertEqual(len(node.actions_log), 1)
+        action = node.actions_log[0]
+        self.assertEqual(action.action_type, ActionType.PUT)
+        self.assertEqual(
+            action.url, f"http://example.com/api{reverse('posts:api_posts-detail', kwargs={"fqid": post.get_encoded_fqid()})}")
+        self.assertEqual(action.json, PostSerializer().to_representation(post))
+
+    def test_deletion_of_post(self) -> None:
+        """Test that when a post is deleted, any external nodes are notified"""
+        node_user = User.nodes.create_user("node_user", password="password")
+        node = MockNode.mock_nodes.create_node(
+            host_url="http://example.com/api/", internal_user=node_user)
+        self.initialize_sample_authors(1)
+        post = Post.objects.create_post(
+            self.sample_authors[0], "My post title", "my post description", "content", PostTypes.PLAINTEXT, VisibilityTypes.PUBLIC)
+        node.clear_action_log()
+        post.delete()
+        self.assertEqual(len(node.actions_log), 1)
+        action = node.actions_log[0]
+        self.assertEqual(action.action_type, ActionType.DELETE)
+        self.assertEqual(
+            action.url, f"http://example.com/api{reverse('posts:api_posts-detail', kwargs={"fqid": post.get_encoded_fqid()})}")
+
+    # CRUD FOR COMMENTS ========================================================
+
+    def test_creation_of_comment(self) -> None:
+        """Test that when a comment is created, any external nodes are notified"""
+        node_user = User.nodes.create_user("node_user", password="password")
+        node = MockNode.mock_nodes.create_node(
+            host_url="http://example.com/api/", internal_user=node_user)
+        self.initialize_sample_authors(1)
+        self.initialize_sample_text_posts(1)
+        node.clear_action_log()
+        comment = Comment.objects.create_comment(
+            self.sample_authors[0], self.sample_posts[0][0], "My comment", PostTypes.PLAINTEXT)
+        self.assertEqual(len(node.actions_log), 1)
+        action = node.actions_log[0]
+        self.assertEqual(action.action_type, ActionType.POST)
+        self.assertEqual(
+            action.url, f"http://example.com/api{reverse('comments:node2node_comments-list')}")
+        self.assertEqual(action.json, CommentSerializer().to_representation(comment))
+
+    def test_update_of_comment(self) -> None:
+        """Test that when a comment is updated, any external nodes are notified"""
+        node_user = User.nodes.create_user("node_user", password="password")
+        node = MockNode.mock_nodes.create_node(
+            host_url="http://example.com/api/", internal_user=node_user)
+        self.initialize_sample_authors(1)
+        self.initialize_sample_text_posts(1)
+        comment = Comment.objects.create_comment(
+            self.sample_authors[0], self.sample_posts[0][0], "My comment", PostTypes.PLAINTEXT)
+        node.clear_action_log()
+        comment.content = "New content"
+        comment.save()
+        self.assertEqual(len(node.actions_log), 1)
+        action = node.actions_log[0]
+        self.assertEqual(action.action_type, ActionType.PUT)
+        self.assertEqual(
+            action.url, f"http://example.com/api{reverse('comments:node2node_comments-detail', kwargs={"fqid": comment.get_encoded_fqid()})}")
+        self.assertEqual(action.json, CommentSerializer().to_representation(comment))
+
+    def test_deletion_of_comment(self) -> None:
+        """Test that when a comment is deleted, any external nodes are notified"""
+        node_user = User.nodes.create_user("node_user", password="password")
+        node = MockNode.mock_nodes.create_node(
+            host_url="http://example.com/api/", internal_user=node_user)
+        self.initialize_sample_authors(1)
+        self.initialize_sample_text_posts(1)
+        comment = Comment.objects.create_comment(
+            self.sample_authors[0], self.sample_posts[0][0], "My comment", PostTypes.PLAINTEXT)
+        node.clear_action_log()
+        comment.delete()
+        self.assertEqual(len(node.actions_log), 1)
+        action = node.actions_log[0]
+        self.assertEqual(action.action_type, ActionType.DELETE)
+        self.assertEqual(
+            action.url, f"http://example.com/api{reverse('comments:node2node_comments-detail', kwargs={"fqid": comment.get_encoded_fqid()})}")
+
+    # CRUD FOR LIKES ===========================================================
+
+    def test_creation_of_like(self) -> None:
+        """Test that when a like is created, any external nodes are notified"""
+        node_user = User.nodes.create_user("node_user", password="password")
+        node = MockNode.mock_nodes.create_node(
+            host_url="http://example.com/api/", internal_user=node_user)
+        self.initialize_sample_authors(1)
+        self.initialize_sample_text_posts(1)
+        node.clear_action_log()
+        like = Like.objects.create_like(self.sample_authors[0], self.sample_posts[0][0])
+        self.assertEqual(len(node.actions_log), 1)
+        action = node.actions_log[0]
+        self.assertEqual(action.action_type, ActionType.POST)
+        self.assertEqual(
+            action.url, f"http://example.com/api{reverse('likes:node2node_likes-list')}")
+        self.assertEqual(action.json, LikeSerializer().to_representation(like))
+
+    def test_deletion_of_like(self) -> None:
+        """Test that when a like is deleted, any external nodes are notified"""
+        node_user = User.nodes.create_user("node_user", password="password")
+        node = MockNode.mock_nodes.create_node(
+            host_url="http://example.com/api/", internal_user=node_user)
+        self.initialize_sample_authors(1)
+        self.initialize_sample_text_posts(1)
+        like = Like.objects.create_like(self.sample_authors[0], self.sample_posts[0][0])
+        node.clear_action_log()
+        like.delete()
+        self.assertEqual(len(node.actions_log), 1)
+        action = node.actions_log[0]
+        self.assertEqual(action.action_type, ActionType.DELETE)
+        self.assertEqual(
+            action.url, f"http://example.com/api{reverse('likes:node2node_likes-detail', kwargs={"fqid": like.get_encoded_fqid()})}")
