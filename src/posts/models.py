@@ -273,6 +273,23 @@ class Post(AuthoredApiObject):
             ...
         super().clean()
 
+    # https://stackoverflow.com/a/8342249
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        """Clears the old image if it exists before saving"""
+        try:
+            this = Post.objects.get(uuid=self.uuid)
+            if this.image != self.image:
+                this.image.delete(save=False)
+        except:
+            pass
+        super(Post, self).save(*args, **kwargs)
+
+    def delete(self, *args: Any, **kwargs: Any) -> tuple[int, dict[str, Any]]:
+        """Deletes the image before deleting the post, only for hard deletion. Soft-deletion
+        does not delete images."""
+        self.image.delete()
+        return super(Post, self).delete(*args, **kwargs)
+
     def get_template_name(self) -> str:
         """Get the template name for this post's inner-content"""
         # will return, for example "components/post_inner_content/PT.html" for a plaintext post

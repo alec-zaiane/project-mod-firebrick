@@ -27,7 +27,9 @@
             <div class="field-wrapper invisible" id="image-field">
                 <label for="id_image">Image <span class="required">∗</span></label>
                 {{ form.image.errors }}
-                {{ form.image }}
+                <div class="image-upload-field">
+                    {{ form.image }}
+                </div>
             </div>
         </section>
         <section class="create-post-tags">

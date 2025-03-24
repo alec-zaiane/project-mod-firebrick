@@ -73,7 +73,7 @@ class EditPostView(View):
                 "no-permission.html", {"error": "You do not have permission to edit this post.", "user": request.user, "post": post, "viewer": viewer})
             return HttpResponse(response, status=403)
 
-        form = CreatePostForm(request.POST, instance=post)
+        form = CreatePostForm(request.POST, request.FILES, instance=post)
         form.instance.author = viewer
         form.instance.host_node = viewer.host_node
         if form.is_valid():

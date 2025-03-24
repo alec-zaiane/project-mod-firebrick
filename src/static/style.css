@@ -692,6 +692,10 @@ a:link:active, a:visited:active  {
     pointer-events: none;
 }
 
+.post-card .IMG {
+    position: relative;
+}
+
 .post-full {
     padding: 20px;
     height: fit-content;
@@ -1208,6 +1212,40 @@ a:link:active, a:visited:active  {
 
 .update-post input:focus, .update-post textarea:focus {
     outline: 0;
+}
+
+.update-post .image-upload-field {
+    margin-top: 6px;
+}
+
+.update-post .image-upload-field label[for="image-clear_id"] {
+    display: none;
+}
+
+.update-post .image-upload-field #image-clear_id {
+    display: none;
+}
+
+.update-post input[type="file"] {
+    height: fit-content;
+}
+
+.update-post input[type="file"]::file-selector-button {
+    background: firebrick;
+    border-radius: 20px;
+    padding: 6px 12px;
+    border: 0;
+    height: 30px;
+    cursor: pointer;
+    color: var(--color);
+}
+
+.update-post input[type="file"]::file-selector-button:hover {
+    background: rgb(159, 30, 30);
+}
+
+.update-post input[type="file"]::file-selector-button:active {
+    background: rgb(199, 69, 69);
 }
 
 .update-post .field-wrapper {
