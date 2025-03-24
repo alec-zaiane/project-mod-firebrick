@@ -110,13 +110,15 @@ class PostSerializer(serializers.ModelSerializer[Post]):
                 like_dict = LikeSerializer().to_internal_value(like)
                 Like.objects.get_or_create(**like_dict)
 
+        author = AuthorSerializer().to_internal_value(data["author"])
+
         return {
             "title": data["title"],
             "fqid": data["id"],
             "description": data["description"],
             "post_type": post_type,  # contentType
             "content": data["content"],
-            "author": Author.objects.get_by_fqid(data["author"]["id"]),
+            "author": author,
             "visibility_type": data["visibility"],
         }
 
