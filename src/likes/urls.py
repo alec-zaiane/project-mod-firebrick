@@ -11,3 +11,5 @@ urlpatterns: list[URLPattern | URLResolver] = [
 
 router = routers.SimpleRouter()
 router.register(r"api/likes", LikeViewSet, basename="node2node_likes")
+
+urlpatterns += router.urls
