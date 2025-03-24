@@ -28,6 +28,10 @@ jobs:
     - name: patch requirements-dev into requirements (for testing)
       run: |
         cat src/requirements-dev.txt >> src/requirements.txt
+    - name: install ffmpeg for moviepy
+      run: |
+        apt-get update
+        apt-get install ffmpeg -y
     - name: Build the Docker image
       run: |
         docker compose build
