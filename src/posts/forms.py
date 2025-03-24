@@ -8,12 +8,32 @@ from posts.models import Post, PostTypes, VisibilityTypes
 class CreatePostForm(forms.ModelForm[Post]):
     class Meta:
         model = Post
-        fields = ["title", "description", "content", "post_type", "visibility_type", "image"]
+        fields = [
+            "title",
+            "description",
+            "content",
+            "post_type",
+            "visibility_type",
+            "image",
+            "video",
+        ]
 
     image = forms.ImageField(
         required=False,
         label="Upload Image",
         help_text="Optional: Upload an image file"
+    )
+
+    video = forms.FileField(
+        required=False,
+        label="Upload Video",
+        help_text="Optional: Upload a video file (max 4 seconds)",
+        widget=forms.FileInput(
+            attrs={
+                "accept": "video/*", 
+                "class": "form-control",
+            }
+        ),
     )
 
     title = forms.CharField(error_messages={
