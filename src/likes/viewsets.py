@@ -22,8 +22,7 @@ class LikeViewSet(viewsets.ModelViewSet[Like]):
     lookup_value_regex = ".+"
     queryset = Like.objects.all()
     serializer_class = LikeSerializer
-    permission_classes = [IsAuthenticated]
-    # TODO custom permission class
+    # permission_classes = [IsAuthenticated]
 
     def get_object(self) -> Like:
         """Allow for encoded fqid based lookup"""

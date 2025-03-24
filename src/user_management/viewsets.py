@@ -26,7 +26,7 @@ class AuthorViewSet(viewsets.ModelViewSet[Author]):
     lookup_value_regex = ".+"
     queryset = Author.objects.all()
     serializer_class = AuthorSerializer
-    permission_classes = [IsAuthenticated, AuthorPermission]
+    # permission_classes = [IsAuthenticated, AuthorPermission]
 
     def get_object(self) -> Author:
         """Allow for encoded fqid based lookup"""
@@ -90,7 +90,7 @@ class FollowRequestViewSet(viewsets.ModelViewSet[FollowRequest]):
     lookup_value_regex = ".+"
     queryset = FollowRequest.objects.all()
     serializer_class = FollowRequestSerializer
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def get_object(self) -> FollowRequest:
         """Allow for encoded fqid based lookup"""

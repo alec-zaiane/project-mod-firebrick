@@ -207,7 +207,7 @@ class AuthorFollowInfoView(View):
 
 
 class AuthorSearchAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         query = request.query_params.get("q", "")
