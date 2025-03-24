@@ -368,4 +368,4 @@ class Post(AuthoredApiObject):
         if self.post_type != PostTypes.VIDEO:
             raise ValidationError("This post is not a video post")
         assert self.video is not None
-        return f"![{self.title}]({self.video.url})"
+        return f"<video alt='{self.title}' src='{self.video.url}' controls>"
