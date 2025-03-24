@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 from typing import Optional, Any
 import abc
@@ -79,14 +78,44 @@ class InboxView(views.APIView):
         return None
 
     @extend_schema(
-        description="Send an inbox item to this author's inbox",
+        operation_id="send_to_inbox",
+        summary="Send to Author's Inbox",
+        description="""Send an item to an author's inbox. Supported types:
+    - Like objects
+    - Comment objects""",
+        parameters=[
+            OpenApiParameter(
+                name="target_author_uuid",
+                location=OpenApiParameter.PATH,
+                description="UUID of the target author",
+                required=True,
+                type=str,
+            )
+        ],
         request=PolymorphicProxySerializer(
             component_name="InboxItem",
             serializers=_get_serializer_map,
-            resource_type_field_name="type"
+            resource_type_field_name="type",
         ),
-        responses={200: OpenApiResponse(description="Success, inbox item sent"),
-                   400: OpenApiResponse(description="Bad request")},
+        responses={
+            200: OpenApiResponse(description="Success, inbox item sent"),
+            400: OpenApiResponse(
+                description="Bad request",
+                response={
+                    "type": "object",
+                    "properties": {
+                        "error": {
+                            "type": "string",
+                            "example": "missing 'type' field under inbox item",
+                        }
+                    },
+                },
+            ),
+            401: OpenApiResponse(description="Authentication required"),
+            403: OpenApiResponse(description="Not authorized to send to this inbox"),
+            404: OpenApiResponse(description="Author not found"),
+        },
+        tags=["Inbox"],
     )
     def post(self, request: Request, target_author_uuid: str) -> Response:
         """Send an inbox item to this author's inbox"""

@@ -15,7 +15,7 @@ from django.urls import reverse
 
 from django.template import loader
 
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
 
 from user_management.forms import AuthorModifyForm, JoinRequestForm
 from user_management.models import LocalAuthor
@@ -209,6 +209,38 @@ class AuthorFollowInfoView(View):
 class AuthorSearchAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Search Authors",
+        description="Search for authors by their username or display name. Returns matching authors.",
+        parameters=[
+            OpenApiParameter(
+                name="q",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Search query string to match against usernames and display names",
+                required=True,
+            ),
+        ],
+        responses={
+            200: OpenApiResponse(
+                response=AuthorSerializer(many=True),
+                description="List of matching authors",
+            ),
+            401: OpenApiResponse(
+                description="Authentication required",
+                response={
+                    "type": "object",
+                    "properties": {
+                        "detail": {
+                            "type": "string",
+                            "example": "Authentication credentials were not provided.",
+                        }
+                    },
+                },
+            ),
+        },
+        tags=["Authors"],
+    )
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         query = request.query_params.get("q", "")
         authors = Author.objects.filter(
@@ -219,10 +251,62 @@ class AuthorSearchAPIView(APIView):
 
 
 class FollowRequestByViewer(APIView):
+
     @extend_schema(
-        summary="[Internal] create a follow request for an author by the viewer",
-        description="Create a follow request for an author by the viewer. Cannot create a follow request for an author that has already been followed by the viewer.",
-        responses={201: None, 400: None, 401: None, 404: None},
+        operation_id="create_follow_request_by_viewer",
+        summary="[Internal] Create follow request",
+        description="Create a follow request for an author by the authenticated viewer. Cannot create duplicate requests or request to follow already-followed authors.",
+        parameters=[
+            OpenApiParameter(
+                name="target_fqid",
+                location=OpenApiParameter.PATH,
+                description="The fully qualified ID of the author to follow",
+                required=True,
+                type=str,
+            ),
+        ],
+        responses={
+            201: OpenApiResponse(
+                description="Follow request created successfully",
+            ),
+            400: OpenApiResponse(
+                description="Invalid request",
+                response={
+                    "type": "object",
+                    "properties": {
+                        "error": {
+                            "type": "string",
+                            "example": "You are already following this author",
+                        }
+                    },
+                },
+            ),
+            401: OpenApiResponse(
+                description="Authentication required",
+                response={
+                    "type": "object",
+                    "properties": {
+                        "error": {
+                            "type": "string",
+                            "example": "Log in as a user to follow an author",
+                        }
+                    },
+                },
+            ),
+            404: OpenApiResponse(
+                description="Author not found",
+                response={
+                    "type": "object",
+                    "properties": {
+                        "error": {
+                            "type": "string",
+                            "example": "Could not find author with id {target_fqid}",
+                        }
+                    },
+                },
+            ),
+        },
+        tags=["Follow Requests"],
     )
     def post(self, request: Request, target_fqid: str) -> Response:
         """Create a follow request for an author by the viewer.
@@ -243,6 +327,48 @@ class FollowRequestByViewer(APIView):
         FollowRequest.objects.create_follow_request(viewer, target_author)
         return Response(status=201)
 
+    @extend_schema(
+        operation_id="delete_follow_request_by_viewer",
+        summary="[Internal] Delete follow request",
+        description="Delete a follow request created by the authenticated viewer. Can only delete requests that exist and were created by the viewer.",
+        parameters=[
+            OpenApiParameter(
+                name="target_fqid",
+                location=OpenApiParameter.PATH,
+                description="The fully qualified ID of the author whose follow request to delete",
+                required=True,
+                type=str,
+            ),
+        ],
+        responses={
+            204: OpenApiResponse(description="Follow request deleted successfully"),
+            401: OpenApiResponse(
+                description="Authentication required",
+                response={
+                    "type": "object",
+                    "properties": {
+                        "error": {
+                            "type": "string",
+                            "example": "Log in as a user to remove a follow request from an author",
+                        }
+                    },
+                },
+            ),
+            404: OpenApiResponse(
+                description="Follow request not found",
+                response={
+                    "type": "object",
+                    "properties": {
+                        "error": {
+                            "type": "string",
+                            "example": "You have not requested to follow this author",
+                        }
+                    },
+                },
+            ),
+        },
+        tags=["Follow Requests"],
+    )
     def delete(self, request: Request, target_fqid: str) -> Response:
         """Delete a follow request for an author by the viewer.
         Cannot delete a follow request for an author that has not been requested to be followed by the viewer.

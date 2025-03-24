@@ -1,7 +1,7 @@
 from rest_framework import viewsets, status
-from user_management.serializers import FollowRequestSerializer
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer
 from user_management.models import Author, FollowRequest
-from typing import Any, Optional
+from typing import Any
 
 from rest_framework import viewsets
 from rest_framework.decorators import action
@@ -37,6 +37,41 @@ class AuthorViewSet(viewsets.ModelViewSet[Author]):
             return self.get_queryset().get(**{lookup_field: lookup_value})
         return super().get_object()
 
+    @extend_schema(
+        summary="List all authors",
+        description="Get a paginated list of all authors in the system.",
+        parameters=[
+            OpenApiParameter(
+                name="page",
+                type=int,
+                description="Page number for pagination",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="size",
+                type=int,
+                description="Number of items per page",
+                required=False,
+            ),
+        ],
+        responses={
+            200: OpenApiResponse(
+                description="List of authors retrieved successfully",
+                response={
+                    "type": "object",
+                    "properties": {
+                        "type": {"type": "string", "example": "authors"},
+                        "items": {
+                            "type": "array",
+                            "items": {"$ref": "#/components/schemas/Author"},
+                        },
+                    },
+                },
+            ),
+            401: OpenApiResponse(description="Authentication required"),
+        },
+        tags=["Authors"],
+    )
     def list(self, request: Request) -> Response:
         super_data = super().list(request).data
         if super_data.get("results", None) is not None:
@@ -46,6 +81,30 @@ class AuthorViewSet(viewsets.ModelViewSet[Author]):
             "items": super_data
         })
 
+    @extend_schema(
+        summary="Create external author",
+        description="Create a new external author. Local authors must be created through the join system.",
+        request=AuthorSerializer,
+        responses={
+            201: OpenApiResponse(
+                response=AuthorSerializer, description="Author created successfully"
+            ),
+            400: OpenApiResponse(
+                description="Bad request",
+                response={
+                    "type": "object",
+                    "properties": {
+                        "error": {
+                            "type": "string",
+                            "example": "Cannot create authors on this node",
+                        }
+                    },
+                },
+            ),
+            401: OpenApiResponse(description="Authentication required"),
+        },
+        tags=["Authors"],
+    )
     def create(self, request: Request) -> Response:
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -65,7 +124,134 @@ class AuthorViewSet(viewsets.ModelViewSet[Author]):
         author = serializer.create(validated_data)
         return Response(serializer.to_representation(author), status=201)
 
-    @action(detail=True, methods=["post"], url_path="unfollow", url_name="unfollow", permission_classes=[IsAuthenticated])
+    @extend_schema(
+        summary="Get author details",
+        description="Get details of a specific author using their fully qualified ID (FQID)",
+        parameters=[
+            OpenApiParameter(
+                name="fqid",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="The fully qualified ID of the author",
+            )
+        ],
+        responses={
+            200: AuthorSerializer,
+            401: OpenApiResponse(description="Authentication required"),
+            404: OpenApiResponse(description="Author not found"),
+        },
+        tags=["Authors"],
+    )
+    def retrieve(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        return super().retrieve(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Update author (Full)",
+        description="Fully update an author's information. All fields must be provided.",
+        parameters=[
+            OpenApiParameter(
+                name="fqid",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="The fully qualified ID of the author",
+            )
+        ],
+        request=AuthorSerializer,
+        responses={
+            200: AuthorSerializer,
+            400: OpenApiResponse(description="Invalid data provided"),
+            401: OpenApiResponse(description="Authentication required"),
+            403: OpenApiResponse(description="Not authorized to update this author"),
+            404: OpenApiResponse(description="Author not found"),
+        },
+        tags=["Authors"],
+    )
+    def update(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        return super().update(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Update author (Partial)",
+        description="Partially update an author's information. Only provided fields will be updated.",
+        parameters=[
+            OpenApiParameter(
+                name="fqid",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="The fully qualified ID of the author",
+            )
+        ],
+        request=AuthorSerializer,
+        responses={
+            200: AuthorSerializer,
+            400: OpenApiResponse(description="Invalid data provided"),
+            401: OpenApiResponse(description="Authentication required"),
+            403: OpenApiResponse(description="Not authorized to update this author"),
+            404: OpenApiResponse(description="Author not found"),
+        },
+        tags=["Authors"],
+    )
+    def partial_update(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        return super().partial_update(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Delete author",
+        description="Delete an author. Only administrators can delete authors.",
+        parameters=[
+            OpenApiParameter(
+                name="fqid",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="The fully qualified ID of the author",
+            )
+        ],
+        responses={
+            204: OpenApiResponse(description="Author successfully deleted"),
+            401: OpenApiResponse(description="Authentication required"),
+            403: OpenApiResponse(description="Not authorized to delete this author"),
+            404: OpenApiResponse(description="Author not found"),
+        },
+        tags=["Authors"],
+    )
+    def destroy(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        return super().destroy(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Unfollow an author",
+        description="Remove a following relationship with the specified author",
+        parameters=[
+            OpenApiParameter(
+                name="fqid",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="The fully qualified ID of the author to unfollow",
+            )
+        ],
+        responses={
+            200: OpenApiResponse(
+                description="Successfully unfollowed author",
+                response={
+                    "type": "object",
+                    "properties": {
+                        "detail": {
+                            "type": "string",
+                            "example": "Unfollowed successfully.",
+                        }
+                    },
+                },
+            ),
+            400: OpenApiResponse(description="Not following this author"),
+            401: OpenApiResponse(description="Authentication required"),
+            404: OpenApiResponse(description="Author not found"),
+        },
+        tags=["Authors"],
+    )
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="unfollow",
+        url_name="unfollow",
+        permission_classes=[IsAuthenticated],
+    )
     def unfollow(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         viewer = get_request_viewer(request)
         if request.user.is_anonymous or viewer is None:
@@ -81,7 +267,6 @@ class AuthorViewSet(viewsets.ModelViewSet[Author]):
             )
         viewer.following.remove(target_author)
         return Response({"detail": "Unfollowed successfully."}, status=status.HTTP_200_OK)
-
 
 class FollowRequestViewSet(viewsets.ModelViewSet[FollowRequest]):
     # suggested by copilot: lookup_field/lookup_url_kwarg/lookup_value_regex to change the lookup field to an encoded fqid
@@ -101,6 +286,31 @@ class FollowRequestViewSet(viewsets.ModelViewSet[FollowRequest]):
             return self.get_queryset().get(**{lookup_field: lookup_value})
         return super().get_object()
 
+    @extend_schema(
+        summary="List follow requests",
+        description="Get a list of all follow requests. Results are paginated.",
+        responses={
+            200: FollowRequestSerializer(many=True),
+            401: OpenApiResponse(description="Authentication required"),
+        },
+        tags=["Follow Requests"],
+    )
+    def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Create follow request",
+        description="Send a new follow request to another author.",
+        request=FollowRequestSerializer,
+        responses={
+            201: FollowRequestSerializer,
+            400: OpenApiResponse(description="Invalid follow request data"),
+            401: OpenApiResponse(description="Authentication required"),
+            404: OpenApiResponse(description="Target author not found"),
+            409: OpenApiResponse(description="Already following or request exists"),
+        },
+        tags=["Follow Requests"],
+    )
     def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         viewer = get_request_viewer(request)
         if request.user.is_anonymous or viewer is None:
@@ -117,6 +327,151 @@ class FollowRequestViewSet(viewsets.ModelViewSet[FollowRequest]):
         follow_request = serializer.save()
         return Response(self.get_serializer(follow_request).data, status=status.HTTP_201_CREATED)
 
+    @extend_schema(
+        summary="Get follow request details",
+        description="Get details of a specific follow request by its FQID.",
+        parameters=[
+            OpenApiParameter(
+                name="fqid",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="The fully qualified ID of the follow request"
+            )
+        ],
+        responses={
+            200: FollowRequestSerializer,
+            401: OpenApiResponse(description="Authentication required"),
+            404: OpenApiResponse(description="Follow request not found")
+        },
+        tags=["Follow Requests"]
+    )
+    def retrieve(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        return super().retrieve(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Update follow request (Full)",
+        description="Fully update a follow request. All fields must be provided.",
+        parameters=[
+            OpenApiParameter(
+                name="fqid",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="The fully qualified ID of the follow request"
+            )
+        ],
+        request=FollowRequestSerializer,
+        responses={
+            200: FollowRequestSerializer,
+            400: OpenApiResponse(description="Invalid follow request data"),
+            401: OpenApiResponse(description="Authentication required"),
+            403: OpenApiResponse(description="Not authorized to update this request"),
+            404: OpenApiResponse(description="Follow request not found")
+        },
+        tags=["Follow Requests"]
+    )
+    def update(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        return super().update(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Update follow request (Partial)",
+        description="Partially update a follow request. Only provided fields will be updated.",
+        parameters=[
+            OpenApiParameter(
+                name="fqid",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="The fully qualified ID of the follow request"
+            )
+        ],
+        request=FollowRequestSerializer,
+        responses={
+            200: FollowRequestSerializer,
+            400: OpenApiResponse(description="Invalid follow request data"),
+            401: OpenApiResponse(description="Authentication required"),
+            403: OpenApiResponse(description="Not authorized to update this request"),
+            404: OpenApiResponse(description="Follow request not found")
+        },
+        tags=["Follow Requests"]
+    )
+    def partial_update(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        return super().partial_update(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Delete follow request",
+        description="Delete a follow request. Only the sender or recipient can delete it.",
+        parameters=[
+            OpenApiParameter(
+                name="fqid",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="The fully qualified ID of the follow request"
+            )
+        ],
+        responses={
+            204: OpenApiResponse(description="Follow request deleted successfully"),
+            401: OpenApiResponse(description="Authentication required"),
+            403: OpenApiResponse(description="Not authorized to delete this request"),
+            404: OpenApiResponse(description="Follow request not found")
+        },
+        tags=["Follow Requests"]
+    )
+    def destroy(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        return super().destroy(request, *args, **kwargs)
+
+    @extend_schema(
+        operation_id="follow_request_approve",
+        summary="Approve follow request",
+        description="Approve a follow request. Only the recipient (followee) can approve it.",
+        parameters=[
+            OpenApiParameter(
+                name="fqid",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="The fully qualified ID of the follow request",
+                required=True,
+            )
+        ],
+        responses={
+            200: OpenApiResponse(
+                description="Follow request approved successfully",
+                response={
+                    "type": "object",
+                    "properties": {
+                        "detail": {
+                            "type": "string",
+                            "example": "Follow request approved.",
+                        }
+                    },
+                },
+            ),
+            401: OpenApiResponse(
+                description="Authentication required",
+                response={
+                    "type": "object",
+                    "properties": {
+                        "error": {
+                            "type": "string",
+                            "example": "User must be authenticated and linked to an author.",
+                        }
+                    },
+                },
+            ),
+            403: OpenApiResponse(
+                description="Not authorized",
+                response={
+                    "type": "object",
+                    "properties": {
+                        "error": {
+                            "type": "string",
+                            "example": "You do not have permission to approve this follow request.",
+                        }
+                    },
+                },
+            ),
+            404: OpenApiResponse(description="Follow request not found"),
+        },
+        tags=["Follow Requests"],
+    )
     @action(detail=True, methods=["post"], url_path="approve", url_name="approve")
     def approve_follow_request(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         # ensure user is authenticated and has an associated author
@@ -138,6 +493,60 @@ class FollowRequestViewSet(viewsets.ModelViewSet[FollowRequest]):
         follow_request.delete()
         return Response({"detail": "Follow request approved."}, status=status.HTTP_200_OK)
 
+    @extend_schema(
+        operation_id="follow_request_deny",
+        summary="Deny follow request",
+        description="Deny a follow request. Only the recipient (followee) can deny it.",
+        parameters=[
+            OpenApiParameter(
+                name="fqid",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="The fully qualified ID of the follow request",
+                required=True
+            )
+        ],
+        responses={
+            200: OpenApiResponse(
+                description="Follow request denied successfully",
+                response={
+                    "type": "object",
+                    "properties": {
+                        "detail": {
+                            "type": "string",
+                            "example": "Follow request denied."
+                        }
+                    }
+                }
+            ),
+            401: OpenApiResponse(
+                description="Authentication required",
+                response={
+                    "type": "object",
+                    "properties": {
+                        "error": {
+                            "type": "string",
+                            "example": "User must be authenticated and linked to an author."
+                        }
+                    }
+                }
+            ),
+            403: OpenApiResponse(
+                description="Not authorized",
+                response={
+                    "type": "object",
+                    "properties": {
+                        "error": {
+                            "type": "string",
+                            "example": "You do not have permission to deny this follow request."
+                        }
+                    }
+                }
+            ),
+            404: OpenApiResponse(description="Follow request not found")
+        },
+        tags=["Follow Requests"]
+    )
     @action(detail=True, methods=["post"], url_path="deny", url_name="deny")
     def deny_follow_request(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         if request.user.is_anonymous or not hasattr(request.user, "author"):
@@ -154,7 +563,27 @@ class FollowRequestViewSet(viewsets.ModelViewSet[FollowRequest]):
         follow_request.delete()
         return Response({"detail": "Follow request denied."}, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=["get"], url_path="pending-count", url_name="pending-count")
+    @extend_schema(
+        operation_id="follow_request_pending_count",
+        summary="Get pending follow request count",
+        description="Get the number of pending follow requests for the authenticated user.",
+        responses={
+            200: OpenApiResponse(
+                description="Count retrieved successfully",
+                response={
+                    "type": "object",
+                    "properties": {
+                        "count": {
+                            "type": "integer",
+                            "description": "Number of pending follow requests",
+                            "example": 5,
+                        }
+                    },
+                },
+            )
+        },
+        tags=["Follow Requests"],
+    )
     def pending_count(self, request: Request) -> Response:
         viewer = get_request_viewer(request)
         if not viewer:
