@@ -1,7 +1,7 @@
 {% load static %}
 
 <div class="update-post">
-    <form id="create-post-form" method="post">
+    <form id="create-post-form" method="post" enctype="multipart/form-data">
         {% csrf_token %}
         <section class="create-post-info">
             <h2>{{ title }}</h2>
@@ -19,10 +19,24 @@
                 {{ form.description.errors }}
                 {{ form.description }}
             </div>
-            <div class="field-wrapper">
+            <div class="field-wrapper" id="content-field">
                 <label for="id_content">Content <span class="required">∗</span></label>
                 {{ form.content.errors }}
                 {{ form.content }}
+            </div>
+            <div class="field-wrapper invisible" id="image-field">
+                <label for="id_image">Image <span class="required">∗</span></label>
+                {{ form.image.errors }}
+                <div class="upload-field">
+                    {{ form.image }}
+                </div>
+            </div>
+            <div class="field-wrapper invisible" id="video-field">
+                <label for="id_video">Video <span class="required">∗</span></label>
+                {{ form.video.errors }}
+                <div class="upload-field">
+                    {{ form.video }}
+                </div>
             </div>
         </section>
         <section class="create-post-tags">

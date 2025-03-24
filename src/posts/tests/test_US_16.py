@@ -6,7 +6,6 @@ from core.utils.testing_utils import GeneralUserStoryApiTest
 from unittest import skip
 
 
-@skip("Not implemented")
 @tag("US-posting")
 class TestUserStory16(GeneralUserStoryApiTest):
     """
@@ -22,8 +21,21 @@ class TestUserStory16(GeneralUserStoryApiTest):
         self.initialize_sample_text_posts(posts_per_author=1)
 
         # try to modify the post of another author
-        url = reverse("posts:TODO_FIGURE_OUT", args=[
+        url = reverse("posts:edit_post", args=[
                       self.sample_posts[0][0].uuid])
+
         self.client.force_authenticate(user=self.sample_authors[1].user)
-        response = self.client.post(url, {"content": "modified content"})
+        assert self.sample_authors[1].user is not None
+        self.client.force_login(self.sample_authors[1].user)
+        post = self.sample_posts[0][0]
+        updated_post = {
+            "title": post.title,
+            "description": post.description,
+            "content": "My new content",
+            "post_type": post.post_type,
+            "visibility_type": post.visibility_type,
+        }
+        response = self.client.put(url, updated_post, format="json")
+
         self.assertEqual(response.status_code, 403)
+        self.assertNotEqual(post.content, updated_post["content"])

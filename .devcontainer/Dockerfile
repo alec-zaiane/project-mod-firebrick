@@ -16,6 +16,7 @@ RUN groupadd --gid $USER_GID $USERNAME \
 # install firefox and some fonts # https://wiki.alpinelinux.org/wiki/Fonts
 RUN apk add font-terminus font-inconsolata font-dejavu font-noto font-noto-cjk font-awesome font-noto-extra
 RUN apk add firefox
+RUN apk add ffmpeg
 
 # let dev sudo without password
 RUN echo "$USERNAME ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/$USERNAME
