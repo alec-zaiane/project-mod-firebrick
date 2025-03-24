@@ -17,6 +17,7 @@ from django.core.validators import URLValidator
 from user_management.models import Author
 from core.utils.api_object import ApiObjectManager, AuthoredApiObject
 from core.utils.validators import validate_url_returns_image
+from moviepy.editor import VideoFileClip
 
 
 # === These are enums for the types of posts ===
@@ -36,7 +37,7 @@ CONTENT_TYPE_WEB_MAP: dict[str, str] = {
     # check back on this
     PostTypes.IMAGE: "image/png;base64",
     # this isn't implemented yet
-    PostTypes.VIDEO: "application/base64"
+    PostTypes.VIDEO: "video/mp4;base64",
 }
 
 CONTENT_TYPE_WEB_MAP_REVERSE: dict[str, str] = {
@@ -44,7 +45,7 @@ CONTENT_TYPE_WEB_MAP_REVERSE: dict[str, str] = {
     "text/markdown": PostTypes.MARKDOWN,
     "image/png;base64": PostTypes.IMAGE,
     "image/jpeg;base64": PostTypes.IMAGE,
-    "application/base64": PostTypes.VIDEO,
+    "video/mp4;base64": PostTypes.VIDEO,
 }
 
 
@@ -204,6 +205,13 @@ class Post(AuthoredApiObject):
 
     image: models.ImageField = models.ImageField(upload_to="post_images/", null=True, blank=True)
 
+    video: models.FileField = models.FileField(
+        upload_to="post_videos/",
+        null=True,
+        blank=True,
+        help_text="Video must be shorter than 4 seconds",
+    )
+
     if TYPE_CHECKING:
         comments: models.QuerySet[Comment]
         likes: models.QuerySet[Like]
@@ -260,15 +268,38 @@ class Post(AuthoredApiObject):
                 raise ValidationError("Content must be specified")
             if self.image:
                 raise ValidationError("Image field must be empty for plaintext and markdown posts")
+            if self.video:
+                raise ValidationError("Video field must be empty for plaintext and markdown posts")
         elif self.post_type == PostTypes.IMAGE:
             # make sure the image field is the only non-null field
             if not self.image:
                 raise ValidationError("Image must be specified")
             if self.content:
                 raise ValidationError("Content field must be empty for image posts")
+            if self.video:
+                raise ValidationError("Video field must be empty for image posts")
         elif self.post_type == PostTypes.VIDEO:
-            # TODO fill this in and add to the if statements above
-            ...
+            # make sure the video field is the only non-null field
+            if not self.video:
+                raise ValidationError("Video must be specified")
+            if self.content:
+                raise ValidationError("Content field must be empty for video posts")
+            if self.image:
+                raise ValidationError("Image field must be empty for video posts")
+
+            # validate the video duration
+            video = None
+            try:
+                video = VideoFileClip(self.video.path)
+                if video.duration > 4:
+                    raise ValidationError("Video must be 4 seconds or shorter")
+            except (IOError, OSError) as e:
+                raise ValidationError(f"Could not read video file: {str(e)}")
+            except Exception as e:
+                raise ValidationError(f"Invalid video file: {str(e)}")
+            finally:
+                if video is not None:
+                    video.close()
         super().clean()
 
     def get_template_name(self) -> str:
@@ -300,3 +331,14 @@ class Post(AuthoredApiObject):
             raise ValidationError("This post is not an image post")
         assert self.image is not None
         return f"![{self.title}]({self.image.url})"
+
+    @property
+    def markdown_video_link(self) -> str | None:
+        """
+        Returns markdown link for video, similar to image link
+        Example: ![title](http://127.0.0.1:8000/media/post_videos/abc.mp4)
+        """
+        if self.post_type != PostTypes.VIDEO:
+            raise ValidationError("This post is not a video post")
+        assert self.video is not None
+        return f"![{self.title}]({self.video.url})"
