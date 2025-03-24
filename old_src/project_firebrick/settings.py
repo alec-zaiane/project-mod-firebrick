@@ -20,13 +20,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-_-$8#4znxw*g^d!kam^2j4aw2b^a-#4gr-&#qvjv_5_5mshzp-'
+
+SECRET_KEY = os.getenv(
+    "DJANGO_SECRET_KEY", 'django-insecure-_-$8#4znxw*g^d!kam^2j4aw2b^a-#4gr-&#qvjv_5_5mshzp-')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DJANGO_DEBUG", str(True)) == "True"
 
-ALLOWED_HOSTS: list[str] = []
+ALLOWED_HOSTS: list[str] = os.getenv("DJANGO_ALLOWED_HOSTS", "*").split(" ")
 
 # set the node URL for building node2node request objects
 # make sure to include the `http://` but *no* trailing `/`!
@@ -51,6 +52,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -86,8 +88,12 @@ WSGI_APPLICATION = 'project_firebrick.wsgi.application'
 
 DATABASES: dict[str, dict[str, Any]] = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': str(os.getenv("DJANGO_DB_ENGINE", 'django.db.backends.sqlite3')),
+        'NAME': str(os.environ.get("POSTGRES_NAME", BASE_DIR / 'db.sqlite3')),
+        'USER': str(os.environ.get("POSTGRES_USER", 'user')),
+        'PASSWORD': str(os.environ.get("POSTGRES_PASSWORD", 'password')),
+        'HOST': str(os.environ.get("DJANGO_DB_HOST", 'localhost')),
+        'PORT': str(os.environ.get("DJANGO_DB_PORT", '5432')),
     }
 }
 
