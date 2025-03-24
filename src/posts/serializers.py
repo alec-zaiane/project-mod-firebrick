@@ -127,4 +127,6 @@ class PostSerializer(serializers.ModelSerializer[Post]):
         fqid = validated_data.pop("fqid")
         if not fqid:
             raise ValidationError("Post must have a valid FQID.")
-        return Post.objects.create(fqid=fqid, **validated_data)
+        author: Author = validated_data["author"]
+        host_node = author.host_node
+        return Post.objects.create(fqid=fqid, **validated_data, host_node=host_node)
