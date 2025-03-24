@@ -1,0 +1,11 @@
+{% extends "registration/registration.html" %}
+
+{% load static %}
+
+{% block title %}Success!{% endblock %}
+
+{% block id %}join-success{% endblock %}
+{% block registration_title %}Join Request Sent{% endblock %}
+{% block registration_contents %}
+    {% include "registration/or_sign_in.html" %}
+{% endblock%}

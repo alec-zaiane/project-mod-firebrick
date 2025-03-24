@@ -1,0 +1,13 @@
+<form id="registration-form" method="post">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <div class="field-wrapper">
+        {{ form.username.errors }}
+        {{ form.username }}
+    </div>
+    <div class="field-wrapper">
+        {{ form.password.errors }}
+        {{ form.password }}
+    </div>
+    <input id="registration-submit" type="submit" value="{{ submit_button }}">
+</form>

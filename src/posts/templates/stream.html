@@ -1,0 +1,25 @@
+{% extends 'return-meta-base.html' %}
+
+{% load static %}
+
+{% block content %}
+<div class="stream-container">
+    {% if posts %}
+    {% for post in posts %}
+    {% include 'components/post_card.html' %}
+    {% endfor %}
+    {% else %}
+    <p>No posts available in your stream.</p>
+    {% endif %}
+    <a id="add-post-floating-button" href="{% url 'posts:create_post' %}?next={{ request.path|urlencode }}">+</a>
+</div>
+
+<script src="{% static 'scripts/generic-form.min.js' %}"></script>
+<script src="{% static 'scripts/posts.min.js' %}"></script>
+<script src="{% static 'scripts/markdown-renderer.min.js' %}"></script>
+
+{% endblock %}
+
+{% block right_panel %}
+    {% include 'search_form.html' %}
+{% endblock %}

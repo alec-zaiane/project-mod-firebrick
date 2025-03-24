@@ -44,13 +44,17 @@
 - https://learndjango.com/tutorials/django-login-and-logout-tutorial
 - https://www.artima.com/weblogs/viewpost.jsp?thread=240845#decorator-functions-with-decorator-arguments
 - https://stackoverflow.com/questions/53847404/how-to-check-uuid-validity-in-python
-
+- https://www.django-rest-framework.org/api-guide/
+- https://stackoverflow.com/questions/14547491/url-encoding-on-django-template
+- https://stackoverflow.com/questions/16566069/url-decode-utf-8-in-python
+- https://stackoverflow.com/a/8342249
+- https://gist.github.com/dmlap/5643609
 
 ##GPT/Copilot Documentation:
 1. Copilot auto-complete was used in VS Code
 2. Copilot chat was used in VS Code, for the purposes of finding the correct django documentation files
 
-GPT PROMPT: This is my post_submission_card.html, why is it that when I post an image I'm getting an error showing it's giving a GET req. Linked my html file, along with the error given with the request. 
+GPT PROMPT: This is my post_submission_card.html, why is it that when I post an image I'm getting an error showing it's giving a GET req. Linked my html file, along with the error given with the request.
 
 Response: Keep method="post" But Prevent Default in JS
 If you must keep method="post" for some reason, ensure your JavaScript code prevents the default submission. For example:
@@ -68,7 +72,7 @@ document.querySelector("form[name='generic-form']").addEventListener("submit", f
 
 GPT PROMPT: When I click the image to use, then I click create image post button and that button redirects me to the django framework as you saw above where I am able to see the markdown. So how would the user see this markdown, so that they can copy it and use it later?
 
-Response: 
+Response:
 ✅ Update post_card.html
 Modify your post_card.html so that if a post contains an image, it will display its corresponding Markdown link right below it.
 
@@ -89,7 +93,7 @@ Edit
     <div class="post-content {{ post.css_class }}">
         {% if post.image %}
             <img src="{{ post.image.url }}" alt="Image Post" class="post-image">
-            
+
             <!-- Display Markdown Link Below Image -->
             <div class="markdown-container">
                 <p><strong>Markdown for this image:</strong></p>

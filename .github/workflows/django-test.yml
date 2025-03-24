@@ -1,5 +1,5 @@
 
-name: Run Django Tests
+name: Run Django Tests (Docker)
 
 on:
   pull_request:
@@ -16,14 +16,30 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.13'
-
     - name: Install dependencies
       run: |
         pip install -r src/requirements.txt
     - name: Install dev dependencies
       run: |
         pip install -r src/requirements-dev.txt
+    - name: Collect static files
+      run: |
+        python src/manage.py collectstatic --noinput
+    - name: patch requirements-dev into requirements (for testing)
+      run: |
+        cat src/requirements-dev.txt >> src/requirements.txt
+    - name: Build the Docker image
+      run: |
+        docker compose build
+    - name: Copy the env files
+      run: |
+        cp .dockerenv/.django.env.example .dockerenv/.django.env
+        cp .dockerenv/.postgres.env.example .dockerenv/.postgres.env
+    - name: Run the Docker containers
+      run: |
+        docker compose up -d
     - name: Run all tests
       run: |
-        cd src
-        python manage.py test
+        docker compose run -T socialnetwork python manage.py test --parallel --exclude-tag=ui
+
+# https://chrisguitarguy.com/2023/01/13/docker-compose-exec-on-github-actions/

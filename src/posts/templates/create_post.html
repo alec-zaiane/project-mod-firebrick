@@ -1,0 +1,13 @@
+{% extends 'return-meta-base.html' %}
+
+{% load static %}
+
+{% block title %}Creating Post{% endblock %}
+
+{% block content %}
+{% include 'update_post.html' with title="Create Post" %}
+
+<script src="{% static 'scripts/posts.min.js' %}"></script>
+<script src="{% static 'scripts/post-editor.min.js' %}"></script>
+<script src="{% static 'scripts/textarea-expand.min.js' %}"></script>
+{% endblock %}

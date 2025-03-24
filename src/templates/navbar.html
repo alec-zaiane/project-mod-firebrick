@@ -1,0 +1,28 @@
+{% load static %}
+{% load get_follow_requests_count %}
+{% if user.is_authenticated %}
+    {% if user.is_superuser %}
+        <a id="navbar-admin-panel" class="navbar-category" href="{% url 'admin:index' %}"><img class="navbar-icon" src="{% static 'svg/admin.svg' %}"/> <span class="navbar-title">Admin Panel</span></a>
+    {% endif %}
+{% endif %}
+{% if user.author %}
+    <a id="navbar-home" class="navbar-category" href="{% url 'posts:stream' %}"><img class="navbar-icon" src="{% static 'svg/home.svg' %}"/> <span class="navbar-title">Home</span></a>
+    {% url 'user_management:follow_requests' as follow_requests_url %}
+    <a id="navbar-follow-requests" class="navbar-category" href="{% if request.path == follow_requests_url %}{{ request.get_full_path }}{% else %}{{ follow_requests_url }}?next={{ request.get_full_path }}{% endif %}">
+        <img class="navbar-icon" src="{% static 'svg/followrequests.svg' %}"/>
+        <span class="navbar-title">
+            <span>Follow Requests</span><span id="follow-request-count">{% get_follow_requests_count user.author %}</span>
+        </span>
+    </a>
+{% endif %}
+{% if user.is_authenticated %}
+<form id="navbar-logout" class="logout-signup-container" action="{% url 'user_management:logout' %}" method="post">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <button class="logout-signup logout" type="submit">Log Out</button>
+</form>
+{% else %}
+<a id="navbar-request-join" class="logout-signup-container" href="{% url 'user_management:join' %}?next={{ request.get_full_path }}">
+    <div class="logout-signup">Request to Join</div>
+</a>
+{% endif %}

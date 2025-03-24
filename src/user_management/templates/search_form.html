@@ -1,0 +1,11 @@
+{% load static %}
+<div class="search">
+    <form id="search-form" class="search-form">
+        <label for="search-input" class="search-bar">
+            <img class="search-icon" src="{% static 'svg/search.svg' %}" alt="Search">
+            <input type="text" id="search-input" placeholder="Search authors...">
+        </label>
+    </form>
+    <div id="search-results" class="search-results"></div>
+    <script src="{% static 'scripts/search.min.js' %}"></script>
+</div>

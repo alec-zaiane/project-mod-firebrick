@@ -1,0 +1,17 @@
+{% load static %}
+
+<span id="post-meta" class="post-meta">
+    {% if not full %}
+        <div class="posted"><time title="{{ post.created_at|date:'g:i a · F j, Y' }}" datetime="{{ post.created_at|date:'Y-m-d H:i:s' }}">{{ post.created_at|date:"M jS" }}</time></div>
+        {% if post.is_updated %}
+            <img class="edit-pencil" title="Edited {{ post.updated_at|date:'g:i a · F j, Y' }}" src="{% static 'svg/edit.svg' %}" />
+        {% endif %}
+    {% else %}
+        {% if post.is_updated %}
+            <img class="edit-pencil" src="{% static 'svg/edit.svg' %}" />
+            <span class="last-edited" title="Posted {{ post.created_at|date:'g:i a · F j, Y' }}">Last Edited <time datetime="{{ post.updated_at|date:'Y-m-d H:i:s' }}">{{ post.updated_at|date:'g:i a · F j, Y' }}</time></span>
+        {% else %}
+            <div class="posted">Posted <time datetime="{{ post.created_at|date:'Y-m-d H:i:s' }}">{{ post.created_at|date:"g:i a · F j, Y" }}</time></div>
+        {% endif %}
+    {% endif %}
+</span>

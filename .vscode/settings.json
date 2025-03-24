@@ -1,0 +1,45 @@
+{
+    "terminal.integrated.profiles.linux": {
+        "fish": {
+            "path": "/usr/bin/fish"
+        }
+    },
+    "terminal.integrated.defaultProfile.linux": "fish",
+    "files.eol": "\n",
+    "python.analysis.typeCheckingMode": "off",
+    "python.analysis.diagnosticSeverityOverrides": {
+        "reportUnusedImport": "information"
+    },
+    "mypy.dmypyExecutable": "/home/dev/.local/bin/dmypy",
+    "mypy.configFile": ".configs/mypy.ini",
+    "mypy.targets": [
+        "src"
+    ],
+    "editor.formatOnSave": true,
+    "editor.formatOnType": true,
+    "editor.formatOnPaste": true,
+    "editor.defaultFormatter": "ms-python.autopep8",
+    "files.insertFinalNewline": true,
+    "files.trimTrailingWhitespace": true,
+    "autopep8.args": [
+        "--max-line-length=100"
+    ],
+    "github.copilot.chat.codeGeneration.useInstructionFiles": true,
+    "github.copilot.chat.codeGeneration.instructions": [
+        {
+            "file": "docs/conventions-contract.md"
+        },
+    ],
+    "github.copilot.chat.testGeneration.instructions": [
+        {
+            "file": "docs/testing-conventions.md"
+        }
+    ],
+    "python.testing.unittestEnabled": true,
+    "python.testing.cwd": "./src",
+    "python.testing.unittestArgs": [
+        "-p",
+        "*test*.py"
+    ],
+    "python.testing.pytestEnabled": false
+}

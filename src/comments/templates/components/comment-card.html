@@ -1,0 +1,29 @@
+{% load check_liked %}
+{% load static %}
+
+<div class="post-comment" id="comment-{{ comment.uuid }}">
+    <a id="post-profile-select" href="{% url 'user_management:author_profile' comment.author.uuid %}" class="names">
+        {% if comment.author.profile_image %}
+        <img class="profile-image" src="{{ comment.author.profile_image }}"/>
+        {% endif %}
+        <h3 class="display-name">{{ comment.author.display_name }}</h3>
+        <h5 class="username">{{ comment.author.username }}</h5>
+    </a>
+    <span class="comment-content">{{ comment.content }}</span>
+    <div class="likes-box">
+        <form id="like-form" name="generic-form" action="{% url 'likes:like_by_viewer' comment.fqid|urlencode:"" %}">
+            {% csrf_token %}
+            <input type="hidden" name="_method" value="POST">
+            <input type="hidden" name="_after_action" value="reload">
+            <button class="like-button" type="submit" {% if not viewer %}disabled{% endif %}>
+                {% check_liked viewer comment as liked %}
+                {% if liked %}
+                    <img class="like-icon liked" src="{% static 'svg/liked.svg' %}" />
+                {% else %}
+                    <img class="like-icon like" src="{% static 'svg/like.svg' %}" />
+                {% endif %}
+            </button>
+        </form>
+        <span class="likes-count">{{ comment.likes.all|length }}</span>
+    </div>
+</div>
