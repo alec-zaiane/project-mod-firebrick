@@ -246,8 +246,17 @@ class AuthorSearchAPIView(APIView):
         authors = Author.objects.filter(
             Q(username__icontains=query) | Q(display_name__icontains=query)
         )
-        serializer = AuthorSerializer(authors, many=True)
-        return Response(serializer.data)
+        authors_list: list[dict[str, str]] = []
+        # Necessary instead of serializer, because we need UUID
+        for author in authors:
+            author_data: dict[str, str] = {
+                "displayName": str(author.display_name),
+                "username": str(author.username),
+                "profileImage": str(author.profile_image),
+                "uuid": str(author.uuid),
+            }
+            authors_list.append(author_data)
+        return Response(authors_list)
 
 
 class FollowRequestByViewer(APIView):

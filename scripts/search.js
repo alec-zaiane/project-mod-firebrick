@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
 
                 data.forEach(author => {
-                    const uuid = author.authorUUID;
+                    const uuid = author.uuid;
 
                     if (uuid) {
                         const link = document.createElement("a");

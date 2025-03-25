@@ -43,7 +43,6 @@ class AuthorSerializer(serializers.ModelSerializer[Author]):
             "displayName": instance.display_name,
             "profileImage": instance.profile_image,
             "page": instance.page_url,
-            "authorUUID": instance.uuid,
         }
 
     def to_internal_value(self, data: dict[str, Any]) -> dict[str, Any]:
