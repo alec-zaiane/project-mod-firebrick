@@ -2,7 +2,7 @@
 
 {% load static %}
 
-{% block title %}{{ author.display_name }}'s {{follow_type}}{% endblock %}
+{% block title %}{{ author.display_name }}'s {{follow_type}} | {% endblock %}
 
 {% url 'user_management:author_profile' author.uuid as author_url %}
 {% block return_href %}{% if request.GET.next %}{{ request.GET.next }}{% else %}{% url 'user_management:author_profile' author.uuid %}{% endif %}{% endblock %}

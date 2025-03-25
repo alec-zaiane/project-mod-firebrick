@@ -57,7 +57,7 @@ class AuthorView(View):
         UUID, and will display information about the author.
         """
         target_author = get_object_or_404(
-            LocalAuthor, uuid=target_author_uuid)
+            Author, uuid=target_author_uuid)
 
         viewer = get_request_viewer(request)
 
