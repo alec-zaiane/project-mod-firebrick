@@ -24,8 +24,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
 
                 data.forEach(author => {
-                    const uuidMatch = author.id.match(/authors\/([a-f0-9\-]+)/i);
-                    const uuid = uuidMatch ? uuidMatch[1] : null;
+                    const uuid = author.uuid;
 
                     if (uuid) {
                         const link = document.createElement("a");
