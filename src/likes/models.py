@@ -95,9 +95,16 @@ class Like(AuthoredApiObject):
             raise ValidationError("Like cannot have both a target post and comment")
         super().clean()
 
+    # def generate_fqid(self) -> str:
+    #     # TODO replace with reverse() call :)
+    #     return f"{self.host_node.host_url}likes/{self.uuid}".replace("/api/api", "/api")
+
     def generate_fqid(self) -> str:
         # TODO replace with reverse() call :)
-        return f"{self.host_node.host_url}likes/{self.uuid}".replace("/api/api", "/api")
+        host_url_slashed = self.host_node.host_url.rstrip('/')
+        fqid = f"{host_url_slashed}/likes/{self.uuid}"
+        return fqid.replace("/api/api", "/api")
+
 
         # node2node stuff
     def node2node_encode_as_class_json_dict(self) -> dict[str, Any]:
