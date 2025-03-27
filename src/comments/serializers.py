@@ -10,6 +10,8 @@ from likes.serializers import LikeSerializer
 from user_management.models import Author, Node
 from user_management.serializers import AuthorSerializer
 
+from dateutil.parser import isoparse
+
 
 class CommentSerializer(serializers.ModelSerializer[Comment]):
     """Comment serializer for node2node
@@ -124,7 +126,8 @@ class CommentSerializer(serializers.ModelSerializer[Comment]):
             "author": found_author,
             "content": data["comment"],
             "content_type": comment_type,
-            "created_at": data["published"],
+            # "created_at": data["published"],
+            "created_at": isoparse(data["published"]),
             "post": found_post,
             "fqid": data["id"],
         }
