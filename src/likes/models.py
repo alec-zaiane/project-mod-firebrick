@@ -100,9 +100,11 @@ class Like(AuthoredApiObject):
     #     return f"{self.host_node.host_url}likes/{self.uuid}".replace("/api/api", "/api")
 
     def generate_fqid(self) -> str:
-        # TODO replace with reverse() call :)
-        host_url_slashed = self.host_node.host_url.rstrip('/')
-        fqid = f"{host_url_slashed}/likes/{self.uuid}"
+        # Ensure there's a slash between host_url and the rest of the path
+        if self.host_node.host_url.endswith('/'):
+            fqid = f"{self.host_node.host_url}likes/{self.uuid}"
+        else:
+            fqid = f"{self.host_node.host_url}/likes/{self.uuid}"
         return fqid.replace("/api/api", "/api")
 
 
