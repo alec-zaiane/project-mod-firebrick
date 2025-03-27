@@ -108,6 +108,9 @@ class ApiObject(models.Model):
             return
         from user_management.models import Node
         for node in Node.external_nodes.all():
+            url = f"{node.host_url.rstrip('/')}{self.node2node_get_deletion_url()}"
+            # see output
+            print(f"Sending DELETE to: {url}")
             node.send_delete(self.node2node_get_deletion_url())
 
     # =====================================

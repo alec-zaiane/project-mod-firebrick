@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from urllib.parse import quote
+
 import os
 import tempfile
 from typing import Any, TYPE_CHECKING, Optional
@@ -344,11 +346,21 @@ class Post(AuthoredApiObject):
     def node2node_get_creation_url(self) -> str:
         return reverse("posts:api_posts-list")
 
+    # def node2node_get_update_url(self) -> str:
+    #     return reverse("posts:api_posts-detail", kwargs={"fqid": self.get_encoded_fqid()})
+
     def node2node_get_update_url(self) -> str:
-        return reverse("posts:api_posts-detail", kwargs={"fqid": self.get_encoded_fqid()})
+        encoded_fqid = quote(self.fqid, safe="")
+        return f"/api/posts/{encoded_fqid}/"
+
+
 
     def node2node_get_deletion_url(self) -> str:
-        return self.node2node_get_update_url()
+        encoded_fqid = quote(self.fqid, safe="")
+        return f"/api/posts/{encoded_fqid}/"
+
+    # def node2node_get_deletion_url(self) -> str:
+    #     return self.node2node_get_update_url()
 
     @property
     def markdown_image_link(self) -> str | None:
