@@ -231,9 +231,6 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
     def destroy(self, request: Request, **kwargs: Any) -> Response:
         """
         Soft delete the specified post.
-
-        Instead of permanently deleting the post, this action marks the post as soft-deleted.
-        Only the author of the post is allowed to do this.
         """
         if isinstance(request.user, AnonymousUser):
             return API_UNAUTHORIZED()
@@ -244,12 +241,13 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
 
         post: Post = self.get_object()
 
-        # if the viewer is not the author, and the author is not hosted by the viewer, deny access
         if viewer != post.author and not viewer_as_node:
             return Response(
                 {"error": "You do not have permission to edit this post."},
                 status=status.HTTP_403_FORBIDDEN
             )
+
+        post._propagate_deletion_to_other_nodes()
 
         post.soft_delete()
         return Response({"detail": "Post soft deleted"}, status=status.HTTP_204_NO_CONTENT)
