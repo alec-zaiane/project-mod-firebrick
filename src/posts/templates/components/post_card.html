@@ -3,8 +3,8 @@
 {% load static %}
 {% load check_liked %}
 {% load check_interaction_eligibility %}
-{% load foreign_url %}
-{% load foreign_url_http %}
+{% load external_url %}
+{% load external_url_http %}
 
 <article class="post-card{% if full %} post-full{% endif %}">
     {% if not full %}
@@ -20,11 +20,11 @@
             <h5 class="username">{{ post.author.username }}</h5>
         </a>
         {% if post.author.host_node != viewer.host_node %}
-            <a id="foreign-node-select" href="{% foreign_url_http post.author.host_node.host_url %}">
+            <a class="external-node-select" id="external-node-select-{{post.author.host_node.host_url}}" href="{% external_url_http post.author.host_node.host_url %}">
                 <!-- idea of how you could get a favicon for later, doesn't work rn because we're using vpns but maybe later
                 <img height="16" width="16" src='http://www.google.com/s2/favicons?domain={{post.author.host_node.host_url}}' />
                 -->
-                <h6 class="foreign-tag" title="From External Node">@{% foreign_url post.author.host_node.host_url %}</h6>
+                <h6 class="external-tag" title="From External Node">@{% external_url post.author.host_node.host_url %}</h6>
             </a>
         {% endif %}
         {% if not full %}

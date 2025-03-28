@@ -99,14 +99,14 @@ a:link:active, a:visited:active  {
     caret-color: firebrick;
 }
 
-.foreign-tag {
+.external-tag {
     background: #2f2f2f96;
     padding: 3px;
     margin: -3px;
     border-radius: 8px;
 }
 
-#foreign-node-select {
+.external-node-select {
     text-decoration: none;
     pointer-events: all;
     color: var(--color-sub) !important;
@@ -114,7 +114,7 @@ a:link:active, a:visited:active  {
     flex-direction: row;
 }
 
-#foreign-node-select:hover {
+.external-node-select:hover {
     text-decoration: underline;
 }
 
@@ -1362,6 +1362,23 @@ a:link:active, a:visited:active  {
     display: grid;
     grid: "a a";
     justify-items: center;
+}
+
+.search .search-results .search-result {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+}
+
+.search .search-results .search-result .display-name {
+    margin: 0;
+}
+
+.search .search-results .search-result .search-name-and-link {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }
 
 /*

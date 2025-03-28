@@ -4,5 +4,5 @@ register = template.Library()
 
 
 @register.simple_tag
-def foreign_url_http(url: str) -> str:
+def external_url_http(url: str) -> str:
     return url.replace("/api", "/")

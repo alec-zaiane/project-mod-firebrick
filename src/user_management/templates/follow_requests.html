@@ -1,6 +1,8 @@
 {% extends 'return-meta-base.html' %}
 
 {% load static %}
+{% load external_url %}
+{% load external_url_http %}
 
 {% block title %}Follow Requests{% endblock %}
 
@@ -15,6 +17,14 @@
             {% endif %}
             <h3 class="display-name">{{ follow_request.follower.display_name }}</h3>
             <h5 class="username">{{ follow_request.follower.username }}</h5>
+            {% if follow_request.host_node != viewer.host_node %}
+                <a class="external-node-select" id="external-node-select-{{follow_request.author.host_node.host_url}}" href="{% external_url_http follow_request.host_node.host_url %}">
+                    <!-- idea of how you could get a favicon for later, doesn't work rn because we're using vpns but maybe later
+                    <img height="16" width="16" src='http://www.google.com/s2/favicons?domain={{follow.host_node.host_url}}' />
+                    -->
+                    <h6 class="external-tag" title="From External Node">@{% external_url follow_request.host_node.host_url %}</h6>
+                </a>
+            {% endif %}
         </a>
         <div class="selector">
             <form class="follow-request-form" name="generic-form" action="{% url 'user_management:node2node_follow_requests-approve' follow_request.get_encoded_fqid %}">
