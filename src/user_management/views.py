@@ -244,7 +244,8 @@ class AuthorSearchAPIView(APIView):
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         query = request.query_params.get("q", "")
         authors = Author.objects.filter(
-            Q(username__icontains=query) | Q(display_name__icontains=query)
+            Q(username__icontains=query) | Q(
+                display_name__icontains=query) & Q(host_node__is_disabled=False)
         )
         serializer = AuthorSerializer(authors, many=True)
         return Response(serializer.data)
