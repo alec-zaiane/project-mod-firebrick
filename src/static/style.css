@@ -1361,6 +1361,7 @@ a:link:active, a:visited:active  {
     border-right: 1px solid #242729;
     padding: 0 20px;
     flex-grow: 1;
+    text-align: center;
 }
 
 /*
