@@ -64,11 +64,11 @@ document.addEventListener("DOMContentLoaded", function () {
                             const host = document.createElement("a");
                             host.id = "external-node-select-" + author.host_url;
                             host.classList.add("external-node-select");
-                            host.href = author.host_url.replace("/api", "");
+                            host.href = getRootUrlUsingURLAPI(author.host_url);
                             const hostTag = document.createElement("h6");
                             hostTag.classList.add("external-tag");
                             hostTag.title = "From External Node";
-                            hostTag.textContent = "@" + author.host_url.replace("https://", "").replace("http://", "").replace("/api", "");
+                            hostTag.textContent = "@" + getRootUrlUsingURLAPI(author.host_url, false);
                             host.appendChild(hostTag);
                             name_and_link.appendChild(host);
                         }
@@ -83,3 +83,17 @@ document.addEventListener("DOMContentLoaded", function () {
             });
     });
 });
+
+function getRootUrlUsingURLAPI(url, http = true) {
+    try {
+        const { protocol, host } = new URL(url);
+        if (!http) {
+            return host;
+        } else {
+            return `${protocol}//${host}/`;
+        }
+    } catch (e) {
+        // URL invalid
+        return url;
+    }
+}
