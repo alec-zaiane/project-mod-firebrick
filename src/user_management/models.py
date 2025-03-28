@@ -430,7 +430,11 @@ class Node(models.Model):
 
     # internal_user is for authentication - this may change in the future
     internal_user: models.OneToOneField[User, Optional[User]] = models.OneToOneField(
-        User, on_delete=models.CASCADE, null=True, blank=True)
+        User, on_delete=models.CASCADE, null=True, blank=True, related_name="internal_node_user")
+
+    # external_user is for authentication as well, only necessary for form display
+    external_user: models.OneToOneField[User, Optional[User]] = models.OneToOneField(
+        User, on_delete=models.CASCADE, null=True, blank=True, related_name="external_node_user")
 
     # if true, this `Node` is the local node. This can only be true for one node (upheld in the manager)
     is_local_node = models.BooleanField(_("Is Local Node"), default=False)

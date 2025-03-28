@@ -5,6 +5,7 @@ from django.db.models import QuerySet
 from django.http import HttpRequest
 
 from core.utils.adminpanel import admin_action_on_queryset
+from user_management.forms import NodeAdminForm
 
 from . import models
 # Register your models here.
@@ -34,6 +35,20 @@ class AuthorAdmin(admin.ModelAdmin[models.Author]):
 @admin.register(models.Node)
 class NodeAdmin(admin.ModelAdmin[models.Node]):
     list_display = ('name', 'host_url', 'is_local_node')
+    form = NodeAdminForm
+    fieldsets = (
+        (None, {
+            'fields': ('name', 'host_url', 'host_site_url')
+        }), ("Remote Node User", {
+            "fields": ('internal_username', 'internal_password'),
+            "description": "These are the credentials used to authenticate with the remote node. These should be identical to the ones stored on the remote node."
+        }), ("Local User", {
+            "fields": ('external_username', 'external_password'),
+            "description": "These are the credentials the remote node would use to authenticate with the local node. The remote node should authenticate identically with these credentials when attempting connection."
+        }), ("Properties", {
+            'fields': ('is_local_node', 'is_disabled')
+        })
+    )
 
 
 @admin.register(models.JoinRequest)
