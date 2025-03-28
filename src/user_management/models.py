@@ -493,6 +493,9 @@ class Node(models.Model):
             print(f"[Node {self.name}] Update sent to {to}")
         except requests.RequestException as e:
             print(f"[Node {self.name}] Failed to send UPDATE to {to}: {e}")
+            # Disables a node that ever sends an invalid update
+            self.is_disabled = True
+            self.save()
 
     def send_create(self, json: dict[str, Any], to: str) -> None:
         """Send an object creation to this node via the given `to` URL"""
@@ -503,6 +506,9 @@ class Node(models.Model):
             response.raise_for_status()
         except requests.RequestException as e:
             print(f"[Node {self.name}] Failed to send CREATE to {to}: {e}")
+            # Disables a node that ever sends an invalid update
+            self.is_disabled = True
+            self.save()
 
     def send_delete(self, to: str) -> None:
         """Send a delete request to this node via the given `to` URL"""
@@ -515,6 +521,9 @@ class Node(models.Model):
             print(f"[Node {self.name}] Delete sent to {to}")
         except requests.RequestException as e:
             print(f"[Node {self.name}] Failed to send DELETE to {to}: {e}")
+            # Disables a node that ever sends an invalid update
+            self.is_disabled = True
+            self.save()
 
 
 # =============================================================================

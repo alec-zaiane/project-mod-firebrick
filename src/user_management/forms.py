@@ -141,8 +141,6 @@ class NodeAdminForm(forms.ModelForm[Node]):
             self.instance.save()
 
         host_url = self.cleaned_data.get("host_url")
-        # Eventually, you also want any failed validations to disable the node if they are not done in the form
-        # As that node is no longer valid.
         if host_url and internal_username and internal_password:
             # Attempts to connect to posts -- arbitrary API point, but guaranteed to exist
             response = requests.get(host_url + "/posts", auth=HTTPBasicAuth(
