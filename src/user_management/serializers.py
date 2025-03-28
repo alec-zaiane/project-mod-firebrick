@@ -66,7 +66,6 @@ class AuthorSerializer(serializers.ModelSerializer[Author]):
                 fqid=data["id"],
                 host_node=host_node,
                 display_name=data["displayName"],
-                username=data["username"],
                 profile_image=data["profileImage"],
                 page_url=data["page"],
             )
