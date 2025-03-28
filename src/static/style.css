@@ -99,6 +99,25 @@ a:link:active, a:visited:active  {
     caret-color: firebrick;
 }
 
+.foreign-tag {
+    background: #2f2f2f96;
+    padding: 3px;
+    margin: -3px;
+    border-radius: 8px;
+}
+
+#foreign-node-select {
+    text-decoration: none;
+    pointer-events: all;
+    color: var(--color-sub) !important;
+    display: flex;
+    flex-direction: row;
+}
+
+#foreign-node-select:hover {
+    text-decoration: underline;
+}
+
 /*
  ===========
   LOGIN

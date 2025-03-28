@@ -60,14 +60,13 @@ class AuthorSerializer(serializers.ModelSerializer[Author]):
         try:
             return Author.objects.get_by_fqid(data["id"])
         except Author.DoesNotExist:
-            print(data["host"])
-            print(data)
             host_node = Node.external_nodes.find_node(data["host"])
             assert host_node is not None
             return Author.objects.create(
                 fqid=data["id"],
                 host_node=host_node,
                 display_name=data["displayName"],
+                username=data["username"],
                 profile_image=data["profileImage"],
                 page_url=data["page"],
             )
