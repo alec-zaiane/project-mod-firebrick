@@ -412,6 +412,11 @@ class ExternalNodeManager(NodeManager):
     def find_node(self, host_url: str) -> Optional[Node]:
         return self.filter(host_url=host_url).first()
 
+    def verify_connection(self, host_url: str, username: str, password: str) -> requests.Response:
+        # Attempts to connect to posts -- arbitrary API point, but guaranteed to exist
+        return requests.get(host_url + "/posts", auth=HTTPBasicAuth(
+            username, password), timeout=5)
+
 
 class Node(models.Model):
     """

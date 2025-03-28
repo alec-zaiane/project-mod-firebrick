@@ -110,24 +110,49 @@ class NodeAdminForm(forms.ModelForm[Node]):
         internal_password = self.cleaned_data.get("internal_password")
         external_username = self.cleaned_data.get("external_username")
         external_password = self.cleaned_data.get("external_password")
+        external_user = self.instance.external_user
+        internal_user = self.instance.internal_user
+        commit = False
 
-        if self.instance.internal_user and internal_username and internal_password:
+        if self.instance.external_user and external_username and external_password and external_user:
             # If the node already has a user, update it
-            internal_user = self.instance.internal_user
+            external_user.username = external_username
+            external_user.set_password(external_password)
+            external_user.password_plain = external_password
+            self.instance.external_user = external_user
+            commit = True
+        elif User.objects.filter(username=external_username).exists():
+            # If this is pointing to a user that already exists, update that user
+            external_user = User.objects.get(username=external_username)
+            external_user.set_password(external_password)
+            external_user.password_plain = external_password
+            self.instance.external_user = external_user
+            commit = True
+        elif external_username and external_password:
+            # Finally, if none of the above are true, create a user
+            external_user = User.objects.create_user(
+                username=external_username,
+                password=external_password,
+                password_plain=external_password,
+                type=User.Types.NODE,
+            )
+            self.instance.external_user = external_user
+            commit = True
+
+        if self.instance.internal_user and internal_username and internal_password and internal_user:
+            # If the node already has a user, update it
             internal_user.username = internal_username
             internal_user.set_password(internal_password)
             internal_user.password_plain = internal_password
-            internal_user.save()
             self.instance.internal_user = internal_user
-            self.instance.save()
+            commit = True
         elif User.objects.filter(username=internal_username).exists():
             # If this is pointing to a user that already exists, update that user
             internal_user = User.objects.get(username=internal_username)
             internal_user.set_password(internal_password)
             internal_user.password_plain = internal_password
-            internal_user.save()
             self.instance.internal_user = internal_user
-            self.instance.save()
+            commit = True
         elif internal_username and internal_password:
             # Finally, if none of the above are true, create a user
             internal_user = User.objects.create_user(
@@ -136,16 +161,20 @@ class NodeAdminForm(forms.ModelForm[Node]):
                 password_plain=internal_password,
                 type=User.Types.NODE,
             )
-            internal_user.save()
             self.instance.internal_user = internal_user
-            self.instance.save()
+            commit = True
+        else:
+            # If no username or password is provided, raise an error
+            raise forms.ValidationError(
+                _("Please provide a valid username and password."))
 
         host_url = self.cleaned_data.get("host_url")
+
         if host_url and internal_username and internal_password:
-            # Attempts to connect to posts -- arbitrary API point, but guaranteed to exist
-            response = requests.get(host_url + "/posts", auth=HTTPBasicAuth(
-                internal_username, internal_password), timeout=10)
+            response = Node.external_nodes.verify_connection(
+                host_url, internal_username, internal_password)
             if not response.ok:
+                commit = False
                 error = "The provided host URL is not reachable. " + \
                     str(response.status_code) + " " + response.reason + ": "
                 error_data = response.json()
@@ -162,33 +191,12 @@ class NodeAdminForm(forms.ModelForm[Node]):
             raise forms.ValidationError(
                 _("Please provide a valid host URL and credentials."))
 
-        if self.instance.external_user and external_username and external_password:
-            # If the node already has a user, update it
-            external_user = self.instance.external_user
-            external_user.username = external_username
-            external_user.set_password(external_password)
-            external_user.password_plain = external_password
-            external_user.save()
-            self.instance.external_user = external_user
-            self.instance.save()
-        elif User.objects.filter(username=external_username).exists():
-            # If this is pointing to a user that already exists, update that user
-            external_user = User.objects.get(username=external_username)
-            external_user.set_password(external_password)
-            external_user.password_plain = external_password
-            external_user.save()
-            self.instance.external_user = external_user
-            self.instance.save()
-        elif external_username and external_password:
-            # Finally, if none of the above are true, create a user
-            external_user = User.objects.create_user(
-                username=external_username,
-                password=external_password,
-                password_plain=external_password,
-                type=User.Types.NODE,
-            )
-            external_user.save()
-            self.instance.external_user = external_user
+        # Only save the user and instance if the form is valid
+        if commit:
+            if external_user:
+                external_user.save()
+            if internal_user:
+                internal_user.save()
             self.instance.save()
 
         return cleaned_data
