@@ -292,6 +292,7 @@ class AuthorSearchAPIView(APIView):
                 "profileImage": str(author.profile_image),
                 "uuid": str(author.uuid),
                 "host_url": str(author.host_node.host_url),
+                "site_url": str(author.host_node.host_site_url),
             }
             authors_list.append(author_data)
         return Response(authors_list)

@@ -41,6 +41,10 @@ document.addEventListener("DOMContentLoaded", function () {
                         </div>
                     </div> */
                     if (uuid) {
+                        host_url = author.host_url;
+                        if (author.site_url != "") {
+                            host_url = author.site_url;
+                        }
                         const names = document.createElement("div");
                         names.classList.add("search-result");
                         if (author.profileImage) {
@@ -60,15 +64,19 @@ document.addEventListener("DOMContentLoaded", function () {
                         displayName.textContent = author.displayName;
                         link.appendChild(displayName);
                         name_and_link.appendChild(link);
-                        if (author.host_url && author.host_url != viewer_url) {
+                        if (host_url && author.host_url != viewer_url) {
                             const host = document.createElement("a");
-                            host.id = "external-node-select-" + author.host_url;
+                            host.id = "external-node-select-" + host_url;
                             host.classList.add("external-node-select");
-                            host.href = getRootUrlUsingURLAPI(author.host_url);
+                            if (author.site_url != "") {
+                                host.href = host_url;
+                            } else {
+                                host.href = getRootUrlUsingURLAPI(host_url);
+                            }
                             const hostTag = document.createElement("h6");
                             hostTag.classList.add("external-tag");
                             hostTag.title = "From External Node";
-                            hostTag.textContent = "@" + getRootUrlUsingURLAPI(author.host_url, false);
+                            hostTag.textContent = "@" + getRootUrlUsingURLAPI(host_url, false);
                             host.appendChild(hostTag);
                             name_and_link.appendChild(host);
                         }

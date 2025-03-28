@@ -1,8 +1,6 @@
 {% extends 'return-base.html' %}
 
 {% load static %}
-{% load external_url %}
-{% load external_url_http %}
 
 {% block title %}{{ author.display_name }}'s {{follow_type}}{% endblock %}
 
@@ -20,14 +18,10 @@
             <img class="profile-image" src="{{ follow.profile_image }}"/>
             {% endif %}
             <h3 class="display-name">{{ follow.display_name }}</h3>
-            <h5 class="username">{{ follow.username }}</h5>
-            {% if follow.host_node != viewer.host_node %}
-                <a class="external-node-select" id="external-node-select-{{follow.author.host_node.host_url}}" href="{% external_url_http follow.host_node.host_url %}">
-                    <!-- idea of how you could get a favicon for later, doesn't work rn because we're using vpns but maybe later
-                    <img height="16" width="16" src='http://www.google.com/s2/favicons?domain={{follow.host_node.host_url}}' />
-                    -->
-                    <h6 class="external-tag" title="From External Node">@{% external_url follow.host_node.host_url %}</h6>
-                </a>
+            {% if follow.username %}
+                <h5 class="username">{{ follow.username }}</h5>
+            {% endif %}
+                {% include 'external_node_select.html' with site_url=follow.host_node.host_site_url host_url=follow.host_node.host_url %}
             {% endif %}
         </a>
     </div>

@@ -1,8 +1,6 @@
 {% extends 'return-meta-base.html' %}
 
 {% load static %}
-{% load external_url %}
-{% load external_url_http %}
 
 {% block title %}{{ author.display_name }}'s Profile{% endblock %}
 
@@ -15,14 +13,11 @@
                 <img id="author-profile-image" class="profile-image" src="{{ author.profile_image }}"/>
                 {% endif %}
                 <h2 id="author-profile-display-name">{{ author.display_name }}</h2>
-                <h3 id="author-profile-username">{{ author.username }}</h3>
+                {% if author.username %}
+                    <h3 id="author-profile-username">{{ author.username }}</h3>
+                {% endif%}
                 {% if author.host_node != viewer.host_node %}
-                    <a class="external-node-select" id="external-node-select-{{author.host_node.host_url}}" href="{% external_url_http author.host_node.host_url %}">
-                        <!-- idea of how you could get a favicon for later, doesn't work rn because we're using vpns but maybe later
-                        <img height="16" width="16" src='http://www.google.com/s2/favicons?domain={{author.host_node.host_url}}' />
-                        -->
-                        <h6 class="external-tag" title="From External Node">@{% external_url author.host_node.host_url %}</h6>
-                    </a>
+                    {% include 'external_node_select.html' with site_url=author.host_node.host_site_url host_url=author.host_node.host_url %}
                 {% endif %}
             </div>
 
