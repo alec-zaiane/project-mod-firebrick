@@ -20,7 +20,7 @@ import json
 class TestNode2Node(Node2NodeTestCase):
     @override_settings(DEBUG=True)
     def test_create_comment_via_json(self) -> None:
-        """Simulate receiving a commend via node2node"""
+        """Simulate receiving a comment via node2node"""
         # create a user and a post to comment on
         self.initialize_sample_authors(1)
         self.initialize_sample_text_posts(1)
