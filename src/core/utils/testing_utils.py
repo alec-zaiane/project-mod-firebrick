@@ -19,7 +19,7 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-from user_management.models import Author, JoinRequest
+from user_management.models import Author, JoinRequest, User, Node
 from posts.models import Post, PostTypes, VisibilityTypes
 
 
@@ -336,7 +336,7 @@ class UITestCase(LiveServerTestCase, GeneralUserStoryApiTest):
         with self.assertRaises(NoSuchElementException):
             self.find_element_by_id(element_id)
 
-    def assertEqual(self, first: Any, second: Any, msg: str|None = None) -> None:
+    def assertEqual(self, first: Any, second: Any, msg: str | None = None) -> None:
         """Assert that two values are equal"""
         self.log(f"Asserting {first} == {second}", indentation_offset=-1)
         if first != second:
@@ -383,3 +383,29 @@ class AdminUITestCase(UITestCase):
         self.find_element_by_name("index").click()
         if confirm_needed:
             self.find_elements_by_selector("input[type=submit]")[0].click()
+
+
+class Node2NodeTestCase(LiveServerTestCase, GeneralUserStoryApiTest):
+    def setUp(self) -> None:
+        # from copilot: use Class.setUp(self) to not have to deal with super() shenanigans
+        GeneralUserStoryApiTest.setUp(self)
+        LiveServerTestCase.setUp(self)
+        self.external_authors: list[Author] = []
+
+    def initialize_other_node(self) -> None:
+        self.other_node_user = User.nodes.create_user("node_other2me", password="node")
+        self.other_node = Node.external_nodes.create_node(
+            "other node",
+            "http://localhost:10000/api",
+            self.other_node_user,
+            "http://localhost:10000",
+        )
+
+    def initialize_external_authors(self, num_authors: int = 5) -> None:
+        """Initialize some sample authors for testing"""
+        for i in range(num_authors):
+            author = Author.external_authors.create(
+                host_node=self.other_node,
+                display_name=f"Mr External {i}"
+            )
+            self.external_authors.append(author)
