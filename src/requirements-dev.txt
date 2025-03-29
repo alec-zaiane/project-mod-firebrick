@@ -3,3 +3,7 @@ django-stubs[compatible-mypy]
 djangorestframework-stubs[compatible-mypy]
 selenium==4.29.0
 tblib==3.0.0
+coverage
+pytest-django
+pytest-cov
+pytest-xdist
