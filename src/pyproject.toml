@@ -2,6 +2,11 @@
 DJANGO_SETTINGS_MODULE = "core.settings"
 FAIL_INVALID_TEMPLATE_VARS=true
 
+python_files = [
+    "test_*.py",
+    "tests.py",
+]
+
 # Uncomment the following line to enable debug mode if needed
 # django_debug_mode = true
 

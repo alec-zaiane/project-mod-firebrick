@@ -3,6 +3,7 @@ source = src
 omit =
     */__init__.py
     manage.py
+    */migrations/*
 
 [report]
 exclude_lines =
