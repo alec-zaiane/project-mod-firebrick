@@ -18,7 +18,9 @@
 {% if user.is_authenticated %}
 <form id="navbar-logout" class="logout-signup-container" action="{% url 'user_management:logout' %}" method="post">
     {% csrf_token %}
+    {% if request.get_full_path %}
     <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    {% endif %}
     <button class="logout-signup logout" type="submit">Log Out</button>
 </form>
 {% else %}
