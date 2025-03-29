@@ -5,7 +5,7 @@ from django.utils import timezone
 from datetime import timedelta
 
 
-@tag("US-Reading")
+@tag("US-reading")
 class TestUserStory17(GeneralUserStoryApiTest):
     """
     Test for User Story 17:
@@ -19,10 +19,10 @@ class TestUserStory17(GeneralUserStoryApiTest):
         """
         super().setUp()
 
-        #2 sample authors
+        # 2 sample authors
         self.initialize_sample_authors(2)
 
-        #create 2 public posts (one per author)
+        # create 2 public posts (one per author)
         self.initialize_sample_text_posts(posts_per_author=1)
 
         self.author_a = self.sample_authors[0]
@@ -31,14 +31,14 @@ class TestUserStory17(GeneralUserStoryApiTest):
         self.post_a = self.sample_posts[0][0]  # Author A's post
         self.post_b = self.sample_posts[1][0]  # Author B's post
 
-        #soft deleted Post
+        # soft deleted Post
         self.post_deleted = PostTextBased.objects.create(
             base_author=self.author_b,
             content="This post is deleted",
             visibility_type=PostTextBased.VisibilityTypes.PUBLIC,
             post_type=PostTextBased.TextPostTypes.PLAINTEXT
         )
-        #soft delete the post
+        # soft delete the post
         self.post_deleted.delete()
 
     @tag("check-fast")
@@ -49,7 +49,7 @@ class TestUserStory17(GeneralUserStoryApiTest):
         """
         stream = self.author_a.get_stream()
 
-        #the stream should include post_a (author_a’s own public post) and post_b (author_b’s public post), but not the deleted Post
+        # the stream should include post_a (author_a’s own public post) and post_b (author_b’s public post), but not the deleted Post
         self.assertIn(self.post_a, stream)
         self.assertIn(self.post_b, stream)
         self.assertNotIn(self.post_deleted, stream)
@@ -59,7 +59,7 @@ class TestUserStory17(GeneralUserStoryApiTest):
         """
         Test that the stream is sorted with the most recent posts first.
         """
-        #calculate timestamps
+        # calculate timestamps
         self.post_a.date_created = timezone.now() - timedelta(hours=1)
         self.post_a.save()
         self.post_b.date_created = timezone.now()
@@ -67,5 +67,5 @@ class TestUserStory17(GeneralUserStoryApiTest):
 
         stream = self.author_a.get_stream()
 
-        #since post_b is more recent, it should appear before post_a in the sorted stream.
+        # since post_b is more recent, it should appear before post_a in the sorted stream.
         self.assertEqual(stream[0], self.post_b)

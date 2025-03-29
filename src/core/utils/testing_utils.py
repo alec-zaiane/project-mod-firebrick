@@ -115,7 +115,6 @@ class WebElementLoggingWrapper:
             self.test_case.fail(f"Element not found by selector: {selector}")
 
 
-@pytest.mark.ui
 @tag("ui")
 class UITestCase(LiveServerTestCase, GeneralUserStoryApiTest):
     """Testing class for UI tests that require a live server

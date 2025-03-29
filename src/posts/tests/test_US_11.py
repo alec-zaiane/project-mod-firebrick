@@ -8,7 +8,7 @@ from posts.models import Post
 from unittest import skip
 
 
-@tag("US-Posting")
+@tag("US-posting")
 class TestUserStory11(GeneralUserStoryApiTest):
     """
     Test User Story 11:
