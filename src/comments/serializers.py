@@ -10,11 +10,6 @@ from likes.serializers import LikeSerializer
 from user_management.models import Author, Node
 from user_management.serializers import AuthorSerializer
 
-<<<<<<< Updated upstream
-=======
-
-
->>>>>>> Stashed changes
 class CommentSerializer(serializers.ModelSerializer[Comment]):
     """Comment serializer for node2node
 
