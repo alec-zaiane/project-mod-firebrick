@@ -5,10 +5,11 @@ from rest_framework.serializers import ValidationError
 
 from comments.models import Comment
 from likes.models import Like
-from posts.models import Post, CONTENT_TYPE_WEB_MAP_REVERSE
+from posts.models import Post, CONTENT_TYPE_WEB_MAP_REVERSE, CONTENT_TYPE_WEB_MAP
 from likes.serializers import LikeSerializer
 from user_management.models import Author, Node
 from user_management.serializers import AuthorSerializer
+
 
 class CommentSerializer(serializers.ModelSerializer[Comment]):
     """Comment serializer for node2node
@@ -89,7 +90,7 @@ class CommentSerializer(serializers.ModelSerializer[Comment]):
             "type": "comment",
             "author": AuthorSerializer().to_representation(instance.author),
             "comment": instance.content,
-            "contentType": instance.content_type,
+            "contentType": CONTENT_TYPE_WEB_MAP.get(instance.content_type, None),
             "published": instance.created_at.isoformat(),
             "id": instance.fqid,
             "post": instance.post.fqid,
@@ -118,7 +119,6 @@ class CommentSerializer(serializers.ModelSerializer[Comment]):
         if found_author is None:
             raise ValidationError(f"Could not find author with id {data['author']['id']}")
 
-
         return {
             "author": found_author,
             "content": data["comment"],
@@ -126,6 +126,7 @@ class CommentSerializer(serializers.ModelSerializer[Comment]):
             "created_at": data["published"],
             "post": found_post,
             "fqid": data["id"],
+            "host_node": found_author.host_node,
         }
 
     def create(self, validated_data: dict[str, Any]) -> Comment:
