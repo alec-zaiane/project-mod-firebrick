@@ -3,8 +3,6 @@ from django.urls import reverse
 
 from core.utils.testing_utils import GeneralUserStoryApiTest
 
-from unittest import skip
-
 
 @tag("US-posting")
 class TestUserStory16(GeneralUserStoryApiTest):

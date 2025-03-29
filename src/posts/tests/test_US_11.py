@@ -5,9 +5,6 @@ from core.utils.testing_utils import GeneralUserStoryApiTest
 from posts.models import Post
 
 
-from unittest import skip
-
-
 @tag("US-posting")
 class TestUserStory11(GeneralUserStoryApiTest):
     """

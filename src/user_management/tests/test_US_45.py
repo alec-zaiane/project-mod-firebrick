@@ -15,8 +15,6 @@ from user_management.models import JoinRequest, Author, User
 
 from user_management.forms import JoinRequestForm
 
-from unittest import skip
-
 
 @tag("US-node-management", "api")
 class TestUserStory45(GeneralUserStoryApiTest):
