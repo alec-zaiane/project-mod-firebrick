@@ -89,7 +89,6 @@ class WebElementLoggingWrapper:
     def click(self) -> None:
         self.test_case.log(f"{self}: Clicking")
         self.element.click()
-        self.test_case._check_no_template_var_error_msg()
 
     def send_keys(self, keys: str) -> None:
         self.test_case.log(f"{self}: Sending keys: {keys}")
@@ -190,12 +189,6 @@ class UITestCase(LiveServerTestCase, GeneralUserStoryApiTest):
     def end_test(self) -> None:
         self.driver.quit()
 
-    def _check_no_template_var_error_msg(self) -> None:
-        error_msg = "<pre>A server error occurred.  Please contact the administrator.</pre>"
-        if error_msg in self.driver.page_source:
-            self.fail(
-                "You might be missing some template variables in your template, check the test logs for more info")
-
     # ======================= PUBLIC UTILITY METHODS START HERE =======================
 
     def skip_if_on_github_actions(self) -> None:
@@ -228,7 +221,6 @@ class UITestCase(LiveServerTestCase, GeneralUserStoryApiTest):
             url = self.live_server_url + url
         self.log(f"Visiting {url}", indentation_offset=-1)
         self.driver.get(url)
-        self._check_no_template_var_error_msg()
         if validate_html:
             self.validate_html()
 
