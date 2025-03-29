@@ -1,4 +1,4 @@
 <fieldset class="or-segment">
     <legend class="or-text">OR</legend>
-    <a class="login" href="{% url 'user_management:login' %}{% if request.GET.next %} ?next={{request.GET.next}} {% endif %}">Log In</a>
+    <a class="login" href="{% url 'user_management:login' %}{% if request.GET.next %}?next={{request.GET.next}} {% endif %}">Log In</a>
 </fieldset>
