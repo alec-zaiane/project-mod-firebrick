@@ -10,9 +10,6 @@ from likes.serializers import LikeSerializer
 from user_management.models import Author, Node
 from user_management.serializers import AuthorSerializer
 
-from dateutil.parser import isoparse
-
-
 class CommentSerializer(serializers.ModelSerializer[Comment]):
     """Comment serializer for node2node
 
