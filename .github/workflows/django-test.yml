@@ -42,7 +42,7 @@ jobs:
         docker compose up -d
     - name: Run all tests and generate coverage report
       run: |
-        docker compose run -T socialentwork sh -c "pytest -n auto -m 'not ui and not node2node' --cov=. && coverage report --skip-covered --omit '*/tests/*' > coverage.txt"
+        docker compose run -T socialnetwork sh -c "pytest -n auto -m 'not ui and not node2node' --cov=. && coverage report --skip-covered --omit '*/tests/*' > coverage.txt"
     - name: Copy coverage report to host
       run: |
         docker cp socialnetwork:/app/coverage.txt coverage.txt
