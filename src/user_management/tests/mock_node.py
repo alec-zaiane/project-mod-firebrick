@@ -47,6 +47,10 @@ class MockNodeManager(models.Manager["MockNode"]):
         # Simulate a successful connection verification
         return DUMMY_RESPONSE
 
+    def find_node(self, host_url: str) -> Optional[MockNode]:
+        # Simulate finding a node
+        return self.filter(host_url=host_url).first()
+
 
 class MockNode(Node):
     """Mock class for Node model, logs all actions performed on the node"""
