@@ -171,19 +171,28 @@ class NodeAdminForm(forms.ModelForm[Node]):
         host_url = self.cleaned_data.get("host_url")
 
         if host_url and internal_username and internal_password:
-            response = Node.external_nodes.verify_connection(
-                host_url, internal_username, internal_password)
+            try:
+                response = Node.external_nodes.verify_connection(
+                    host_url, internal_username, internal_password)
+            except requests.exceptions.RequestException as e:
+                response = requests.Response()
+                response.status_code = 500
+                response.reason = str(e)
+                response._content = b""
             if not response.ok:
                 commit = False
                 error = "The provided host URL is not reachable. " + \
                     str(response.status_code) + " " + response.reason + ": "
-                error_data = response.json()
-                error_messages = ""
-                for key, value in error_data.items():
-                    message = ", ".join(value) if isinstance(value, list) else value
-                    error_messages += f"{message} "
-                error_messages = error_messages.strip()
-                error += error_messages
+                try:
+                    error_data = response.json()
+                    error_messages = ""
+                    for key, value in error_data.items():
+                        message = ", ".join(value) if isinstance(value, list) else value
+                        error_messages += f"{message} "
+                    error_messages = error_messages.strip()
+                    error += error_messages
+                except ValueError:
+                    pass  # If the response is not JSON, just use the status code and reason
                 raise forms.ValidationError(
                     _(error))
 
