@@ -15,8 +15,13 @@
             <img class="profile-image" src="{{ post.author.profile_image }}"/>
             {% endif %}
             <h3 class="display-name">{{ post.author.display_name }}</h3>
-            <h5 class="username">{{ post.author.username }}</h5>
+            {% if post.author.username %}
+                <h5 class="username">{{ post.author.username }}</h5>
+            {% endif %}
         </a>
+        {% if post.author.host_node != viewer.host_node %}
+            {% include 'external_node_select.html' with site_url=post.author.host_node.host_site_url host_url=post.author.host_node.host_url %}
+        {% endif %}
         {% if not full %}
         ·
         {% include 'components/post-meta.html' %}

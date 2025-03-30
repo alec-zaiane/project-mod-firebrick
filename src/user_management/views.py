@@ -56,8 +56,17 @@ class AuthorView(View):
         The view for viewing an author's profile. It can be linked to from any author's
         UUID, and will display information about the author.
         """
-        target_author = get_object_or_404(
-            Author, uuid=target_author_uuid)
+        try:
+            target_author = Author.objects.get(uuid=target_author_uuid)
+        except Author.DoesNotExist:
+            return render(request, "author_not_found.html", {
+                "error_uuid": target_author_uuid,
+            })
+
+        if target_author.host_node.is_disabled:
+            return render(request, "author_not_found.html", {
+                "error_uuid": target_author_uuid,
+            })
 
         viewer = get_request_viewer(request)
 
@@ -95,8 +104,17 @@ class AuthorModifyView(View):
         The view for modifying an author's profile. It can be linked to from any author's
         UUID, and will allow the viewer, if valid, to modify the author's profile.
         """
-        target_author = get_object_or_404(
-            LocalAuthor, uuid=target_author_uuid)
+        try:
+            target_author = Author.objects.get(uuid=target_author_uuid)
+        except Author.DoesNotExist:
+            return render(request, "author_not_found.html", {
+                "error_uuid": target_author_uuid,
+            })
+
+        if target_author.host_node.is_disabled:
+            return render(request, "author_not_found.html", {
+                "error_uuid": target_author_uuid,
+            })
 
         viewer = get_request_viewer(request)
         if viewer is None or (viewer != target_author and not viewer.user.is_superuser):
@@ -116,8 +134,17 @@ class AuthorModifyView(View):
         The view for modifying an author's profile. It can be linked to from any author's
         UUID, and will display information about the author.
         """
-        target_author = get_object_or_404(
-            LocalAuthor, uuid=target_author_uuid)
+        try:
+            target_author = Author.objects.get(uuid=target_author_uuid)
+        except Author.DoesNotExist:
+            return render(request, "author_not_found.html", {
+                "error_uuid": target_author_uuid,
+            })
+
+        if target_author.host_node.is_disabled:
+            return render(request, "author_not_found.html", {
+                "error_uuid": target_author_uuid,
+            })
 
         viewer = get_request_viewer(request)
         if viewer is None or (viewer != target_author and not viewer.user.is_superuser):
@@ -175,8 +202,17 @@ class AuthorFollowInfoView(View):
         That is: following, followers, and friends.
         """
 
-        target_author = get_object_or_404(
-            LocalAuthor, uuid=target_author_uuid)
+        try:
+            target_author = Author.objects.get(uuid=target_author_uuid)
+        except Author.DoesNotExist:
+            return render(request, "author_not_found.html", {
+                "error_uuid": target_author_uuid,
+            })
+
+        if target_author.host_node.is_disabled:
+            return render(request, "author_not_found.html", {
+                "error_uuid": target_author_uuid,
+            })
 
         viewer = get_request_viewer(request)
 
@@ -244,7 +280,8 @@ class AuthorSearchAPIView(APIView):
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         query = request.query_params.get("q", "")
         authors = Author.objects.filter(
-            Q(username__icontains=query) | Q(display_name__icontains=query)
+            Q(username__icontains=query) | Q(
+                display_name__icontains=query) & Q(host_node__is_disabled=False)
         )
         authors_list: list[dict[str, str]] = []
         # Necessary instead of serializer, because we need UUID
@@ -254,6 +291,8 @@ class AuthorSearchAPIView(APIView):
                 "username": str(author.username),
                 "profileImage": str(author.profile_image),
                 "uuid": str(author.uuid),
+                "host_url": str(author.host_node.host_url),
+                "site_url": str(author.host_node.host_site_url),
             }
             authors_list.append(author_data)
         return Response(authors_list)

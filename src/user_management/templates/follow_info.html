@@ -12,13 +12,17 @@
 <div class="follow-infos">
     <h1>{{ follow_type }}</h1>
     {% for follow in follow_info %}
-    <div class="follow">
+    <div class="follow-info">
         <a id="post-profile-select" href="{% url 'user_management:author_profile' follow.uuid %}{% if request.GET.next %}?next={{ request.get_full_path }}{% endif %}" class="names">
             {% if follow.profile_image %}
             <img class="profile-image" src="{{ follow.profile_image }}"/>
             {% endif %}
             <h3 class="display-name">{{ follow.display_name }}</h3>
-            <h5 class="username">{{ follow.username }}</h5>
+            {% if follow.username %}
+                <h5 class="username">{{ follow.username }}</h5>
+            {% endif %}
+                {% include 'external_node_select.html' with site_url=follow.host_node.host_site_url host_url=follow.host_node.host_url %}
+            {% endif %}
         </a>
     </div>
 </div>

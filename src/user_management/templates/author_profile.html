@@ -13,7 +13,12 @@
                 <img id="author-profile-image" class="profile-image" src="{{ author.profile_image }}"/>
                 {% endif %}
                 <h2 id="author-profile-display-name">{{ author.display_name }}</h2>
-                <h3 id="author-profile-username">{{ author.username }}</h3>
+                {% if author.username %}
+                    <h3 id="author-profile-username">{{ author.username }}</h3>
+                {% endif%}
+                {% if author.host_node != viewer.host_node %}
+                    {% include 'external_node_select.html' with site_url=author.host_node.host_site_url host_url=author.host_node.host_url %}
+                {% endif %}
             </div>
 
             {% if viewer %}

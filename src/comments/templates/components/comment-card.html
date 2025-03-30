@@ -7,7 +7,12 @@
         <img class="profile-image" src="{{ comment.author.profile_image }}"/>
         {% endif %}
         <h3 class="display-name">{{ comment.author.display_name }}</h3>
-        <h5 class="username">{{ comment.author.username }}</h5>
+        {% if comment.author.username %}
+            <h5 class="username">{{ comment.author.username }}</h5>
+        {% endif %}
+        {% if comment.author.host_node != viewer.host_node %}
+            {% include 'external_node_select.html' with site_url=comment.author.host_node.host_site_url host_url=comment.author.host_node.host_url %}
+        {% endif %}
     </a>
     <span class="comment-content">{{ comment.content }}</span>
     <div class="likes-box">
