@@ -111,13 +111,13 @@ jobs:
             echo "### Non-UI tests (inside docker)" >> coverage-report.md
             echo "" >> coverage-report.md
             echo "\`\`\`" >> coverage-report.md
-            cat coverage-no-ui/coverage.txt >> coverage-report.md
+            cat coverage-no-ui-or-node2node/coverage.txt >> coverage-report.md
             echo "\`\`\`" >> coverage-report.md
             echo "" >> coverage-report.md
             echo "### UI tests (outside docker)" >> coverage-report.md
             echo "" >> coverage-report.md
             echo "\`\`\`" >> coverage-report.md
-            cat coverage-ui/coverage.txt >> coverage-report.md
+            cat coverage-ui-node2node/coverage.txt >> coverage-report.md
             echo "\`\`\`" >> coverage-report.md
       - name: comment coverage on PR
         uses: thollander/actions-comment-pull-request@v3
