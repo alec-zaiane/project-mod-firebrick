@@ -42,7 +42,7 @@ jobs:
         docker compose up -d
     - name: Run all tests
       run: |
-        docker compose run -T socialnetwork pytest -n auto -m "not ui" --cov=src
+        docker compose run -T socialnetwork pytest -n auto -m "not ui" --cov=.
     - name: Generate coverage report
       run: |
         docker compose run -T socialnetwork coverage report --skip-covered --omit "*/tests/*" > coverage.txt
