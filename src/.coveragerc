@@ -1,0 +1,13 @@
+[run]
+source = src
+omit =
+    */__init__.py
+    manage.py
+    */migrations/*
+    */tests/*
+
+[report]
+exclude_lines =
+    if TYPE_CHECKING:
+    pragma: no cover
+    def __str__

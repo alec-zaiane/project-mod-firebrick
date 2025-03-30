@@ -6,7 +6,7 @@
     <section class="main">
         <div class="navbar">
             <section class="navbar-contents">
-                <img class="logo" src="{% static 'images/firebrick.webp' %}" />
+                <a href="{% url 'home' %}"><img class="logo" src="{% static 'images/firebrick.webp' %}" /></a>
                 {% if user.is_authenticated %}
                     <a id="navbar-own-profile" href="{% url 'user_management:author_profile' user.author.uuid %}" class="names">
                         {% if user.author.profile_image %}

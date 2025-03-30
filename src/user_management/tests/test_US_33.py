@@ -6,7 +6,7 @@ from core.utils.testing_utils import GeneralUserStoryApiTest
 from user_management.serializers import AuthorSerializer
 
 
-@tag("US-Following/Friends")
+@tag("US-following/friends")
 class TestUserStory33(GeneralUserStoryApiTest):
     """
     Tests for User Story 33

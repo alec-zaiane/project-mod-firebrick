@@ -38,10 +38,14 @@ def get_actions(node: MockNode) -> list[Action]:
 
 class MockNodeManager(models.Manager["MockNode"]):
     def get_queryset(self) -> models.QuerySet[MockNode]:
-        return super().get_queryset().filter(is_local_node=False)
+        return super().get_queryset().filter(is_local_node=False, is_disabled=False)
 
-    def create_node(self, host_url: str, internal_user: User) -> MockNode:
-        return self.create(host_url=host_url, internal_user=internal_user)
+    def create_node(self, host_url: str, user: User, name: str = "mock_node") -> MockNode:
+        return self.create(host_url=host_url, internal_user=user, name=name)
+
+    def verify_connection(self, host_url: str, internal_username: str, internal_password: str) -> requests.Response:
+        # Simulate a successful connection verification
+        return DUMMY_RESPONSE
 
 
 class MockNode(Node):

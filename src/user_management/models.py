@@ -18,9 +18,11 @@ from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import AbstractUser, UserManager
 from django.urls import reverse
 
-
+from core.settings import DEBUG
 from core.utils.api_object import ApiObject, ApiObjectManager
 from core.utils.validators import validate_url_returns_image
+
+from django.db import transaction
 
 # =============================================================================
 # Users
@@ -412,6 +414,11 @@ class ExternalNodeManager(NodeManager):
     def find_node(self, host_url: str) -> Optional[Node]:
         return self.filter(host_url=host_url).first()
 
+    def verify_connection(self, host_url: str, username: str, password: str) -> requests.Response:
+        # Attempts to connect to posts -- arbitrary API point, but guaranteed to exist
+        return requests.get(host_url + "/posts", auth=HTTPBasicAuth(
+            username, password), timeout=5)
+
 
 class Node(models.Model):
     """
@@ -430,7 +437,11 @@ class Node(models.Model):
 
     # internal_user is for authentication - this may change in the future
     internal_user: models.OneToOneField[User, Optional[User]] = models.OneToOneField(
-        User, on_delete=models.CASCADE, null=True, blank=True)
+        User, on_delete=models.CASCADE, null=True, blank=True, related_name="internal_node_user")
+
+    # external_user is for authentication as well, only necessary for form display
+    external_user: models.OneToOneField[User, Optional[User]] = models.OneToOneField(
+        User, on_delete=models.CASCADE, null=True, blank=True, related_name="external_node_user")
 
     # if true, this `Node` is the local node. This can only be true for one node (upheld in the manager)
     is_local_node = models.BooleanField(_("Is Local Node"), default=False)
@@ -488,7 +499,12 @@ class Node(models.Model):
             response.raise_for_status()
             print(f"[Node {self.name}] Update sent to {to}")
         except requests.RequestException as e:
-            print(f"[Node {self.name}] Failed to send UPDATE to {to}: {e}")
+            if DEBUG:
+                print(f"[Node {self.name}] Failed to send UPDATE to {to}: {e}")
+                # Disables a node that ever sends an invalid update
+                self.is_disabled = True
+                self.save()
+            pass
 
     def send_create(self, json: dict[str, Any], to: str) -> None:
         """Send an object creation to this node via the given `to` URL"""
@@ -498,7 +514,12 @@ class Node(models.Model):
             response = self._post(json, self._make_absolute_url(to))
             response.raise_for_status()
         except requests.RequestException as e:
-            print(f"[Node {self.name}] Failed to send CREATE to {to}: {e}")
+            if DEBUG:
+                print(f"[Node {self.name}] Failed to send CREATE to {to}: {e}")
+                # Disables a node that ever sends an invalid update
+                self.is_disabled = True
+                self.save()
+            pass
 
     def send_delete(self, to: str) -> None:
         """Send a delete request to this node via the given `to` URL"""
@@ -510,12 +531,18 @@ class Node(models.Model):
             response.raise_for_status()
             print(f"[Node {self.name}] Delete sent to {to}")
         except requests.RequestException as e:
-            print(f"[Node {self.name}] Failed to send DELETE to {to}: {e}")
-
+            if DEBUG:
+                print(f"[Node {self.name}] Failed to send DELETE to {to}: {e}")
+                # Disables a node that ever sends an invalid update
+                self.is_disabled = True
+                self.save()
+            pass
 
 # =============================================================================
 # Join requests
 # =============================================================================
+
+
 class JoinRequestManager(models.Manager["JoinRequest"]):
     def create(self, *args: Any, **kwargs: Any) -> JoinRequest:
         """
@@ -571,13 +598,14 @@ class JoinRequest(models.Model):
         # create the new local user
         user = User.authors.create_user(self.username, self.email, self.password)
         try:
-            author = Author.local_authors.create(
-                username=self.username,
-                display_name=self.display_name,
-                host_node=node,
-                _user=user
-            )
-            self.force_delete()
+            with transaction.atomic():
+                author = Author.local_authors.create(
+                    username=self.username,
+                    display_name=self.display_name,
+                    host_node=node,
+                    _user=user
+                )
+                self.force_delete()
             return author
         except Exception as e:
             user.delete()

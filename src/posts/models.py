@@ -61,18 +61,23 @@ class VisibilityTypeResolver:
     """Modified an existing Q object with a visibility type"""
     @staticmethod
     def modify_q(existing_q: Q, visibility_type: VisibilityTypes, author: Optional[Author]) -> Q:
+        query_filter = Q()
         match visibility_type:
             case VisibilityTypes.PUBLIC:
-                return existing_q | Q(visibility_type=VisibilityTypes.PUBLIC)
+                query_filter = existing_q | Q(visibility_type=VisibilityTypes.PUBLIC)
             case VisibilityTypes.FRIENDS_ONLY:
                 if author == None:
-                    return existing_q
-                return existing_q | (Q(visibility_type=VisibilityTypes.FRIENDS_ONLY) & Q(
+                    query_filter = existing_q
+                query_filter = existing_q | (Q(visibility_type=VisibilityTypes.FRIENDS_ONLY) & Q(
                     author__followers__in=[author]) & Q(author__following__in=[author]))
             case VisibilityTypes.UNLISTED:
-                return existing_q | Q(visibility_type=VisibilityTypes.UNLISTED)
+                query_filter = existing_q | Q(visibility_type=VisibilityTypes.UNLISTED)
             case _:
                 raise ValueError("Invalid visibility type")
+        if query_filter != Q():
+            # Remove disabled nodes from being visible
+            query_filter = query_filter & Q(author__host_node__is_disabled=False)
+        return query_filter
 
 
 # === These are actual models ===

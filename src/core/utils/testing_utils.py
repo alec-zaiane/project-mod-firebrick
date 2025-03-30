@@ -7,6 +7,8 @@ import traceback
 
 from typing import Any, Never
 
+import pytest
+
 from django.test import LiveServerTestCase, tag
 from django.urls import reverse
 from rest_framework.test import APITestCase

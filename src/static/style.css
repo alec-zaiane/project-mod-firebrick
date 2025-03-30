@@ -99,6 +99,25 @@ a:link:active, a:visited:active  {
     caret-color: firebrick;
 }
 
+.external-tag {
+    background: #2f2f2f96;
+    padding: 3px;
+    margin: -3px;
+    border-radius: 8px;
+}
+
+.external-node-select {
+    text-decoration: none;
+    pointer-events: all;
+    color: var(--color-sub) !important;
+    display: flex;
+    flex-direction: row;
+}
+
+.external-node-select:hover {
+    text-decoration: underline;
+}
+
 /*
  ===========
   LOGIN
@@ -1137,8 +1156,9 @@ a:link:active, a:visited:active  {
     display: flex;
     height: fit-content;
     width: 100%;
-    justify-content: space-evenly;
+    justify-content: center;
     align-items: center;
+    gap: 10px;
 }
 
 /*
@@ -1345,6 +1365,23 @@ a:link:active, a:visited:active  {
     justify-items: center;
 }
 
+.search .search-results .search-result {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+}
+
+.search .search-results .search-result .display-name {
+    margin: 0;
+}
+
+.search .search-results .search-result .search-name-and-link {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
 /*
  ===========
   FORBIDDEN
@@ -1361,6 +1398,7 @@ a:link:active, a:visited:active  {
     border-right: 1px solid #242729;
     padding: 0 20px;
     flex-grow: 1;
+    text-align: center;
 }
 
 /*

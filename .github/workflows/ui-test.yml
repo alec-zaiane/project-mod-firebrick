@@ -30,6 +30,5 @@ jobs:
         python src/manage.py collectstatic --noinput
     - name: Run all tests
       run: |
-        cd src
-        python manage.py test --parallel --tag=ui
+        pytest src -n auto -m "ui"
 

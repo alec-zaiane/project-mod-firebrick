@@ -41,6 +41,6 @@ jobs:
         docker compose up -d
     - name: Run all tests
       run: |
-        docker compose run -T socialnetwork python manage.py test --parallel --exclude-tag=ui
+        docker compose run -T socialnetwork pytest -n auto -m "not ui"
 
 # https://chrisguitarguy.com/2023/01/13/docker-compose-exec-on-github-actions/
