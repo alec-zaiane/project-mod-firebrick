@@ -10,8 +10,11 @@ from rest_framework.serializers import Serializer
 
 from likes.serializers import LikeSerializer
 from comments.serializers import CommentSerializer
+
 from posts.models import Post
 
+from user_management.serializers import FollowRequestSerializer
+from user_management.viewsets import FollowRequestViewSet
 
 from core.utils.request_viewer import get_request_viewer
 
@@ -200,3 +203,25 @@ class CommentInboxHandler(InboxHandler):
 
 
 register_inbox_handler(CommentInboxHandler())
+
+
+class FollowRequestInboxHandler(InboxHandler):
+    """
+    - URL: ://service/api/authors/{AUTHOR_SERIAL}/inbox
+        - POST [remote]: follow request to AUTHOR_SERIAL
+        - Body is a follow request object
+    """
+
+    def __init__(self) -> None:
+        super().__init__("follow")
+
+    @property
+    def serializer(self) -> type[FollowRequestSerializer]:
+        return FollowRequestSerializer
+
+    def post(self, request: Request) -> Response:
+        # TODO imaad :3 you got this
+        return FollowRequestViewSet().create(request)
+
+
+register_inbox_handler(FollowRequestInboxHandler())
