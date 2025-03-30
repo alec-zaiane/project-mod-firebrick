@@ -40,7 +40,7 @@ class MockNodeManager(models.Manager["MockNode"]):
     def get_queryset(self) -> models.QuerySet[MockNode]:
         return super().get_queryset().filter(is_local_node=False, is_disabled=False)
 
-    def create_node(self, host_url: str, user: User, name: str = "mock_node") -> MockNode:
+    def create_node(self, name: str, host_url: str, user: User, host_site_url: str = "") -> MockNode:
         return self.create(host_url=host_url, internal_user=user, name=name)
 
     def verify_connection(self, host_url: str, internal_username: str, internal_password: str) -> requests.Response:

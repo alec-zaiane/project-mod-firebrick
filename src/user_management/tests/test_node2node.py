@@ -137,8 +137,8 @@ class TestNode2NodeAuthors(GeneralUserStoryApiTest):
             "page": "http://nodeaaaa.abc/authors/greg"
         }
         external_node_user = User.nodes.create_user("nodeaaaa", password="password")
-        Node.external_nodes.create_node("Node a", "http://nodeaaaa.abc/api/", external_node_user)
-
+        Node.external_nodes.create_node(
+            name="Node a", host_url="http://nodeaaaa.abc/api/", user=external_node_user)
         # modified from https://stackoverflow.com/questions/5495452/using-basic-http-access-authentication-in-django-testing-framework
         self.client.logout()
         response = self.client.post(
@@ -165,8 +165,8 @@ class TestNode2NodeProperSending(GeneralUserStoryApiTest):
     def test_creation_of_author(self) -> None:
         """Test that when an author is created, any external nodes are notified"""
         node_user = User.nodes.create_user("node_user", password="password")
-        node = MockNode.mock_nodes.create_node(
-            host_url="http://example.com/api", user=node_user)
+        node = MockNode.mock_nodes.create_node(name="mock_node",
+                                               host_url="http://example.com/api", user=node_user)
         self.initialize_sample_authors(1)
         self.assertEqual(len(node.actions_log), 1)
         action = node.actions_log[0]
@@ -178,8 +178,8 @@ class TestNode2NodeProperSending(GeneralUserStoryApiTest):
     def test_update_of_author(self) -> None:
         """Test that when an author is updated, any external nodes are notified"""
         node_user = User.nodes.create_user("node_user", password="password")
-        node = MockNode.mock_nodes.create_node(
-            host_url="http://example.com/api", user=node_user)
+        node = MockNode.mock_nodes.create_node(name="mock_node",
+                                               host_url="http://example.com/api", user=node_user)
         self.initialize_sample_authors(1)
         node.clear_action_log()
         self.sample_authors[0].display_name = "New Name"
@@ -194,8 +194,8 @@ class TestNode2NodeProperSending(GeneralUserStoryApiTest):
     def test_deletion_of_author(self) -> None:
         """Test that when an author is deleted, any external nodes are notified"""
         node_user = User.nodes.create_user("node_user", password="password")
-        node = MockNode.mock_nodes.create_node(
-            host_url="http://example.com/api", user=node_user)
+        node = MockNode.mock_nodes.create_node(name="mock_node",
+                                               host_url="http://example.com/api", user=node_user)
         self.initialize_sample_authors(1)
         node.clear_action_log()
         self.sample_authors[0].delete()
@@ -209,8 +209,8 @@ class TestNode2NodeProperSending(GeneralUserStoryApiTest):
     def test_creation_of_follow_request(self) -> None:
         """Test that when a follow request is created, any external nodes are notified"""
         node_user = User.nodes.create_user("node_user", password="password")
-        node = MockNode.mock_nodes.create_node(
-            host_url="http://example.com/api", user=node_user)
+        node = MockNode.mock_nodes.create_node(name="mock_node",
+                                               host_url="http://example.com/api", user=node_user)
         self.initialize_sample_authors(2)
         node.clear_action_log()
         # author 0 follows author 1
@@ -227,8 +227,8 @@ class TestNode2NodeProperSending(GeneralUserStoryApiTest):
     def test_creation_of_post(self) -> None:
         """Test that when a post is created, any external nodes are notified"""
         node_user = User.nodes.create_user("node_user", password="password")
-        node = MockNode.mock_nodes.create_node(
-            host_url="http://example.com/api", user=node_user)
+        node = MockNode.mock_nodes.create_node(name="mock_node",
+                                               host_url="http://example.com/api", user=node_user)
         self.initialize_sample_authors(1)
         node.clear_action_log()
         post = Post.objects.create_post(
@@ -243,8 +243,8 @@ class TestNode2NodeProperSending(GeneralUserStoryApiTest):
     def test_update_of_post(self) -> None:
         """Test that when a post is updated, any external nodes are notified"""
         node_user = User.nodes.create_user("node_user", password="password")
-        node = MockNode.mock_nodes.create_node(
-            host_url="http://example.com/api", user=node_user)
+        node = MockNode.mock_nodes.create_node(name="mock_node",
+                                               host_url="http://example.com/api", user=node_user)
         self.initialize_sample_authors(1)
         post = Post.objects.create_post(
             self.sample_authors[0], "My post title", "my post description", "content", PostTypes.PLAINTEXT, VisibilityTypes.PUBLIC)
@@ -262,8 +262,8 @@ class TestNode2NodeProperSending(GeneralUserStoryApiTest):
     def test_deletion_of_post(self) -> None:
         """Test that when a post is deleted, any external nodes are notified"""
         node_user = User.nodes.create_user("node_user", password="password")
-        node = MockNode.mock_nodes.create_node(
-            host_url="http://example.com/api", user=node_user)
+        node = MockNode.mock_nodes.create_node(name="mock_node",
+                                               host_url="http://example.com/api", user=node_user)
         self.initialize_sample_authors(1)
         post = Post.objects.create_post(
             self.sample_authors[0], "My post title", "my post description", "content", PostTypes.PLAINTEXT, VisibilityTypes.PUBLIC)
@@ -280,8 +280,8 @@ class TestNode2NodeProperSending(GeneralUserStoryApiTest):
     def test_creation_of_comment(self) -> None:
         """Test that when a comment is created, any external nodes are notified"""
         node_user = User.nodes.create_user("node_user", password="password")
-        node = MockNode.mock_nodes.create_node(
-            host_url="http://example.com/api", user=node_user)
+        node = MockNode.mock_nodes.create_node(name="mock_node",
+                                               host_url="http://example.com/api", user=node_user)
         self.initialize_sample_authors(1)
         self.initialize_sample_text_posts(1)
         node.clear_action_log()
@@ -297,8 +297,8 @@ class TestNode2NodeProperSending(GeneralUserStoryApiTest):
     def test_update_of_comment(self) -> None:
         """Test that when a comment is updated, any external nodes are notified"""
         node_user = User.nodes.create_user("node_user", password="password")
-        node = MockNode.mock_nodes.create_node(
-            host_url="http://example.com/api", user=node_user)
+        node = MockNode.mock_nodes.create_node(name="mock_node",
+                                               host_url="http://example.com/api", user=node_user)
         self.initialize_sample_authors(1)
         self.initialize_sample_text_posts(1)
         comment = Comment.objects.create_comment(
@@ -316,8 +316,8 @@ class TestNode2NodeProperSending(GeneralUserStoryApiTest):
     def test_deletion_of_comment(self) -> None:
         """Test that when a comment is deleted, any external nodes are notified"""
         node_user = User.nodes.create_user("node_user", password="password")
-        node = MockNode.mock_nodes.create_node(
-            host_url="http://example.com/api", user=node_user)
+        node = MockNode.mock_nodes.create_node(name="mock_node",
+                                               host_url="http://example.com/api", user=node_user)
         self.initialize_sample_authors(1)
         self.initialize_sample_text_posts(1)
         comment = Comment.objects.create_comment(
@@ -335,8 +335,8 @@ class TestNode2NodeProperSending(GeneralUserStoryApiTest):
     def test_creation_of_like(self) -> None:
         """Test that when a like is created, any external nodes are notified"""
         node_user = User.nodes.create_user("node_user", password="password")
-        node = MockNode.mock_nodes.create_node(
-            host_url="http://example.com/api", user=node_user)
+        node = MockNode.mock_nodes.create_node(name="mock_node",
+                                               host_url="http://example.com/api", user=node_user)
         self.initialize_sample_authors(1)
         self.initialize_sample_text_posts(1)
         node.clear_action_log()
@@ -351,8 +351,8 @@ class TestNode2NodeProperSending(GeneralUserStoryApiTest):
     def test_deletion_of_like(self) -> None:
         """Test that when a like is deleted, any external nodes are notified"""
         node_user = User.nodes.create_user("node_user", password="password")
-        node = MockNode.mock_nodes.create_node(
-            host_url="http://example.com/api", user=node_user)
+        node = MockNode.mock_nodes.create_node(name="mock_node",
+                                               host_url="http://example.com/api", user=node_user)
         self.initialize_sample_authors(1)
         self.initialize_sample_text_posts(1)
         like = Like.objects.create_like(self.sample_authors[0], self.sample_posts[0][0])
