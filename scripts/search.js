@@ -10,11 +10,6 @@ document.addEventListener("DOMContentLoaded", function () {
         let query = searchInput.value.trim();
         let viewer_url = searchForm.elements['viewer_host_url'].value;
 
-        if (query === "") {
-            resultsContainer.innerHTML = "<p>Please enter a search term.</p>";
-            return;
-        }
-
         fetch(`/api/authors/search/?q=${encodeURIComponent(query)}`)
             .then(response => response.json())
             .then(data => {

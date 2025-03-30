@@ -1,7 +1,7 @@
 {% extends 'return-meta-base.html' %}
 {% load static %}
 
-{% block title %}Post by {{post.author.display_name}}{% endblock %}
+{% block title %}Post by {{post.author.display_name}} | {% endblock %}
 
 {% block content %}
 {% include 'components/post_card.html' with full=True %}

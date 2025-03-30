@@ -25,7 +25,7 @@ from django.conf.urls.static import static
 from drf_spectacular import views as spectacular_views
 
 urlpatterns: list[URLPattern | URLResolver] = [
-    path("", RedirectView.as_view(url="stream")),
+    path("", RedirectView.as_view(url="stream"), name="home"),
     path("admin/", admin.site.urls),
     path("", include("posts.urls")),
     path("", include("user_management.urls")),
