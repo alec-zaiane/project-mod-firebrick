@@ -40,12 +40,12 @@ jobs:
     - name: Run the Docker containers
       run: |
         docker compose up -d
-    - name: Run all tests
+    - name: Run all tests and generate coverage report
       run: |
-        docker compose run -T socialnetwork pytest -n auto -m "not ui and not node2node" --cov=.
-    - name: Generate coverage report
+        docker compose run -T socialentwork sh -c "pytest -n auto -m 'not ui and not node2node' --cov=. && coverage report --skip-covered --omit '*/tests/*' > coverage.txt"
+    - name: Copy coverage report to host
       run: |
-        docker compose run -T socialnetwork coverage report --skip-covered --omit "*/tests/*" > coverage.txt
+        docker cp socialnetwork:/app/coverage.txt coverage.txt
     - name: Upload coverage report
       uses: actions/upload-artifact@v4
       with:
