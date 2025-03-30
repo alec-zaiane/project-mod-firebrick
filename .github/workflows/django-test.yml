@@ -1,12 +1,12 @@
 
-name: Run Django Tests (Docker)
+name: Run Django Tests
 
 on:
   pull_request:
     branches: [ "**" ]
 
 jobs:
-  django-test:
+  django-test-no-ui:
     name: django testing
     runs-on: ubuntu-latest
 
@@ -42,5 +42,33 @@ jobs:
     - name: Run all tests
       run: |
         docker compose run -T socialnetwork pytest -n auto -m "not ui"
+
+
+  django-test-ui:
+    name: django testing
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: setup python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.13'
+
+    - name: Install geckodriver
+      uses: browser-actions/setup-geckodriver@latest
+
+    - name: Install dependencies
+      run: |
+        pip install -r src/requirements.txt
+    - name: Install dev dependencies
+      run: |
+        pip install -r src/requirements-dev.txt
+    - name: Collect static files
+      run: |
+        python src/manage.py collectstatic --noinput
+    - name: Run all tests
+      run: |
+        pytest src -n auto -m "ui"
 
 # https://chrisguitarguy.com/2023/01/13/docker-compose-exec-on-github-actions/
