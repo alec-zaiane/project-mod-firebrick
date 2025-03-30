@@ -42,7 +42,7 @@ jobs:
         docker compose up -d
     - name: Run all tests and generate coverage report
       run: |
-        docker compose run --rm -T -v $PWD/coverage:/coverage socialnetwork sh -c "pytest -n auto -m 'not ui and not node2node' --cov=. && cp .coverage /coverage/.coverage"
+        docker compose run --rm -T -v $PWD/coverage:/coverage socialnetwork sh -c "pytest -n auto -m 'not ui and not node2node' --cov=. && coverage combine && cp .coverage /coverage/.coverage"
     - run: |
         cp coverage/.coverage .coverage
     - name: Upload coverage db
@@ -81,11 +81,12 @@ jobs:
     - name: Run all tests
       run: |
         pytest src -n auto -m "ui or node2node" --cov=src
+        coverage combine
     - name: Upload coverage db
       uses: actions/upload-artifact@v4
       with:
         name: coverage-ui-node2node
-        path: src/.coverage
+        path: .coverage
         overwrite: true
 
   show-coverage:
