@@ -85,9 +85,9 @@ class InboxView(views.APIView):
     - Comment objects""",
         parameters=[
             OpenApiParameter(
-                name="target_author_uuid",
+                name="target_author_fqid",
                 location=OpenApiParameter.PATH,
-                description="UUID of the target author",
+                description="FQID of the target author",
                 required=True,
                 type=str,
             )
@@ -117,7 +117,7 @@ class InboxView(views.APIView):
         },
         tags=["Inbox"],
     )
-    def post(self, request: Request, target_author_uuid: str) -> Response:
+    def post(self, request: Request, target_author_fqid: str) -> Response:
         """Send an inbox item to this author's inbox"""
         type = request.data.get("type")
         if type is None:

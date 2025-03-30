@@ -41,7 +41,7 @@
                                 <div name="errorresponse-error"></div>
                             </form>
                         {% else %}
-                        <form id="follow-form" name="generic-form" action="{% url 'user_management:follow_request' author.fqid|urlencode:"" %}">
+                        <form id="follow-form" name="generic-form" action="{% url 'user_management:node2node_inbox' author.fqid|urlencode:"" %}">
                                 {% csrf_token %}
                                 <input type="hidden" name="_method" value="POST">
                                 <input type="hidden" name="_after_action" value="reload">

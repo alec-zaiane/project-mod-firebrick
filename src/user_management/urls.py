@@ -43,16 +43,18 @@ urlpatterns: list[URLPattern | URLResolver] = [
 
 
 
-    path("api/authors/<uuid:target_author_uuid>/inbox",
+    path("api/authors/<str:target_author_fqid>/inbox",
          InboxView.as_view(),
          name="node2node_inbox"
          ),
-    path("api/authors/search/", AuthorSearchAPIView.as_view(), name="author_search"),
 
-
+    path("api/authors/search/",
+         AuthorSearchAPIView.as_view(),
+         name="author_search"),
 
     path("api/follow-requests/<str:target_fqid>/request-follow",
-         FollowRequestByViewer.as_view(), name="follow_request"),
+         FollowRequestByViewer.as_view(),
+         name="follow_request"),
 ]
 
 router = routers.SimpleRouter()
