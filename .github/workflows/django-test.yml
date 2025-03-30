@@ -42,12 +42,13 @@ jobs:
         docker compose up -d
     - name: Run all tests and generate coverage report
       run: |
-        docker compose run -T socialnetwork sh -c "pytest -n auto -m 'not ui and not node2node' --cov=. && coverage json && cat coverage.json" > coverage.json
-    - name: Upload coverage report
+        docker compose run --rm -T -v $PWD/coverage:/coverage socialnetwork sh -c "pytest -n auto -m 'not ui and not node2node' --cov=. && cp .coverage /coverage/"
+        cp coverage/.coverage .coverage
+    - name: Upload coverage db
       uses: actions/upload-artifact@v4
       with:
         name: coverage-no-ui-or-node2node
-        path: coverage.json
+        path: .coverage
         overwrite: true
 
 
@@ -82,11 +83,11 @@ jobs:
     - name: Generate coverage report
       run: |
         coverage json
-    - name: Upload coverage report
+    - name: Upload coverage db
       uses: actions/upload-artifact@v4
       with:
         name: coverage-ui-node2node
-        path: coverage.json
+        path: .coverage
         overwrite: true
 
   show-coverage:
@@ -117,7 +118,7 @@ jobs:
           path: coverage-ui-node2node
       - name: generate coverage report
         run: |
-            coverage combine coverage-no-ui-or-node2node/coverage.json coverage-ui-node2node/coverage.json
+            coverage combine coverage-no-ui-or-node2node/.coverage coverage-ui-node2node/.coverage
             coverage report -m --omit="*/tests/*,*/migrations/* --skip-covered" > report.txt
       - name: format coverage report
         run: |
