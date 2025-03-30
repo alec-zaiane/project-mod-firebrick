@@ -41,7 +41,10 @@ jobs:
         docker compose up -d
     - name: Run all tests
       run: |
-        docker compose run -T socialnetwork pytest -n auto -m "not ui" --cov=src --cov-report=txt
+        docker compose run -T socialnetwork pytest -n auto -m "not ui" --cov=src
+    - name: Generate coverage report
+      run: |
+        docker compose run -T socialnetwork coverage report --skip-covered --omit "*/tests/*" > coverage.txt
     - name: Upload coverage report
       uses: actions/upload-artifact@v4
       with:
@@ -76,7 +79,10 @@ jobs:
         python src/manage.py collectstatic --noinput
     - name: Run all tests
       run: |
-        pytest src -n auto -m "ui" --cov=src --cov-report=txt
+        pytest src -n auto -m "ui" --cov=src
+    - name: Generate coverage report
+      run: |
+        coverage report --skip-covered --omit "*/tests/*" > coverage.txt
     - name: Upload coverage report
       uses: actions/upload-artifact@v4
       with:
