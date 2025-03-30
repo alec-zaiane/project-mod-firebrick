@@ -8,6 +8,7 @@ from core.utils.testing_utils import AdminUITestCase, GeneralUserStoryApiTest
 from user_management.models import JoinRequest, Author, User, Node
 
 from user_management.forms import JoinRequestForm
+from user_management.tests.mock_node import MockNode
 
 
 @tag("US-node-management")
@@ -18,6 +19,11 @@ class UserStory132TestUI(AdminUITestCase):
     https://github.com/uofa-cmput404/w25-project-mod-firebrick/issues/136
     """
 
+    def setUp(self) -> None:
+        super().setUp()
+        # monkeypatch the mock nodes into the Node.external_nodes manager
+        Node.external_nodes = MockNode.mock_nodes  # type: ignore
+
     def test_can_disable_node(self) -> None:
         self.login_as_admin()
 
@@ -25,7 +31,7 @@ class UserStory132TestUI(AdminUITestCase):
         node_user = User.nodes.create_user("node_abc", password="password")
 
         # create the node
-        node = Node.external_nodes.create_node("Other node", "http://example.com/api", node_user)
+        node = MockNode.mock_nodes.create_node("http://example.com/api", node_user)
 
         # make sure the node was created
         self.assertEqual(Node.external_nodes.all().count(), 1)
