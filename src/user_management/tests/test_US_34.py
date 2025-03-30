@@ -5,7 +5,7 @@ from rest_framework import status
 from core.utils.testing_utils import GeneralUserStoryApiTest
 
 
-@tag("US-Following/Friends")
+@tag("US-following/friends")
 class TestUserStory34(GeneralUserStoryApiTest):
     """
     Tests for User Story 34

@@ -6,7 +6,6 @@ from user_management.models import Author, JoinRequest, User
 from core.utils.testing_utils import AdminUITestCase
 
 
-# @skip("Not implemented")
 @tag("US-node-management", "ui")
 class TestUserStory44(AdminUITestCase):
     # TODO refactor into a UI test!

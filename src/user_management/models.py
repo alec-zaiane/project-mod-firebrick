@@ -22,6 +22,8 @@ from core.settings import DEBUG
 from core.utils.api_object import ApiObject, ApiObjectManager
 from core.utils.validators import validate_url_returns_image
 
+from django.db import transaction
+
 # =============================================================================
 # Users
 # =============================================================================
@@ -596,13 +598,14 @@ class JoinRequest(models.Model):
         # create the new local user
         user = User.authors.create_user(self.username, self.email, self.password)
         try:
-            author = Author.local_authors.create(
-                username=self.username,
-                display_name=self.display_name,
-                host_node=node,
-                _user=user
-            )
-            self.force_delete()
+            with transaction.atomic():
+                author = Author.local_authors.create(
+                    username=self.username,
+                    display_name=self.display_name,
+                    host_node=node,
+                    _user=user
+                )
+                self.force_delete()
             return author
         except Exception as e:
             user.delete()
