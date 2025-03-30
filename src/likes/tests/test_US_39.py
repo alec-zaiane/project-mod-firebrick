@@ -1,6 +1,5 @@
 from django.test import tag
 from django.urls import reverse
-from unittest import skip
 
 from rest_framework import status
 
@@ -11,8 +10,6 @@ from posts.models import PostTypes, VisibilityTypes
 from likes.models import Like
 
 from user_management.serializers import AuthorSerializer
-
-from unittest import skip
 
 from urllib.parse import quote
 
@@ -108,5 +105,3 @@ class TestUserStory39(GeneralUserStoryApiTest):
         assert first_like is not None  # for mypy
         self.assertEqual(first_like.author.uuid, self.sample_authors[0].uuid)
         self.assertEqual(first_like.target.uuid, comment.uuid)
-
-

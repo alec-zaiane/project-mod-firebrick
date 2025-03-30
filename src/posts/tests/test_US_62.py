@@ -3,13 +3,14 @@ from posts.models import Post, VisibilityTypes
 from core.utils.testing_utils import GeneralUserStoryApiTest
 
 
-@tag("US-Reading", "check-medium")
+@tag("US-reading", "check-medium")
 class TestUserStory62(GeneralUserStoryApiTest):
     """
     Tests for User Story 62
     "As an author, I want my stream page to show me all the unlisted and friends-only posts of all the authors I follow."
     https://github.com/uofa-cmput404/w25-project-mod-firebrick/issues/62
     """
+
     def setUp(self) -> None:
         super().setUp()
         # create authors

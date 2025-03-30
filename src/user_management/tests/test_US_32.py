@@ -7,7 +7,7 @@ from user_management.models import FollowRequest
 from user_management.serializers import AuthorSerializer
 
 
-@tag("US-Following/Friends")
+@tag("US-following/friends")
 class TestUserStory32(GeneralUserStoryApiTest):
     """
     Tests for User Story 32

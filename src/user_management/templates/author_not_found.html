@@ -1,0 +1,11 @@
+{% extends 'return-meta-base.html' %}
+
+{% load static %}
+
+{% block title %}Author Not Found{% endblock %}
+
+{% block content %}
+<div id="no-permission-container" class="no-permissions">
+    <h1>Author with UUID {{error_uuid}} Not Found</h1>
+</div>
+{% endblock %}
