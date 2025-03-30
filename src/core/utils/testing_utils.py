@@ -129,16 +129,9 @@ class UITestCase(LiveServerTestCase, GeneralUserStoryApiTest):
     def _get_driver(self) -> webdriver.Firefox:
         # https://stackoverflow.com/questions/73973332/check-if-were-in-a-github-action-travis-ci-circle-ci-etc-testing-environme
         self.is_in_github_actions = bool(os.getenv("GITHUB_ACTIONS"))
-        if self.is_in_github_actions:
-            # grab the installded geckodriver version (will be installed on the runner by the django-tests.yml before this is run)
-            geckodriver_root = "/opt/hostedtoolcache/geckodriver"
-            geckodriver_version = os.listdir(geckodriver_root)[0]
-            geckodriver_path = f"{geckodriver_root}/{geckodriver_version}/x64/geckodriver"
-
-            driver_service = webdriver.FirefoxService(
-                executable_path=geckodriver_path)
-
-            options = webdriver.FirefoxOptions()
+        self.is_in_headless = bool(os.getenv("TEST_HEADLESS"))
+        options = webdriver.FirefoxOptions()
+        if self.is_in_headless or self.is_in_github_actions:
             options.add_argument('--no-sandbox')
             options.add_argument('--disable-dev-shm-usage')
             options.add_argument('--headless')
@@ -149,9 +142,18 @@ class UITestCase(LiveServerTestCase, GeneralUserStoryApiTest):
             # auto-accept alerts (From ChatGPT)
             options.set_capability("unhandledPromptBehavior", "accept")  # Auto-accept alerts
 
+        if self.is_in_github_actions:
+            # grab the installed geckodriver version (will be installed on the runner by the django-tests.yml before this is run)
+            geckodriver_root = "/opt/hostedtoolcache/geckodriver"
+            geckodriver_version = os.listdir(geckodriver_root)[0]
+            geckodriver_path = f"{geckodriver_root}/{geckodriver_version}/x64/geckodriver"
+
+            driver_service = webdriver.FirefoxService(
+                executable_path=geckodriver_path)
+
             return webdriver.Firefox(service=driver_service, options=options)
         else:
-            return webdriver.Firefox(options=webdriver.FirefoxOptions())
+            return webdriver.Firefox(options=options)
 
     def _get_logger(self) -> logging.Logger:
         """Set up a logger for the test case"""
