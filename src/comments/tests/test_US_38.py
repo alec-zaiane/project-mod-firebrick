@@ -26,7 +26,8 @@ class TestUserStory38(GeneralUserStoryApiTest):
         self.initialize_sample_text_posts(posts_per_author=1)
 
         self.client.force_authenticate(user=self.sample_authors[0].user)
-        url = reverse("user_management:node2node_inbox", args=[self.sample_authors[1].uuid])
+        url = reverse("user_management:node2node_inbox", args=[
+                      self.sample_authors[1].get_encoded_fqid()])
         comment_json = {
             "type": "comment",
             "author": AuthorSerializer().to_representation(self.sample_authors[0]),
@@ -53,7 +54,8 @@ class TestUserStory38(GeneralUserStoryApiTest):
             posts_per_author=1, visibility_type=VisibilityTypes.FRIENDS_ONLY)
 
         self.client.force_authenticate(user=self.sample_authors[0].user)
-        url = reverse("user_management:node2node_inbox", args=[self.sample_authors[1].uuid])
+        url = reverse("user_management:node2node_inbox", args=[
+                      self.sample_authors[1].get_encoded_fqid()])
         comment_json = {
             "type": "comment",
             "author": AuthorSerializer().to_representation(self.sample_authors[0]),
@@ -75,7 +77,8 @@ class TestUserStory38(GeneralUserStoryApiTest):
             posts_per_author=1, visibility_type=VisibilityTypes.UNLISTED)
 
         self.client.force_authenticate(user=self.sample_authors[0].user)
-        url = reverse("user_management:node2node_inbox", args=[self.sample_authors[1].uuid])
+        url = reverse("user_management:node2node_inbox", args=[
+                      self.sample_authors[1].get_encoded_fqid()])
         comment_json = {
             "type": "comment",
             "author": AuthorSerializer().to_representation(self.sample_authors[0]),
