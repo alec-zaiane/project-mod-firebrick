@@ -9,11 +9,6 @@ document.addEventListener("DOMContentLoaded", function () {
         event.preventDefault();
         let query = searchInput.value.trim();
 
-        if (query === "") {
-            resultsContainer.innerHTML = "<p>Please enter a search term.</p>";
-            return;
-        }
-
         fetch(`/api/authors/search/?q=${encodeURIComponent(query)}`)
             .then(response => response.json())
             .then(data => {
@@ -24,8 +19,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
 
                 data.forEach(author => {
-                    const uuidMatch = author.id.match(/authors\/([a-f0-9\-]+)/i);
-                    const uuid = uuidMatch ? uuidMatch[1] : null;
+                    const uuid = author.uuid;
 
                     if (uuid) {
                         const link = document.createElement("a");
