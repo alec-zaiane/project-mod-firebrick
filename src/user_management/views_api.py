@@ -20,7 +20,7 @@ from core.utils.request_viewer import get_request_viewer
 
 
 from drf_spectacular.utils import extend_schema
-from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, OpenApiExample, PolymorphicProxySerializer
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer
 
 # ======================================================================================
 # Inbox handling
@@ -37,6 +37,10 @@ def register_inbox_handler(handler: InboxHandler) -> None:
 def _get_serializer_map() -> dict[str, Serializer[Any] | type[Serializer[Any]]]:
     return {handler.handlable_type: handler.serializer for handler in _INBOX_HANDLERS}
 
+class ResolverMatchStub:
+    """A stub class to mimic Django's ResolverMatch for type checking purposes"""
+    def __init__(self) -> None:
+        self.kwargs: dict[str, Any] = {}
 
 class InboxHandler(abc.ABC):
     """InboxHandler class that handles a specific type of inbox item
@@ -125,8 +129,14 @@ class InboxView(views.APIView):
         type = request.data.get("type")
         if type is None:
             return Response({"error": "missing 'type' field under inbox item"}, 400)
+
         handler = self._find_handler_for_type(type)
         if handler is not None:
+            if not hasattr(request, 'resolver_match') or request.resolver_match is None:
+                stub = ResolverMatchStub()
+                setattr(request, 'resolver_match', stub)
+            resolver_match = getattr(request, 'resolver_match')
+            resolver_match.kwargs['target_author_fqid'] = target_author_fqid
             return handler.post(request)
         return Response({"error": "invalid 'type' field under inbox item",
                          "type": type}, 400)
@@ -221,7 +231,23 @@ class FollowRequestInboxHandler(InboxHandler):
 
     def post(self, request: Request) -> Response:
         # TODO imaad :3 you got this
-        return FollowRequestViewSet().create(request)
+        if not hasattr(request, 'resolver_match') or request.resolver_match is None:
+            return Response(
+                {"error": "Invalid request - missing resolver match"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        resolver_match = getattr(request, 'resolver_match')
+        target_author_fqid = resolver_match.kwargs.get('target_author_fqid')
 
+        request_object = request.data.get('object', {})
+        request_object_id = request_object.get('id')
+
+        if not request_object_id or request_object_id != target_author_fqid:
+            return Response(
+                {"error": "Follow request target doesn't match the inbox owner"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return FollowRequestViewSet().create(request)
 
 register_inbox_handler(FollowRequestInboxHandler())
