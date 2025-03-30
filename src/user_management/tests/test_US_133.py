@@ -11,7 +11,7 @@ from user_management.forms import JoinRequestForm
 
 
 @tag("US-node-management")
-class UserStory132TestUI(AdminUITestCase):
+class UserStory133TestUI(AdminUITestCase):
     """
     Tests for User Story 133
     "As a node admin, I want to be able to remove nodes and stop sharing with them."
@@ -25,7 +25,8 @@ class UserStory132TestUI(AdminUITestCase):
         node_user = User.nodes.create_user("node_abc", password="password")
 
         # create the node
-        node = Node.external_nodes.create_node("Other node", "http://example.com/api", node_user)
+        node = Node.external_nodes.create_node(
+            name="Other node", host_url="http://example.com/api", user=node_user)
 
         # make sure the node was created
         self.assertEqual(Node.external_nodes.all().count(), 1)

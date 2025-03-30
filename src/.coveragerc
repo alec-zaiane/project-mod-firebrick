@@ -4,6 +4,7 @@ omit =
     */__init__.py
     manage.py
     */migrations/*
+    */tests/*
 
 [report]
 exclude_lines =
