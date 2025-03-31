@@ -556,6 +556,47 @@ class Node(models.Model):
                 self.save()
             pass
 
+    def _synchronize_authors(self) -> None:
+        print(f"[Node {self.name}] Synchronizing authors...")
+        raise NotImplementedError("Synchronizing authors is not implemented yet")
+
+    def _synchronize_posts(self) -> None:
+        author_list = self.get_hosted_users()
+        print(f"[Node {self.name}] Synchronizing posts for {len(author_list)} authors...")
+        for author in author_list:
+            raise NotImplementedError("Synchronizing posts is not implemented yet")
+
+    def _synchronize_comments(self) -> None:
+        from posts.models import Post
+        post_list = Post.objects.filter(host_node=self)
+        print(f"[Node {self.name}] Synchronizing comments for {len(post_list)} posts...")
+        for post in post_list:
+            raise NotImplementedError("Synchronizing comments is not implemented yet")
+
+    def _synchronize_likes(self) -> None:
+        from posts.models import Post
+        from comments.models import Comment
+        post_list = Post.objects.filter(host_node=self)
+        comment_list = Comment.objects.filter(host_node=self)
+        print(
+            f"[Node {self.name}] Synchronizing likes for {len(post_list)} posts and {len(comment_list)} comments...")
+        for post in post_list:
+            raise NotImplementedError("Synchronizing likes for posts is not implemented yet")
+        for comment in comment_list:
+            raise NotImplementedError("Synchronizing likes for comments is not implemented yet")
+
+    def synchronize_all(self) -> None:
+        """Synchronize with this node by sending GET requests to its API"""
+        print(f"[Node {self.name}] Synchronizing...")
+        if self.is_disabled:
+            print(f"[Node {self.name}] Node is disabled, skipping synchronization")
+            return
+        self._synchronize_authors()
+        self._synchronize_posts()
+        self._synchronize_comments()
+        self._synchronize_likes()
+
+
 # =============================================================================
 # Join requests
 # =============================================================================
