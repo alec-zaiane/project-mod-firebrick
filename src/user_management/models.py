@@ -431,7 +431,9 @@ class ExternalNodeManager(NodeManager):
         return self.create(name=name, host_url=host_url, internal_user=user, host_site_url=host_site_url)
 
     def find_node(self, host_url: str) -> Optional[Node]:
-        return self.filter(host_url=host_url).first()
+        find_by_no_slash = self.filter(host_url=host_url.rstrip("/")).first()
+        find_by_slash = self.filter(host_url=host_url.rstrip("/")+"/").first()
+        return find_by_no_slash or find_by_slash
 
     def verify_connection(self, host_url: str, username: str, password: str) -> requests.Response:
         # Attempts to connect to posts -- arbitrary API point, but guaranteed to exist
