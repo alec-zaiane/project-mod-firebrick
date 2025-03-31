@@ -571,7 +571,7 @@ class Node(models.Model):
             return
         authors = response.json()
         print(f"[Node {self.name}] Found {len(authors)} authors to synchronize")
-        for author in authors:
+        for author in authors["items"]:
             try:
                 AuthorSerializer().get_or_create(author)
             except Exception as e:
