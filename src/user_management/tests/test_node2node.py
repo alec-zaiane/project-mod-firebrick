@@ -6,7 +6,7 @@ from django.urls import reverse
 from core.utils.testing_utils import GeneralUserStoryApiTest
 
 from user_management.models import FollowRequest, Author, Node, User
-from user_management.tests.mock_node import MockNode, Action, ActionType
+from user_management.tests.mock_node import MockNode, Action, ActionType, monkeypatch_mock_nodes
 from posts.models import Post, PostTypes, VisibilityTypes
 from comments.models import Comment
 from likes.models import Like
@@ -158,8 +158,7 @@ class TestNode2NodeProperSending(GeneralUserStoryApiTest):
     def setUp(self) -> None:
         super().setUp()
         # monkeypatch the mock nodes into the Node.external_nodes manager
-        Node.external_nodes = MockNode.mock_nodes  # type: ignore
-
+        monkeypatch_mock_nodes()
     # CRUD FOR AUTHORS ========================================================
 
     def test_creation_of_author(self) -> None:
@@ -211,16 +210,17 @@ class TestNode2NodeProperSending(GeneralUserStoryApiTest):
         node_user = User.nodes.create_user("node_user", password="password")
         node = MockNode.mock_nodes.create_node(name="mock_node",
                                                host_url="http://example.com/api", user=node_user)
+        external_author = Author.objects.create(host_node=node, display_name="External Author")
         self.initialize_sample_authors(2)
         node.clear_action_log()
         # author 0 follows author 1
         follow_request = FollowRequest.objects.create_follow_request(
-            self.sample_authors[0], self.sample_authors[1])
+            self.sample_authors[0], external_author)
         self.assertEqual(len(node.actions_log), 1)
         action = node.actions_log[0]
         self.assertEqual(action.action_type, ActionType.POST)
         self.assertEqual(
-            action.url, f"http://example.com{reverse('user_management:node2node_follow_requests-list')}")
+            action.url, f"http://example.com{reverse('user_management:node2node_inbox', args=[external_author.get_encoded_fqid()])}")
         self.assertEqual(action.json, FollowRequestSerializer().to_representation(follow_request))
 
     # CRUD FOR POSTS ===========================================================
@@ -229,7 +229,14 @@ class TestNode2NodeProperSending(GeneralUserStoryApiTest):
         node_user = User.nodes.create_user("node_user", password="password")
         node = MockNode.mock_nodes.create_node(name="mock_node",
                                                host_url="http://example.com/api", user=node_user)
+        external_author = Author.objects.create(host_node=node, display_name="External Author")
         self.initialize_sample_authors(1)
+        # make external author follow the author
+        external_author.following.add(self.sample_authors[0])
+        # monkeypatch external_author's host_node to be the mock node
+        external_author.host_node = node
+        external_author.save()
+
         node.clear_action_log()
         post = Post.objects.create_post(
             self.sample_authors[0], "My post title", "my post description", "content", PostTypes.PLAINTEXT, VisibilityTypes.PUBLIC)
@@ -237,7 +244,7 @@ class TestNode2NodeProperSending(GeneralUserStoryApiTest):
         action = node.actions_log[0]
         self.assertEqual(action.action_type, ActionType.POST)
         self.assertEqual(
-            action.url, f"http://example.com{reverse('posts:api_posts-list')}")
+            action.url, f"http://example.com{reverse('user_management:node2node_inbox', args=[external_author.get_encoded_fqid()])}")
         self.assertEqual(action.json, PostSerializer().to_representation(post))
 
     def test_update_of_post(self) -> None:
@@ -278,20 +285,22 @@ class TestNode2NodeProperSending(GeneralUserStoryApiTest):
     # CRUD FOR COMMENTS ========================================================
 
     def test_creation_of_comment(self) -> None:
-        """Test that when a comment is created, any external nodes are notified"""
+        """Test that when a comment is created, the external node hosting the post's author is notified"""
         node_user = User.nodes.create_user("node_user", password="password")
         node = MockNode.mock_nodes.create_node(name="mock_node",
                                                host_url="http://example.com/api", user=node_user)
         self.initialize_sample_authors(1)
-        self.initialize_sample_text_posts(1)
+        external_author = Author.objects.create(host_node=node, display_name="External Author")
+        external_post = Post.objects.create_post(
+            external_author, "My post title", "my post description", "content", PostTypes.PLAINTEXT, VisibilityTypes.PUBLIC)
         node.clear_action_log()
         comment = Comment.objects.create_comment(
-            self.sample_authors[0], self.sample_posts[0][0], "My comment", PostTypes.PLAINTEXT)
+            self.sample_authors[0], external_post, "My comment", PostTypes.PLAINTEXT)
         self.assertEqual(len(node.actions_log), 1)
         action = node.actions_log[0]
         self.assertEqual(action.action_type, ActionType.POST)
         self.assertEqual(
-            action.url, f"http://example.com{reverse('comments:node2node_comments-list')}")
+            action.url, f"http://example.com{reverse('user_management:node2node_inbox', args=[external_author.get_encoded_fqid()])}")
         self.assertEqual(action.json, CommentSerializer().to_representation(comment))
 
     def test_update_of_comment(self) -> None:
@@ -332,20 +341,42 @@ class TestNode2NodeProperSending(GeneralUserStoryApiTest):
 
     # CRUD FOR LIKES ===========================================================
 
-    def test_creation_of_like(self) -> None:
-        """Test that when a like is created, any external nodes are notified"""
+    def test_creation_of_like_post(self) -> None:
+        """Test that when a like is created, the external node hosting the post's author is notified"""
         node_user = User.nodes.create_user("node_user", password="password")
         node = MockNode.mock_nodes.create_node(name="mock_node",
                                                host_url="http://example.com/api", user=node_user)
+        external_author = Author.objects.create(host_node=node, display_name="External Author")
+        external_post = Post.objects.create_post(
+            external_author, "My post title", "my post description", "content", PostTypes.PLAINTEXT, VisibilityTypes.PUBLIC)
         self.initialize_sample_authors(1)
-        self.initialize_sample_text_posts(1)
         node.clear_action_log()
-        like = Like.objects.create_like(self.sample_authors[0], self.sample_posts[0][0])
+        like = Like.objects.create_like(self.sample_authors[0], external_post)
         self.assertEqual(len(node.actions_log), 1)
         action = node.actions_log[0]
         self.assertEqual(action.action_type, ActionType.POST)
         self.assertEqual(
-            action.url, f"http://example.com{reverse('likes:node2node_likes-list')}")
+            action.url, f"http://example.com{reverse('user_management:node2node_inbox', args=[external_author.get_encoded_fqid()])}")
+        self.assertEqual(action.json, LikeSerializer().to_representation(like))
+
+    def test_creation_of_like_comment(self) -> None:
+        """Test that when a like is created, the external node hosting the post's author is notified"""
+        node_user = User.nodes.create_user("node_user", password="password")
+        node = MockNode.mock_nodes.create_node(name="mock_node",
+                                               host_url="http://example.com/api", user=node_user)
+        external_author = Author.objects.create(host_node=node, display_name="External Author")
+
+        self.initialize_sample_authors(1)
+        self.initialize_sample_text_posts(1)
+        external_comment = Comment.objects.create_comment(
+            external_author, self.sample_posts[0][0], "My comment", PostTypes.PLAINTEXT)
+        node.clear_action_log()
+        like = Like.objects.create_like(self.sample_authors[0], external_comment)
+        self.assertEqual(len(node.actions_log), 1)
+        action = node.actions_log[0]
+        self.assertEqual(action.action_type, ActionType.POST)
+        self.assertEqual(
+            action.url, f"http://example.com{reverse('user_management:node2node_inbox', args=[external_author.get_encoded_fqid()])}")
         self.assertEqual(action.json, LikeSerializer().to_representation(like))
 
     def test_deletion_of_like(self) -> None:

@@ -85,3 +85,18 @@ class MockNode(Node):
 
     def clear_action_log(self) -> None:
         ACTION_LOG[self.uuid] = []
+
+
+def monkeypatch_mock_nodes() -> None:
+    Node.external_nodes = MockNode.mock_nodes  # type: ignore
+    MockNode_added_methods = set(dir(MockNode)) - set(dir(Node))
+    override_methods = {
+        "_post",
+        "_put",
+        "_delete",
+    }
+    MockNode_added_methods = MockNode_added_methods.union(override_methods)
+
+    for method_name in MockNode_added_methods:
+        method = getattr(MockNode, method_name)
+        setattr(Node, method_name, method)
