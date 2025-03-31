@@ -35,7 +35,7 @@ class TestUserStory38(GeneralUserStoryApiTest):
             "contentType": "text/plain",
             "published": "2021-03-01T00:00:00Z",
             "id": f"{Node.objects.get_local_node().host_url}/comments/1",
-            "post": self.sample_posts[1][0].get_encoded_fqid(),
+            "post": self.sample_posts[1][0].fqid,
         }
         response = self.client.post(url, comment_json, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -63,7 +63,7 @@ class TestUserStory38(GeneralUserStoryApiTest):
             "contentType": "text/plain",
             "published": "2021-03-01T00:00:00Z",
             "id": f"{Node.objects.get_local_node().host_url}/comments/1",
-            "post": self.sample_posts[1][0].get_encoded_fqid(),
+            "post": self.sample_posts[1][0].fqid,
         }
         response = self.client.post(url, comment_json, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
@@ -86,7 +86,7 @@ class TestUserStory38(GeneralUserStoryApiTest):
             "contentType": "text/plain",
             "published": "2021-03-01T00:00:00Z",
             "id": f"{Node.objects.get_local_node().host_url}/comments/1",
-            "post": self.sample_posts[1][0].get_encoded_fqid(),
+            "post": self.sample_posts[1][0].fqid,
         }
         response = self.client.post(url, comment_json, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)

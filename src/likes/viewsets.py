@@ -44,7 +44,8 @@ class LikeViewSet(viewsets.ModelViewSet[Like]):
 
     def create(self, request: Request) -> Response:
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            return Response({"detail": "Invalid Like data", "like": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         serializer.save()
         return Response(serializer.data, status=201)
 

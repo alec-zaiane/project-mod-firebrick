@@ -11,8 +11,6 @@ from likes.models import Like
 
 from user_management.serializers import AuthorSerializer
 
-from urllib.parse import quote
-
 
 @tag("US-comments/likes")
 class TestUserStory39(GeneralUserStoryApiTest):
@@ -36,7 +34,7 @@ class TestUserStory39(GeneralUserStoryApiTest):
             "author": AuthorSerializer().to_representation(self.sample_authors[0]),
             "published": "2021-10-10T10:00:00Z",
             "id": "http://nodeaaaa.com/api/authors/111/liked/166",
-            "object": quote(self.sample_posts[0][0].fqid, safe="")
+            "object": self.sample_posts[0][0].fqid
         }
 
         response = self.client.post(
@@ -65,7 +63,7 @@ class TestUserStory39(GeneralUserStoryApiTest):
             "author": AuthorSerializer().to_representation(self.sample_authors[0]),
             "published": "2021-10-10T10:00:00Z",
             "id": "http://nodeaaaa.com/api/authors/111/liked/166",
-            "object": quote(self.sample_posts[0][0].fqid, safe="")
+            "object": self.sample_posts[0][0].fqid
         }
 
         response = self.client.post(
@@ -98,10 +96,11 @@ class TestUserStory39(GeneralUserStoryApiTest):
             "type": "like",
             "author": AuthorSerializer().to_representation(self.sample_authors[0]),
             "published": "2021-10-10T10:00:00Z",
-            "id": "http://nodeaaaa.com/api/authors/111/liked/166",
-            "object": quote(comment.fqid, safe="")
+            "id": "http://nodeaaaa.com/api/authors/111/liked/166",  # up to the client
+            "object": comment.fqid
         }
-        self.client.post(url, like_json, format="json")
+        response = self.client.post(url, like_json, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         comment.refresh_from_db()
         self.assertEqual(comment.likes.count(), 1)
         first_like = comment.likes.first()

@@ -12,6 +12,7 @@ from rest_framework.serializers import Serializer
 from likes.serializers import LikeSerializer
 from likes.viewsets import LikeViewSet
 
+from comments.models import Comment
 from comments.serializers import CommentSerializer
 from comments.viewsets import CommentViewSet
 
@@ -21,8 +22,8 @@ from user_management.serializers import FollowRequestSerializer
 from user_management.viewsets import FollowRequestViewSet
 from user_management.models import Author
 
-from core.utils.request_viewer import get_request_node
-from core.utils.redirects import API_UNAUTHORIZED
+from core.utils.request_viewer import get_request_node, get_request_viewer
+from core.utils.redirects import API_UNAUTHORIZED, API_FORBIDDEN
 
 from drf_spectacular.utils import extend_schema
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer
@@ -179,6 +180,27 @@ class LikesInboxHandler(InboxHandler):
         return LikeSerializer  # pragma: no cover
 
     def post(self, request: Request, target_author: Author) -> Response:
+        # make sure the request's owner has access to the post
+        if get_request_node(request) is None:  # if they are a node, we're good
+            # otherwise, make sure the author can see the targeted post
+            viewer = get_request_viewer(request)
+            if viewer is None:
+                return API_UNAUTHORIZED()
+            post_id = request.data.get("object")
+            if post_id is None:
+                return Response({"error": "missing 'object' field"}, 400)
+            post = Post.visible_posts.find_by_fqid(post_id)
+            comment = Comment.objects.find_by_fqid(post_id)
+            if post is None and comment is None:
+                return Response({"error": "`object` not found", "fqid": post_id}, 404)
+            if comment is not None:
+                post = comment.post
+            if post is None:
+                # this shouldn't ever happen, just a sanity check
+                return Response({"error": "Post not found", "fqid": post_id}, 404)
+            if not post.check_can_be_seen_by(viewer):
+                return API_FORBIDDEN()
+
         return self._post_to_viewset(request, LikeViewSet())
 
 
@@ -200,6 +222,21 @@ class CommentInboxHandler(InboxHandler):
         return CommentSerializer  # pragma: no cover
 
     def post(self, request: Request, target_author: Author) -> Response:
+        # make sure the request's owner has access to the post
+        if get_request_node(request) is None:  # if they are a node, we're good
+            # otherwise, make sure the author can see the targeted post
+            viewer = get_request_viewer(request)
+            if viewer is None:
+                return API_UNAUTHORIZED()
+            post_id = request.data.get("post")
+            if post_id is None:
+                return Response({"error": "missing 'post' field"}, 400)
+            post = Post.visible_posts.find_by_fqid(post_id)
+            if post is None:
+                return Response({"error": "Post not found", "fqid": post_id}, 404)
+            if not post.check_can_be_seen_by(viewer):
+                return API_FORBIDDEN()
+
         return self._post_to_viewset(request, CommentViewSet())
 
 
