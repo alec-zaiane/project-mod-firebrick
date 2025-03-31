@@ -48,6 +48,11 @@ urlpatterns: list[URLPattern | URLResolver] = [
          name="node2node_inbox"
          ),
 
+    path("api/authors/<uuid:target_author_uuid>/inbox/",
+         InboxView.as_view(),
+         name="node2node_inbox"
+         ),
+
     path("api/authors/search/",
          AuthorSearchAPIView.as_view(),
          name="author_search"),
