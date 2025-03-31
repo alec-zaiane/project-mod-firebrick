@@ -575,7 +575,7 @@ class Node(models.Model):
         response = requests.get(
             self._make_absolute_url("/authors"),
             headers={"Accept": "application/json"},
-            auth=HTTPBasicAuth(self.internal_user.username, self.internal_user.password_plain)
+            auth=(self.internal_user.username, self.internal_user.password_plain)
         )
         if response.status_code != 200:
             print(f"[Node {self.name}] Failed to synchronize authors: {response.status_code}")
@@ -599,7 +599,7 @@ class Node(models.Model):
             response = requests.get(
                 self._make_absolute_url(author.fqid + "/posts"),
                 headers={"Accept": "application/json"},
-                auth=HTTPBasicAuth(self.internal_user.username, self.internal_user.password_plain)
+                auth=(self.internal_user.username, self.internal_user.password_plain)
             )
             if response.status_code != 200:
                 print(
@@ -625,7 +625,7 @@ class Node(models.Model):
             response = requests.get(
                 self._make_absolute_url(post.fqid + "/comments"),
                 headers={"Accept": "application/json"},
-                auth=HTTPBasicAuth(self.internal_user.username, self.internal_user.password_plain)
+                auth=(self.internal_user.username, self.internal_user.password_plain)
             )
             if response.status_code != 200:
                 print(
@@ -649,7 +649,7 @@ class Node(models.Model):
             response = requests.get(
                 self._make_absolute_url(author.fqid + "/liked"),
                 headers={"Accept": "application/json"},
-                auth=HTTPBasicAuth(self.internal_user.username, self.internal_user.password_plain)
+                auth=(self.internal_user.username, self.internal_user.password_plain)
             )
             if response.status_code != 200:
                 print(
