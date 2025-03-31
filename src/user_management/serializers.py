@@ -35,7 +35,7 @@ class AuthorSerializer(serializers.ModelSerializer[Author]):
     def to_representation(self, instance: Author) -> dict[str, Any]:
         if not isinstance(instance, Author):
             raise ValueError(f"AuthorSerializer can only serialize Author objects, got {instance}")
-        author_node_url = instance.host_node.host_url
+        author_node_url = instance.host_node.get_host_url_slash()
         return {
             "type": "author",
             "id": instance.fqid,
@@ -50,6 +50,8 @@ class AuthorSerializer(serializers.ModelSerializer[Author]):
             raise ValidationError({
                 "type": "Author object must always have type author",
             })
+        if data.get("profileImage", None) is None:
+            data["profileImage"] = ""
         return {
             "fqid": data["id"],
             "host__host_url": data["host"],
@@ -64,6 +66,8 @@ class AuthorSerializer(serializers.ModelSerializer[Author]):
         except Author.DoesNotExist:
             host_node = Node.external_nodes.find_node(data["host"])
             assert host_node is not None
+            if data.get("profileImage", None) is None:
+                data["profileImage"] = ""
             return Author.objects.create(
                 fqid=data["id"],
                 host_node=host_node,

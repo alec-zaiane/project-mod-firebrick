@@ -26,7 +26,7 @@ class TestNode2NodeComments(Node2NodeReceptionTestCase):
         self.initialize_external_authors(1)
 
         self.author0_inbox_url = self.live_server_url + reverse("user_management:node2node_inbox", args=[
-            self.sample_authors[0].get_encoded_fqid()
+            self.sample_authors[0].uuid
         ])
 
     # @override_settings(DEBUG=True)

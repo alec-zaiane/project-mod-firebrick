@@ -141,7 +141,13 @@ class CommentSerializer(serializers.ModelSerializer[Comment]):
         return Comment.objects.create(**validated_data)
 
     def get_or_create(self, data: dict[str, Any]) -> Comment:
-        try:
-            return Comment.objects.get_by_fqid(data["id"])
-        except Comment.DoesNotExist:
-            return self.create(self.to_internal_value(data))
+        # if a comment doesn't exist, create it, otherwise update and return it
+        comment_dict = self.to_internal_value(data)
+        comment = Comment.objects.find_by_fqid(comment_dict["fqid"])
+        if comment is None:
+            comment = self.create(comment_dict)
+        else:
+            for key, value in comment_dict.items():
+                setattr(comment, key, value)
+            comment.save()
+        return comment

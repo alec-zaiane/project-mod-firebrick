@@ -24,8 +24,8 @@ from rest_framework.permissions import IsAuthenticated
 
 class AuthorViewSet(viewsets.ModelViewSet[Author]):
     # suggested by copilot: lookup_field/lookup_url_kwarg/lookup_value_regex to change the lookup field to an encoded fqid
-    lookup_field = "fqid"
-    lookup_url_kwarg = "fqid"
+    lookup_field = "uuid"
+    lookup_url_kwarg = "uuid"
     lookup_value_regex = ".+"
     queryset = Author.objects.all()
     serializer_class = AuthorSerializer
@@ -33,10 +33,10 @@ class AuthorViewSet(viewsets.ModelViewSet[Author]):
 
     def get_object(self) -> Author:
         """Allow for encoded fqid based lookup"""
-        fqid = self.kwargs.get("fqid", None)
-        if fqid is not None:
-            lookup_field = "fqid"
-            lookup_value = unquote(fqid)
+        uuid = self.kwargs.get("uuid", None)
+        if uuid is not None:
+            lookup_field = "uuid"
+            lookup_value = uuid
             return self.get_queryset().get(**{lookup_field: lookup_value})
         return super().get_object()
 
@@ -271,23 +271,24 @@ class AuthorViewSet(viewsets.ModelViewSet[Author]):
         viewer.following.remove(target_author)
         return Response({"detail": "Unfollowed successfully."}, status=status.HTTP_200_OK)
 
+
 class FollowRequestViewSet(viewsets.ModelViewSet[FollowRequest]):
     # suggested by copilot: lookup_field/lookup_url_kwarg/lookup_value_regex to change the lookup field to an encoded fqid
 
-    lookup_field = "fqid"
-    lookup_url_kwarg = "fqid"
+    lookup_field = "uuid"
+    lookup_url_kwarg = "uuid"
     lookup_value_regex = ".+"
     queryset = FollowRequest.objects.all()
     serializer_class = FollowRequestSerializer
-    authentication_classes = [NodeUserBasicAuthentication]
+    # authentication_classes = [NodeUserBasicAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get_object(self) -> FollowRequest:
         """Allow for encoded fqid based lookup"""
-        fqid = self.kwargs.get("fqid", None)
-        if fqid is not None:
-            lookup_field = "fqid"
-            lookup_value = unquote(fqid)
+        uuid = self.kwargs.get("uuid", None)
+        if uuid is not None:
+            lookup_field = "uuid"
+            lookup_value = uuid
             return self.get_queryset().get(**{lookup_field: lookup_value})
         return super().get_object()
 
@@ -498,6 +499,7 @@ class FollowRequestViewSet(viewsets.ModelViewSet[FollowRequest]):
             )
 
         # approve by adding the follow relationship and deleting the request
+        print("adding follower to followee")
         follow_request.follower.following.add(follow_request.followee)
         follow_request.delete()
         return Response({"detail": "Follow request approved."}, status=status.HTTP_200_OK)

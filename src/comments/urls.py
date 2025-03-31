@@ -9,7 +9,7 @@ from comments.views import PostCommentsAPIView
 app_name = "comments"
 urlpatterns: list[URLPattern | URLResolver] = [
     path("comments/<str:encoded_post_fqid>/", InternalCommentView.as_view(), name="internal_comment"),
-    path("posts/<str:post_fqid>/comments", PostCommentsAPIView.as_view(), name="node2node_post_comments"),
+    path("posts/<uuid:post_uuid>/comments", PostCommentsAPIView.as_view(), name="node2node_post_comments"),
 ]
 
 router = routers.SimpleRouter()

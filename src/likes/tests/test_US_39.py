@@ -28,7 +28,7 @@ class TestUserStory39(GeneralUserStoryApiTest):
 
         self.client.force_authenticate(user=self.sample_authors[0].user)
         url = reverse("user_management:node2node_inbox", args=[
-                      self.sample_authors[1].get_encoded_fqid()])
+                      self.sample_authors[1].uuid])
         like_json = {
             "type": "like",
             "author": AuthorSerializer().to_representation(self.sample_authors[0]),
@@ -57,7 +57,7 @@ class TestUserStory39(GeneralUserStoryApiTest):
 
         self.client.force_authenticate(user=self.sample_authors[1].user)
         url = reverse("user_management:node2node_inbox", args=[
-                      self.sample_authors[1].get_encoded_fqid()])
+                      self.sample_authors[1].uuid])
         like_json = {
             "type": "like",
             "author": AuthorSerializer().to_representation(self.sample_authors[0]),
@@ -90,7 +90,7 @@ class TestUserStory39(GeneralUserStoryApiTest):
         )
 
         url = reverse("user_management:node2node_inbox", args=[
-                      self.sample_authors[1].get_encoded_fqid()])
+                      self.sample_authors[1].uuid])
         self.client.force_authenticate(user=self.sample_authors[0].user)
         like_json = {
             "type": "like",

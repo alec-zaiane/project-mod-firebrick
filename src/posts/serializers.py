@@ -92,6 +92,7 @@ class PostSerializer(serializers.ModelSerializer[Post]):
                       },
             "published": instance.created_at.isoformat(),
             "visibility": VISIBILITY_TYPE_WEB_MAP.get(instance.visibility_type),
+            "page": instance.author.page_url,
         }
 
     def to_internal_value(self, data: dict[str, Any]) -> dict[str, Any]:
@@ -108,25 +109,6 @@ class PostSerializer(serializers.ModelSerializer[Post]):
         post_type = CONTENT_TYPE_WEB_MAP_REVERSE.get(data["contentType"], None)
         if post_type is None:
             raise ValidationError(f"Invalid contentType: {data['contentType']}")
-
-        # before returning, make sure that all `likes` and `comments` are copied into our database if they don't exist
-        # TODO verify that this is the correct way to handle this
-        if "comments" in data:
-            if "src" not in data["comments"]:
-                raise ValidationError({
-                    "comments": "Post object must always have comments src"
-                })
-            for comment in data["comments"]["src"]:
-                comment_dict = CommentSerializer().to_internal_value(comment)
-                Comment.objects.get_or_create(**comment_dict)
-        if "likes" in data:
-            if "src" not in data["comments"]:
-                raise ValidationError({
-                    "likes": "Post object must always have likes src"
-                })
-            for like in data["likes"]["src"]:
-                like_dict = LikeSerializer().to_internal_value(like)
-                Like.objects.get_or_create(**like_dict)
 
         author = AuthorSerializer().get_or_create(data["author"])
 
@@ -148,3 +130,15 @@ class PostSerializer(serializers.ModelSerializer[Post]):
         author: Author = validated_data["author"]
         host_node = author.host_node
         return Post.objects.create(fqid=fqid, **validated_data, host_node=host_node)
+
+    def get_or_create(self, data: dict[str, Any]) -> Post:
+        # if a post doesn't exist, create it, otherwise update and return it
+        post_dict = self.to_internal_value(data)
+        post = Post.objects.find_by_fqid(post_dict["fqid"])
+        if post is None:
+            post = self.create(post_dict)
+        else:
+            for key, value in post_dict.items():
+                setattr(post, key, value)
+            post.save()
+        return post

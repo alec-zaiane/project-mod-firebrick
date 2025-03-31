@@ -1,5 +1,4 @@
 from typing import Any
-from urllib.parse import unquote
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
 from django.contrib.auth.models import AnonymousUser
 
@@ -27,9 +26,9 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
        - Update: only allows authors to modify their own post
        - Destroy: performs soft delete instead of a hard delete
     """
-    # suggested by copilot: lookup_field/lookup_url_kwarg/lookup_value_regex to change the lookup field to an encoded fqid
-    lookup_field = "fqid"
-    lookup_url_kwarg = "fqid"
+    # suggested by copilot: lookup_field/lookup_url_kwarg/lookup_value_regex to change the lookup field to an encoded uuid
+    lookup_field = "uuid"
+    lookup_url_kwarg = "uuid"
     lookup_value_regex = ".+"
     queryset = Post.visible_posts.all()
     serializer_class = PostSerializer
@@ -37,11 +36,11 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
     parser_classes = (MultiPartParser, FormParser, JSONParser)
 
     def get_object(self) -> Post:
-        """Allow for encoded fqid based lookup"""
-        fqid = self.kwargs.get("fqid", None)
-        if fqid is not None:
-            lookup_field = "fqid"
-            lookup_value = unquote(fqid)
+        """Allow for encoded uuid based lookup"""
+        uuid = self.kwargs.get("uuid", None)
+        if uuid is not None:
+            lookup_field = "uuid"
+            lookup_value = uuid
             return self.get_queryset().get(**{lookup_field: lookup_value})
         return super().get_object()
 
@@ -126,10 +125,10 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
 
     @extend_schema(
         summary="Get post details",
-        description="Get details of a specific post using its fully qualified ID (FQID)",
+        description="Get details of a specific post using its fully qualified ID (uuid)",
         parameters=[
             OpenApiParameter(
-                name="fqid",
+                name="uuid",
                 type=str,
                 location=OpenApiParameter.PATH,
                 description="The fully qualified ID of the post",
@@ -150,7 +149,7 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
         description="Fully update a post. All fields must be provided. Only the author can update their own posts.",
         parameters=[
             OpenApiParameter(
-                name="fqid",
+                name="uuid",
                 type=str,
                 location=OpenApiParameter.PATH,
                 description="The fully qualified ID of the post",
@@ -190,7 +189,7 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
         description="Partially update a post. Only provided fields will be updated. Only the author can update their own posts.",
         parameters=[
             OpenApiParameter(
-                name="fqid",
+                name="uuid",
                 type=str,
                 location=OpenApiParameter.PATH,
                 description="The fully qualified ID of the post",
@@ -214,7 +213,7 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
         description="Soft delete a post. Only the author can delete their own posts.",
         parameters=[
             OpenApiParameter(
-                name="fqid",
+                name="uuid",
                 type=str,
                 location=OpenApiParameter.PATH,
                 description="The fully qualified ID of the post",

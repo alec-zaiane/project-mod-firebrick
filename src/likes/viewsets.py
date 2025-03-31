@@ -12,24 +12,22 @@ from likes.serializers import LikeSerializer
 from user_management.models import Author, Node
 from user_management.serializers import AuthorSerializer
 
-from urllib.parse import unquote
-
 
 class LikeViewSet(viewsets.ModelViewSet[Like]):
-    # suggested by copilot: lookup_field/lookup_url_kwarg/lookup_value_regex to change the lookup field to an encoded fqid
-    lookup_field = "fqid"
-    lookup_url_kwarg = "fqid"
+    # suggested by copilot: lookup_field/lookup_url_kwarg/lookup_value_regex to change the lookup field to an encoded uuid
+    lookup_field = "uuid"
+    lookup_url_kwarg = "uuid"
     lookup_value_regex = ".+"
     queryset = Like.objects.all()
     serializer_class = LikeSerializer
     # permission_classes = [IsAuthenticated]
 
     def get_object(self) -> Like:
-        """Allow for encoded fqid based lookup"""
-        fqid = self.kwargs.get("fqid", None)
-        if fqid is not None:
-            lookup_field = "fqid"
-            lookup_value = unquote(fqid)
+        """Allow for encoded uuid based lookup"""
+        uuid = self.kwargs.get("uuid", None)
+        if uuid is not None:
+            lookup_field = "uuid"
+            lookup_value = uuid
             return self.get_queryset().get(**{lookup_field: lookup_value})
         return super().get_object()
 

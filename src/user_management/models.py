@@ -283,10 +283,14 @@ class Author(ApiObject):
         return reverse("user_management:node2node_authors-list")
 
     def node2node_get_update_url(self) -> str:
-        return reverse("user_management:node2node_authors-detail", kwargs={"fqid": self.get_encoded_fqid()})
+        return self.fqid
+        # return reverse("user_management:node2node_authors-detail", kwargs={"fqid": self.get_encoded_fqid()})
 
     def node2node_get_deletion_url(self) -> str:
         return self.node2node_get_update_url()
+
+    def node2node_get_inbox_url(self) -> str:
+        return self.fqid.rstrip("/") + "/inbox"
 
 
 # === Proxy Classes for Authors ===
@@ -369,9 +373,7 @@ class FollowRequest(ApiObject):
     def node2node_get_creation_url(self, author_for_inbox: Optional[Author] = None) -> str:
         if author_for_inbox is None:
             return reverse("user_management:node2node_follow_requests-list")
-        return reverse("user_management:node2node_inbox", args=[
-            author_for_inbox.get_encoded_fqid()
-        ])
+        return author_for_inbox.node2node_get_inbox_url()
 
     def node2node_get_update_url(self) -> str:
         return reverse("user_management:node2node_follow_requests-detail", kwargs={"fqid": self.get_encoded_fqid()})
@@ -431,11 +433,13 @@ class ExternalNodeManager(NodeManager):
         return self.create(name=name, host_url=host_url, internal_user=user, host_site_url=host_site_url)
 
     def find_node(self, host_url: str) -> Optional[Node]:
-        return self.filter(host_url=host_url).first()
+        find_by_no_slash = self.filter(host_url=host_url.rstrip("/")).first()
+        find_by_slash = self.filter(host_url=host_url.rstrip("/")+"/").first()
+        return find_by_no_slash or find_by_slash
 
     def verify_connection(self, host_url: str, username: str, password: str) -> requests.Response:
         # Attempts to connect to posts -- arbitrary API point, but guaranteed to exist
-        return requests.get(host_url + "/posts", auth=HTTPBasicAuth(
+        return requests.get(host_url.rstrip("/") + "/authors", auth=HTTPBasicAuth(
             username, password), timeout=5)
 
 
@@ -479,6 +483,10 @@ class Node(models.Model):
     def get_hosted_users(self) -> models.QuerySet[Author]:
         return Author.objects.filter(host_node=self)
 
+    def get_host_url_slash(self) -> str:
+        """Get the host URL with a trailing slash"""
+        return self.host_url.rstrip("/") + "/"
+
     # Node2Node communication
 
     # HTTP METHODS ====== IF YOU ADD ONE MAKE SURE TO ADD TO user_management.tests.mock_node.py AS WELL
@@ -504,6 +512,8 @@ class Node(models.Model):
 
     def _make_absolute_url(self, url: str) -> str:
         host_url_no_slash = self.host_url.rstrip("/")
+        if url.startswith(host_url_no_slash):
+            return url
         to_no_slash = url.lstrip("/")
         # horrible but worky
         return f"{host_url_no_slash}/{to_no_slash}".replace("/api/api", "/api")
@@ -565,7 +575,7 @@ class Node(models.Model):
         response = requests.get(
             self._make_absolute_url("/authors"),
             headers={"Accept": "application/json"},
-            auth=HTTPBasicAuth(self.internal_user.username, self.internal_user.password_plain)
+            auth=(self.internal_user.username, self.internal_user.password_plain)
         )
         if response.status_code != 200:
             print(f"[Node {self.name}] Failed to synchronize authors: {response.status_code}")
@@ -577,13 +587,32 @@ class Node(models.Model):
                 AuthorSerializer().get_or_create(author)
             except Exception as e:
                 print(f"[Node {self.name}] Failed to synchronize author {author}: {e}")
+                print(f"\t {e.__class__}, {str(e.__traceback__)}")
                 continue
 
     def _synchronize_posts(self) -> None:
         author_list = self.get_hosted_users()
+        assert self.internal_user is not None
+        assert self.internal_user.password_plain is not None  # for mypy
         print(f"[Node {self.name}] Synchronizing posts for {len(author_list)} authors...")
         for author in author_list:
-            raise NotImplementedError("Synchronizing posts is not implemented yet")
+            response = requests.get(
+                self._make_absolute_url(author.fqid + "/posts"),
+                headers={"Accept": "application/json"},
+                auth=(self.internal_user.username, self.internal_user.password_plain)
+            )
+            if response.status_code != 200:
+                print(
+                    f"[Node {self.name}] Failed to synchronize posts for author {author}: {response.status_code}")
+                continue
+            posts = response.json()
+            from posts.serializers import PostSerializer
+            for post in posts['src']:
+                try:
+                    PostSerializer().get_or_create(post)
+                except Exception as e:
+                    print(f"[Node {self.name}] Failed to synchronize post {post}: {e}")
+                    continue
 
     def _synchronize_comments(self) -> None:
         assert self.internal_user is not None
@@ -594,9 +623,9 @@ class Node(models.Model):
         print(f"[Node {self.name}] Synchronizing comments for {len(post_list)} posts...")
         for post in post_list:
             response = requests.get(
-                self._make_absolute_url(f"/posts/{post.get_encoded_fqid()}/comments"),
+                self._make_absolute_url(post.fqid + "/comments"),
                 headers={"Accept": "application/json"},
-                auth=HTTPBasicAuth(self.internal_user.username, self.internal_user.password_plain)
+                auth=(self.internal_user.username, self.internal_user.password_plain)
             )
             if response.status_code != 200:
                 print(
@@ -618,9 +647,9 @@ class Node(models.Model):
         print(f"[Node {self.name}] Synchronizing likes for {len(hosted_users)} authors...")
         for author in hosted_users:
             response = requests.get(
-                self._make_absolute_url(f"/authors/{author.get_encoded_fqid()}/liked"),
+                self._make_absolute_url(author.fqid + "/liked"),
                 headers={"Accept": "application/json"},
-                auth=HTTPBasicAuth(self.internal_user.username, self.internal_user.password_plain)
+                auth=(self.internal_user.username, self.internal_user.password_plain)
             )
             if response.status_code != 200:
                 print(
@@ -641,7 +670,7 @@ class Node(models.Model):
             print(f"[Node {self.name}] Node is disabled, skipping synchronization")
             return
         self._synchronize_authors()
-        # self._synchronize_posts()
+        self._synchronize_posts()
         self._synchronize_comments()
         self._synchronize_likes()
 

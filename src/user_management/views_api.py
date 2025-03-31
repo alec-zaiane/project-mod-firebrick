@@ -20,15 +20,17 @@ from posts.models import Post
 from posts.serializers import PostSerializer
 from posts.viewsets import PostViewSet
 
-from user_management.serializers import FollowRequestSerializer
+from user_management.serializers import FollowRequestSerializer, AuthorSerializer
 from user_management.viewsets import FollowRequestViewSet
-from user_management.models import Author
+from user_management.models import Author, FollowRequest
 
 from core.utils.request_viewer import get_request_node, get_request_viewer
 from core.utils.redirects import API_UNAUTHORIZED, API_FORBIDDEN
 
 from drf_spectacular.utils import extend_schema
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer
+
+from uuid import UUID
 
 # ======================================================================================
 # Inbox handling
@@ -142,18 +144,18 @@ class InboxView(views.APIView):
         },
         tags=["Inbox"],
     )
-    def post(self, request: Request, target_author_fqid: str) -> Response:
+    def post(self, request: Request, target_author_uuid: UUID) -> Response:
         """Send an inbox item to this author's inbox"""
         type = request.data.get("type")
         if type is None:
             return Response({"error": "missing 'type' field under inbox item"}, 400)
 
         # make sure the author FQID is valid
-        if not target_author_fqid:
-            return Response({"error": "missing 'target_author_fqid' field"}, 400)
-        target_author = Author.local_authors.find_by_encoded_fqid(target_author_fqid)
+        if not target_author_uuid:
+            return Response({"error": "missing 'target_author_uuid' field"}, 400)
+        target_author = Author.local_authors.find_by_uuid(target_author_uuid)
         if target_author is None:
-            return Response({"error": "Author not found", "fqid": target_author_fqid}, 404)
+            return Response({"error": "Author not found", "uuid": target_author_uuid}, 404)
 
         handler = self._find_handler_for_type(type)
         if handler is not None:
@@ -295,3 +297,71 @@ class PostInboxHandler(InboxHandler):
 
 
 register_inbox_handler(PostInboxHandler())
+
+
+class FollowDecisionInboxHandler(InboxHandler):
+    """
+    Receive a follow-decision inbox object to approve/deny a follow request
+    example:
+    ```
+    {
+        "type": "follow-decision",
+        "decision": "true",
+        "actor": {
+            "type": "author",
+            "id": "http://370ea.yeg.rac.sh/api/authors/1",
+            "host": "http://370ea.yeg.rac.sh/api/",
+            "displayName": "blue",
+            "github": "None",
+            "profileImage": "None",
+            "page": "http://370ea.yeg.rac.sh/authors/blue"
+        },
+        "object": {
+            "type": "author",
+            "id": "http://10.2.4.248:8000/api/authors/7",
+            "host": "http://10.2.4.248:8000/api/",
+            "displayName": "TestProfile1",
+            "github": "https://github.com/totallyrealgithub",
+            "profileImage": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQXTM-nt34tD8LUQBFbWEKGSdzpbacaHXenmA&s",
+            "page": "http://10.2.4.248:8000/authors/7"
+        }
+    }
+    ```
+    """
+
+    def __init__(self) -> None:
+        super().__init__("follow-decision")
+
+    @property
+    def serializer(self) -> None:  # type: ignore # pragma: no cover
+        return None
+
+    def post(self, request: Request, target_author: Author) -> Response:
+        # TODO this should ideally be a serializer/viewset, not logic here
+        json = request.data
+        if not json.get("decision"):
+            return Response({"error": "missing 'decision' field"}, 400)
+        if not json.get("object") or not json.get("actor"):
+            return Response({"error": "missing 'object' or 'actor' field"}, 400)
+        actor = AuthorSerializer().to_internal_value(json["actor"])
+        object = AuthorSerializer().to_internal_value(json["object"])
+        if not actor or not object:
+            return Response({"error": "invalid 'object' or 'actor' field"}, 400)
+        if not isinstance(actor, Author) or not isinstance(object, Author):
+            return Response({"error": "invalid 'object' or 'actor' field"}, 400)
+        try:
+            decision = bool(json.get("decision"))
+        except ValueError:
+            return Response({"error": "invalid 'decision' field"}, 400)
+        if decision:
+            # approved
+            actor.following.add(target_author)
+        # remove the follow request object
+        existing_follow_request = FollowRequest.objects.filter(
+            follower=actor, followee=object).first()
+        if existing_follow_request:
+            existing_follow_request.delete()
+        return Response({"status": "success"}, status=200)
+
+
+register_inbox_handler(FollowDecisionInboxHandler())
