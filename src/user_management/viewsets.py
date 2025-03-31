@@ -280,7 +280,7 @@ class FollowRequestViewSet(viewsets.ModelViewSet[FollowRequest]):
     lookup_value_regex = ".+"
     queryset = FollowRequest.objects.all()
     serializer_class = FollowRequestSerializer
-    authentication_classes = [NodeUserBasicAuthentication]
+    # authentication_classes = [NodeUserBasicAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get_object(self) -> FollowRequest:
