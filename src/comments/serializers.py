@@ -99,15 +99,20 @@ class CommentSerializer(serializers.ModelSerializer[Comment]):
 
     def to_internal_value(self, data: dict[str, Any]) -> dict[str, Any]:
         if data.get("type") != "comment":
-            raise ValidationError("Comment object must always have type comment")
+            raise ValidationError({"type": "Comment object must always have type comment"})
+        if 'contentType' not in data:
+            raise ValidationError({"contentType": "Missing contentType"})
         comment_type = CONTENT_TYPE_WEB_MAP_REVERSE.get(data["contentType"], None)
         if comment_type is None:
-            raise ValidationError(
-                f"Unsupported content type {data['contentType']}, expected one of {list(CONTENT_TYPE_WEB_MAP_REVERSE.keys())}")
+            raise ValidationError({
+                "contentType": f"Unsupported content type {data['contentType']}, expected one of {list(CONTENT_TYPE_WEB_MAP_REVERSE.keys())}"
+            })
 
         found_post = Post.visible_posts.find_by_fqid(data["post"])
         if found_post is None:
-            raise ValidationError(f"Could not find post with id {data['post']}")
+            raise ValidationError({
+                "post": f"Could not find post with id {data['post']}"
+            })
 
         # before returning, make sure all `likes` are accounted for in our database
         if data.get("likes"):
@@ -117,8 +122,8 @@ class CommentSerializer(serializers.ModelSerializer[Comment]):
 
         found_author = AuthorSerializer().get_or_create(data["author"])
         if found_author is None:
-            raise ValidationError(f"Could not find author with id {data['author']['id']}")
-
+            raise ValidationError(
+                {"author": f"Could not find author with id {data['author']['id']}"})
         return {
             "author": found_author,
             "content": data["comment"],

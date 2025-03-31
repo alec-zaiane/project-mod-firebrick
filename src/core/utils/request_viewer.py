@@ -8,3 +8,10 @@ def get_request_viewer(request: HttpRequest) -> Optional[LocalAuthor]:
     if not request.user.is_authenticated:
         return None
     return Author.local_authors.find_author_with_user(request.user)
+
+
+def get_request_node(request: HttpRequest) -> Optional[Node]:
+    """Get the viewing Node from the request object"""
+    if not request.user.is_authenticated:
+        return None
+    return Node.objects.filter(internal_user=request.user).first()

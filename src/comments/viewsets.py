@@ -5,6 +5,8 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiRespon
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from rest_framework.exceptions import ValidationError
+
 from comments.serializers import CommentSerializer
 from comments.models import Comment
 
@@ -62,7 +64,8 @@ class CommentViewSet(viewsets.ModelViewSet[Comment]):
     )
     def create(self, request: Request) -> Response:
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            return Response({"detail": "malformed comment", "comment": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         validated_data: dict[str, Any] = serializer.validated_data
         comment = serializer.create(validated_data)
         return Response(serializer.to_representation(comment), status=status.HTTP_201_CREATED)

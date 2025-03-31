@@ -3,13 +3,17 @@ from typing import Optional, Any
 import abc
 
 from rest_framework import views
+from rest_framework.viewsets import ModelViewSet
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.serializers import Serializer
 
 from likes.serializers import LikeSerializer
+from likes.viewsets import LikeViewSet
+
 from comments.serializers import CommentSerializer
+from comments.viewsets import CommentViewSet
 
 from posts.models import Post
 
@@ -17,7 +21,7 @@ from user_management.serializers import FollowRequestSerializer
 from user_management.viewsets import FollowRequestViewSet
 from user_management.models import Author
 
-from core.utils.request_viewer import get_request_viewer
+from core.utils.request_viewer import get_request_node
 from core.utils.redirects import API_UNAUTHORIZED
 
 from drf_spectacular.utils import extend_schema
@@ -67,6 +71,12 @@ class InboxHandler(abc.ABC):
     def post(self, request: Request, target_author: Author) -> Response:
         """Process the inbox item for the inbox of the target author, return a response"""
         ...
+
+    def _post_to_viewset(self, request: Request, viewset_instance: ModelViewSet[Any]) -> Response:
+        """Post to a viewset with the request object *calls the `create` method*"""
+        viewset_instance.setup(request)
+        viewset_instance.initial(request)
+        return viewset_instance.create(request)
 
 
 class InboxView(views.APIView):
@@ -169,25 +179,7 @@ class LikesInboxHandler(InboxHandler):
         return LikeSerializer  # pragma: no cover
 
     def post(self, request: Request, target_author: Author) -> Response:
-        serializer = LikeSerializer(data=request.data)
-        viewer = get_request_viewer(request)
-        if viewer is None:
-            return Response("User must be authenticated", status.HTTP_401_UNAUTHORIZED)
-        if serializer.is_valid():
-            # double check that the author has access to the target object
-            like_target = serializer.get_target()
-            if not like_target.check_can_be_seen_by(viewer):
-                return Response("User does not have access to target object", status.HTTP_403_FORBIDDEN)
-            like = serializer.create(serializer.validated_data)
-            return Response({
-                "detail": "Like Created",
-                "like": serializer.to_representation(like)
-            }, status.HTTP_201_CREATED)
-        else:
-            return Response({
-                "error": "Invalid Like",
-                "like": serializer.errors
-            }, status.HTTP_400_BAD_REQUEST)
+        return self._post_to_viewset(request, LikeViewSet())
 
 
 register_inbox_handler(LikesInboxHandler())
@@ -208,20 +200,7 @@ class CommentInboxHandler(InboxHandler):
         return CommentSerializer  # pragma: no cover
 
     def post(self, request: Request, target_author: Author) -> Response:
-        viewer = get_request_viewer(request)
-        serializer = CommentSerializer(data=request.data)
-        if viewer is None:
-            return API_UNAUTHORIZED()
-        if serializer.is_valid():
-            # double check that the viewer has access to the target object
-            target = serializer.validated_data["post"]
-            if not isinstance(target, Post):
-                return Response("Target post is malformed", 404)
-            if not target.check_can_be_seen_by(viewer):
-                return Response("Viewer does not have access to the target post", 403)
-            comment = serializer.create(serializer.validated_data)
-            return Response({"detail": "Comment created", "comment": serializer.to_representation(comment)}, 201)
-        return Response({"error": "Error creating comment", "comment": serializer.errors}, 400)
+        return self._post_to_viewset(request, CommentViewSet())
 
 
 register_inbox_handler(CommentInboxHandler())
@@ -251,7 +230,7 @@ class FollowRequestInboxHandler(InboxHandler):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        return FollowRequestViewSet().create(request)
+        return self._post_to_viewset(request, FollowRequestViewSet())
 
 
 register_inbox_handler(FollowRequestInboxHandler())
