@@ -77,7 +77,6 @@ class TestNode2NodeAuthors(GeneralUserStoryApiTest):
         self.assertEqual(response2.status_code, 200)
         expected2 = {
             "type": "authors",
-            "author": [
             "authors": [
                 {
                     "type": "author",
