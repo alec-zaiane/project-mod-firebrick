@@ -1,6 +1,7 @@
 {% extends 'return-meta-base.html' %}
 
 {% load static %}
+{% load get_absolute_inbox_url %}
 
 {% block title %}{{ author.display_name }}'s Profile | {% endblock %}
 
@@ -41,7 +42,7 @@
                                 <div name="errorresponse-error"></div>
                             </form>
                         {% else %}
-                        <form id="follow-form" name="generic-form" action="{% url 'user_management:node2node_inbox' author.fqid|urlencode:"" %}">
+                        <form id="follow-form" name="generic-form" action="{% get_absolute_inbox_url author %}">
                                 {% csrf_token %}
                                 <input type="hidden" name="_method" value="POST">
                                 <input type="hidden" name="_after_action" value="reload">
