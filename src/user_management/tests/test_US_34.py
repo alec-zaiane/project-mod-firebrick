@@ -5,7 +5,7 @@ from rest_framework import status
 from core.utils.testing_utils import GeneralUserStoryApiTest
 
 
-@tag("US-Following/Friends")
+@tag("US-following/friends")
 class TestUserStory34(GeneralUserStoryApiTest):
     """
     Tests for User Story 34
@@ -29,7 +29,7 @@ class TestUserStory34(GeneralUserStoryApiTest):
         # author0 logs in and unfollows author1
         self.client.force_authenticate(user=author0.user)
         unfollow_url = reverse("user_management:node2node_authors-unfollow",
-                               kwargs={"fqid": author1.get_encoded_fqid()})
+                               kwargs={"uuid": author1.uuid})
         response = self.client.post(unfollow_url)
 
         # check for success

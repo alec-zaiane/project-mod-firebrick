@@ -3,7 +3,7 @@ from posts.models import Post, VisibilityTypes, PostTypes
 from core.utils.testing_utils import GeneralUserStoryApiTest
 
 
-@tag("US-Visibility")
+@tag("US-visibility")
 class TestUserStory22(GeneralUserStoryApiTest):
     """
     Tests for User Story 22

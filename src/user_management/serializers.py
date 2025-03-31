@@ -35,7 +35,7 @@ class AuthorSerializer(serializers.ModelSerializer[Author]):
     def to_representation(self, instance: Author) -> dict[str, Any]:
         if not isinstance(instance, Author):
             raise ValueError(f"AuthorSerializer can only serialize Author objects, got {instance}")
-        author_node_url = instance.host_node.host_url
+        author_node_url = instance.host_node.get_host_url_slash()
         return {
             "type": "author",
             "id": instance.fqid,
@@ -47,7 +47,11 @@ class AuthorSerializer(serializers.ModelSerializer[Author]):
 
     def to_internal_value(self, data: dict[str, Any]) -> dict[str, Any]:
         if data.get("type") != "author":
-            raise ValidationError("Author object must always have type author")
+            raise ValidationError({
+                "type": "Author object must always have type author",
+            })
+        if data.get("profileImage", None) is None:
+            data["profileImage"] = ""
         return {
             "fqid": data["id"],
             "host__host_url": data["host"],
@@ -60,10 +64,10 @@ class AuthorSerializer(serializers.ModelSerializer[Author]):
         try:
             return Author.objects.get_by_fqid(data["id"])
         except Author.DoesNotExist:
-            print(data["host"])
-            print(data)
             host_node = Node.external_nodes.find_node(data["host"])
             assert host_node is not None
+            if data.get("profileImage", None) is None:
+                data["profileImage"] = ""
             return Author.objects.create(
                 fqid=data["id"],
                 host_node=host_node,
@@ -88,15 +92,21 @@ class FollowRequestSerializer(serializers.ModelSerializer[FollowRequest]):
 
     def to_internal_value(self, data: dict[str, Any]) -> dict[str, Any]:
         if data.get("type") != "follow":
-            raise ValidationError("Follow request object must always have type follow")
+            raise ValidationError({
+                "type": "Follow request object must always have type follow",
+            })
         try:
             follower = Author.objects.get_by_fqid(data["actor"]["id"])
         except Exception as e:
-            raise ValidationError(f"Invalid actor: {e}")
+            raise ValidationError({
+                'actor': f"Invalid actor: {e}",
+            })
         try:
             followee = Author.objects.get_by_fqid(data["object"]["id"])
         except Exception as e:
-            raise ValidationError(f"Invalid object: {e}")
+            raise ValidationError({
+                "object": f"Invalid object: {e}",
+            })
 
         host_node = followee.host_node
 

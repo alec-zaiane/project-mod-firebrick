@@ -47,12 +47,19 @@ urlpatterns: list[URLPattern | URLResolver] = [
          InboxView.as_view(),
          name="node2node_inbox"
          ),
-    path("api/authors/search/", AuthorSearchAPIView.as_view(), name="author_search"),
 
+    path("api/authors/<uuid:target_author_uuid>/inbox/",
+         InboxView.as_view(),
+         name="node2node_inbox_slash"
+         ),
 
+    path("api/authors/search/",
+         AuthorSearchAPIView.as_view(),
+         name="author_search"),
 
     path("api/follow-requests/<str:target_fqid>/request-follow",
-         FollowRequestByViewer.as_view(), name="follow_request"),
+         FollowRequestByViewer.as_view(),
+         name="follow_request"),
 ]
 
 router = routers.SimpleRouter()
@@ -66,15 +73,15 @@ urlpatterns += router.urls
 # for some reason, percent decoding is done before the regex is matched, making all FQIDs either break themselves, or break any trailing URL
 urlpatterns += [
     # For Authors:
-    path("api/authors/<str:fqid>/unfollow",
+    path("api/authors/<uuid:uuid>/unfollow",
          AuthorViewSet.as_view({"post": "unfollow"}),
          name="node2node_authors-unfollow"),
 
     # For Follow requests:
-    path("api/follow-requests/<str:fqid>/approve",
+    path("api/follow-requests/<uuid:uuid>/approve",
          FollowRequestViewSet.as_view({"post": "approve_follow_request"}),
          name="node2node_follow_requests-approve"),
-    path("api/follow-requests/<str:fqid>/deny",
+    path("api/follow-requests/<uuid:uuid>/deny",
          FollowRequestViewSet.as_view({"post": "deny_follow_request"}),
          name="node2node_follow_requests-deny"),
     path("api/follow-requests/pending-count",

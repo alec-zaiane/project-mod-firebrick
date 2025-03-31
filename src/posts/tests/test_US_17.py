@@ -3,7 +3,7 @@ from posts.models import Post, VisibilityTypes, PostTypes
 from core.utils.testing_utils import GeneralUserStoryApiTest
 
 
-@tag("US-Reading", "check-medium")
+@tag("US-reading", "check-medium")
 class TestUserStory17(GeneralUserStoryApiTest):
     """
     Tests for User Story 17

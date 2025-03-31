@@ -18,22 +18,25 @@ from core.utils.request_viewer import get_request_viewer
 
 from urllib.parse import unquote
 
+from user_management.authentication import NodeUserBasicAuthentication
+from rest_framework.permissions import IsAuthenticated
+
 
 class AuthorViewSet(viewsets.ModelViewSet[Author]):
     # suggested by copilot: lookup_field/lookup_url_kwarg/lookup_value_regex to change the lookup field to an encoded fqid
-    lookup_field = "fqid"
-    lookup_url_kwarg = "fqid"
+    lookup_field = "uuid"
+    lookup_url_kwarg = "uuid"
     lookup_value_regex = ".+"
     queryset = Author.objects.all()
     serializer_class = AuthorSerializer
-    # permission_classes = [IsAuthenticated, AuthorPermission]
+    permission_classes = [IsAuthenticated, AuthorPermission]
 
     def get_object(self) -> Author:
         """Allow for encoded fqid based lookup"""
-        fqid = self.kwargs.get("fqid", None)
-        if fqid is not None:
-            lookup_field = "fqid"
-            lookup_value = unquote(fqid)
+        uuid = self.kwargs.get("uuid", None)
+        if uuid is not None:
+            lookup_field = "uuid"
+            lookup_value = uuid
             return self.get_queryset().get(**{lookup_field: lookup_value})
         return super().get_object()
 
@@ -61,9 +64,9 @@ class AuthorViewSet(viewsets.ModelViewSet[Author]):
                     "type": "object",
                     "properties": {
                         "type": {"type": "string", "example": "authors"},
-                        "items": {
+                        "author": {
                             "type": "array",
-                            "items": {"$ref": "#/components/schemas/Author"},
+                            "author": {"$ref": "#/components/schemas/Author"},
                         },
                     },
                 },
@@ -78,7 +81,7 @@ class AuthorViewSet(viewsets.ModelViewSet[Author]):
             super_data = super_data["results"]  # fix for pagination
         return Response({
             "type": "authors",
-            "items": super_data
+            "authors": super_data
         })
 
     @extend_schema(
@@ -268,21 +271,24 @@ class AuthorViewSet(viewsets.ModelViewSet[Author]):
         viewer.following.remove(target_author)
         return Response({"detail": "Unfollowed successfully."}, status=status.HTTP_200_OK)
 
+
 class FollowRequestViewSet(viewsets.ModelViewSet[FollowRequest]):
     # suggested by copilot: lookup_field/lookup_url_kwarg/lookup_value_regex to change the lookup field to an encoded fqid
-    lookup_field = "fqid"
-    lookup_url_kwarg = "fqid"
+
+    lookup_field = "uuid"
+    lookup_url_kwarg = "uuid"
     lookup_value_regex = ".+"
     queryset = FollowRequest.objects.all()
     serializer_class = FollowRequestSerializer
-    # permission_classes = [IsAuthenticated]
+    # authentication_classes = [NodeUserBasicAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def get_object(self) -> FollowRequest:
         """Allow for encoded fqid based lookup"""
-        fqid = self.kwargs.get("fqid", None)
-        if fqid is not None:
-            lookup_field = "fqid"
-            lookup_value = unquote(fqid)
+        uuid = self.kwargs.get("uuid", None)
+        if uuid is not None:
+            lookup_field = "uuid"
+            lookup_value = uuid
             return self.get_queryset().get(**{lookup_field: lookup_value})
         return super().get_object()
 
@@ -312,17 +318,21 @@ class FollowRequestViewSet(viewsets.ModelViewSet[FollowRequest]):
         tags=["Follow Requests"],
     )
     def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        viewer = get_request_viewer(request)
-        if request.user.is_anonymous or viewer is None:
+        print("Request user:", request.user)
+        print("User type:", getattr(request.user, "type", None))
+        # viewer = get_request_viewer(request)
+        # if request.user.is_anonymous or viewer is None:
+        #     return Response({"error": "User must be authenticated."}, status=status.HTTP_401_UNAUTHORIZED)
+        if request.user.is_anonymous:
             return Response({"error": "User must be authenticated."}, status=status.HTTP_401_UNAUTHORIZED)
 
         # deserialize and validate the incoming follow request data
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         # check that the actor in the request matches the logged-in user
-        input_actor = request.data.get("actor", {})
-        if input_actor.get("id") and viewer.fqid != input_actor["id"]:
-            return Response({"error": "Logged in user does not match actor in request."}, status=status.HTTP_403_FORBIDDEN)
+        # input_actor = request.data.get("actor", {})
+        # if input_actor.get("id") and viewer.fqid != input_actor["id"]:
+        #     return Response({"error": "Logged in user does not match actor in request."}, status=status.HTTP_403_FORBIDDEN)
 
         follow_request = serializer.save()
         return Response(self.get_serializer(follow_request).data, status=status.HTTP_201_CREATED)
@@ -489,6 +499,7 @@ class FollowRequestViewSet(viewsets.ModelViewSet[FollowRequest]):
             )
 
         # approve by adding the follow relationship and deleting the request
+        print("adding follower to followee")
         follow_request.follower.following.add(follow_request.followee)
         follow_request.delete()
         return Response({"detail": "Follow request approved."}, status=status.HTTP_200_OK)

@@ -6,7 +6,7 @@ from user_management.models import FollowRequest
 from user_management.serializers import AuthorSerializer
 
 
-@tag("US-Following/Friends")
+@tag("US-following/friends")
 class TestUserStory35(GeneralUserStoryApiTest):
     """
     Tests for User Story 35
@@ -42,7 +42,7 @@ class TestUserStory35(GeneralUserStoryApiTest):
         self.client.force_authenticate(user=author1.user)
         fr_0_to_1 = FollowRequest.objects.get_follow_request(author0, author1)
         approve_url_0_to_1 = reverse(
-            "user_management:node2node_follow_requests-approve", kwargs={"fqid": fr_0_to_1.get_encoded_fqid()})
+            "user_management:node2node_follow_requests-approve", kwargs={"uuid": fr_0_to_1.uuid})
         approve_resp_0_to_1 = self.client.post(approve_url_0_to_1)
         self.assertEqual(approve_resp_0_to_1.status_code, status.HTTP_200_OK)
 
@@ -67,7 +67,7 @@ class TestUserStory35(GeneralUserStoryApiTest):
         self.client.force_authenticate(user=author0.user)
         fr_1_to_0 = FollowRequest.objects.get_follow_request(author1, author0)
         approve_url_1_to_0 = reverse(
-            "user_management:node2node_follow_requests-approve", kwargs={"fqid": fr_1_to_0.get_encoded_fqid()})
+            "user_management:node2node_follow_requests-approve", kwargs={"uuid": fr_1_to_0.uuid})
         approve_resp_1_to_0 = self.client.post(approve_url_1_to_0)
         self.assertEqual(approve_resp_1_to_0.status_code, status.HTTP_200_OK)
 

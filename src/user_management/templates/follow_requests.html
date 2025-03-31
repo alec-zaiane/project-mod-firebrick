@@ -2,7 +2,7 @@
 
 {% load static %}
 
-{% block title %}Follow Requests{% endblock %}
+{% block title %}Follow Requests | {% endblock %}
 
 {% block content %}
 <div class="follow-requests">
@@ -14,10 +14,15 @@
             <img class="profile-image" src="{{ follow_request.follower.profile_image }}"/>
             {% endif %}
             <h3 class="display-name">{{ follow_request.follower.display_name }}</h3>
-            <h5 class="username">{{ follow_request.follower.username }}</h5>
+            {% if follow_request.follower.username %}
+                <h5 class="username">{{ follow_request.follower.username }}</h5>
+            {% endif %}
+            {% if follow_request.host_node != viewer.host_node %}
+                {% include 'external_node_select.html' with site_url=follow_request.follower.host_node.host_site_url host_url=follow_request.follower.host_node.host_url %}
+            {% endif %}
         </a>
         <div class="selector">
-            <form class="follow-request-form" name="generic-form" action="{% url 'user_management:node2node_follow_requests-approve' follow_request.get_encoded_fqid %}">
+            <form class="follow-request-form" name="generic-form" action="{% url 'user_management:node2node_follow_requests-approve' follow_request.uuid%}">
                 {% csrf_token %}
                 <input type="hidden" name="_method" value="POST">
                 <input type="hidden" name="_after_action" value="reload">
@@ -25,7 +30,7 @@
                     <div class="follow-request-button accept"><img class="accept-decline-icon" src="{% static 'svg/yes.svg' %}"></div>
                 </button>
             </form>
-            <form class="follow-request-form" name="generic-form" action="{% url 'user_management:node2node_follow_requests-deny' follow_request.get_encoded_fqid %}">
+            <form class="follow-request-form" name="generic-form" action="{% url 'user_management:node2node_follow_requests-deny' follow_request.uuid %}">
                 {% csrf_token %}
                 <input type="hidden" name="_method" value="POST">
                 <input type="hidden" name="_after_action" value="reload">

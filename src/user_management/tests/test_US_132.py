@@ -2,12 +2,15 @@ from django.urls import reverse
 
 from django.test import tag
 
+import requests
 from rest_framework import status
 
 from core.utils.testing_utils import AdminUITestCase, GeneralUserStoryApiTest
 from user_management.models import JoinRequest, Author, User, Node
 
 from user_management.forms import JoinRequestForm
+
+from user_management.tests.mock_node import MockNode
 
 
 @tag("US-node-management")
@@ -37,21 +40,25 @@ class UserStory132TestUI(AdminUITestCase):
     https://github.com/uofa-cmput404/w25-project-mod-firebrick/issues/132
     """
 
+    def setUp(self) -> None:
+        super().setUp()
+        # monkeypatch the mock nodes into the Node.external_nodes manager
+        Node.external_nodes = MockNode.mock_nodes  # type: ignore
+
     def test_can_add_node(self) -> None:
         self.login_as_admin()
-
-        # create the user of the node
-        self.visit("/admin/user_management/user/add/")
-        self.find_element_by_id("id_password").send_keys("password")
-        self.find_element_by_id("id_username").send_keys("node_abc")
-        self.find_element_by_id("id_type").as_selector_choose_value("Node")
-        self.find_elements_by_selector("input[type=submit]")[0].click()
 
         # create the node
         self.visit("/admin/user_management/node/add/")
         self.find_element_by_id("id_name").send_keys("Other node")
+        # we have to use out own node to verify validation
         self.find_element_by_id("id_host_url").send_keys("http://example.com/api")
-        self.find_element_by_id("id_internal_user").as_selector_choose_value("node_abc")
+        # connect to the user we just made
+        self.find_element_by_id("id_internal_username").send_keys("user_abc")
+        self.find_element_by_id("id_internal_password").send_keys("password")
+        # create an external user to be connected to
+        self.find_element_by_id("id_external_username").send_keys("user2_abc")
+        self.find_element_by_id("id_external_password").send_keys("password")
         self.find_elements_by_selector("input[type=submit]")[0].click()
 
         # make sure the node was created
@@ -61,6 +68,10 @@ class UserStory132TestUI(AdminUITestCase):
         self.assertEqual(node_fetched.host_url, "http://example.com/api")
         self.assertEqual(node_fetched.name, "Other node")
         assert node_fetched.internal_user is not None  # for mypy
-        self.assertEqual(node_fetched.internal_user.username, "node_abc")
+        assert node_fetched.external_user is not None  # for mypy
+        self.assertEqual(node_fetched.internal_user.username, "user_abc")
+        self.assertEqual(node_fetched.internal_user.password_plain, "password")
+        self.assertEqual(node_fetched.external_user.username, "user2_abc")
+        self.assertEqual(node_fetched.external_user.password_plain, "password")
 
         self.end_test()

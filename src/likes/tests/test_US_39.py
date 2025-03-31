@@ -1,6 +1,5 @@
 from django.test import tag
 from django.urls import reverse
-from unittest import skip
 
 from rest_framework import status
 
@@ -11,10 +10,6 @@ from posts.models import PostTypes, VisibilityTypes
 from likes.models import Like
 
 from user_management.serializers import AuthorSerializer
-
-from unittest import skip
-
-from urllib.parse import quote
 
 
 @tag("US-comments/likes")
@@ -32,13 +27,14 @@ class TestUserStory39(GeneralUserStoryApiTest):
         self.initialize_sample_text_posts(posts_per_author=1)
 
         self.client.force_authenticate(user=self.sample_authors[0].user)
-        url = reverse("user_management:node2node_inbox", args=[self.sample_authors[1].uuid])
+        url = reverse("user_management:node2node_inbox", args=[
+                      self.sample_authors[1].uuid])
         like_json = {
             "type": "like",
             "author": AuthorSerializer().to_representation(self.sample_authors[0]),
             "published": "2021-10-10T10:00:00Z",
             "id": "http://nodeaaaa.com/api/authors/111/liked/166",
-            "object": quote(self.sample_posts[0][0].fqid, safe="")
+            "object": self.sample_posts[0][0].fqid
         }
 
         response = self.client.post(
@@ -60,13 +56,14 @@ class TestUserStory39(GeneralUserStoryApiTest):
             posts_per_author=1, visibility_type=VisibilityTypes.FRIENDS_ONLY)
 
         self.client.force_authenticate(user=self.sample_authors[1].user)
-        url = reverse("user_management:node2node_inbox", args=[self.sample_authors[1].uuid])
+        url = reverse("user_management:node2node_inbox", args=[
+                      self.sample_authors[1].uuid])
         like_json = {
             "type": "like",
             "author": AuthorSerializer().to_representation(self.sample_authors[0]),
             "published": "2021-10-10T10:00:00Z",
             "id": "http://nodeaaaa.com/api/authors/111/liked/166",
-            "object": quote(self.sample_posts[0][0].fqid, safe="")
+            "object": self.sample_posts[0][0].fqid
         }
 
         response = self.client.post(
@@ -92,21 +89,21 @@ class TestUserStory39(GeneralUserStoryApiTest):
             content_type=PostTypes.PLAINTEXT
         )
 
-        url = reverse("user_management:node2node_inbox", args=[self.sample_authors[1].uuid])
+        url = reverse("user_management:node2node_inbox", args=[
+                      self.sample_authors[1].uuid])
         self.client.force_authenticate(user=self.sample_authors[0].user)
         like_json = {
             "type": "like",
             "author": AuthorSerializer().to_representation(self.sample_authors[0]),
             "published": "2021-10-10T10:00:00Z",
-            "id": "http://nodeaaaa.com/api/authors/111/liked/166",
-            "object": quote(comment.fqid, safe="")
+            "id": "http://nodeaaaa.com/api/authors/111/liked/166",  # up to the client
+            "object": comment.fqid
         }
-        self.client.post(url, like_json, format="json")
+        response = self.client.post(url, like_json, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         comment.refresh_from_db()
         self.assertEqual(comment.likes.count(), 1)
         first_like = comment.likes.first()
         assert first_like is not None  # for mypy
         self.assertEqual(first_like.author.uuid, self.sample_authors[0].uuid)
         self.assertEqual(first_like.target.uuid, comment.uuid)
-
-

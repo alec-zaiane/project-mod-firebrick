@@ -38,10 +38,18 @@ def get_actions(node: MockNode) -> list[Action]:
 
 class MockNodeManager(models.Manager["MockNode"]):
     def get_queryset(self) -> models.QuerySet[MockNode]:
-        return super().get_queryset().filter(is_local_node=False)
+        return super().get_queryset().filter(is_local_node=False, is_disabled=False)
 
-    def create_node(self, host_url: str, internal_user: User) -> MockNode:
-        return self.create(host_url=host_url, internal_user=internal_user)
+    def create_node(self, name: str, host_url: str, user: User, host_site_url: str = "") -> MockNode:
+        return self.create(host_url=host_url, internal_user=user, name=name)
+
+    def verify_connection(self, host_url: str, internal_username: str, internal_password: str) -> requests.Response:
+        # Simulate a successful connection verification
+        return DUMMY_RESPONSE
+
+    def find_node(self, host_url: str) -> Optional[MockNode]:
+        # Simulate finding a node
+        return self.filter(host_url=host_url).first()
 
 
 class MockNode(Node):
@@ -77,3 +85,18 @@ class MockNode(Node):
 
     def clear_action_log(self) -> None:
         ACTION_LOG[self.uuid] = []
+
+
+def monkeypatch_mock_nodes() -> None:
+    Node.external_nodes = MockNode.mock_nodes  # type: ignore
+    MockNode_added_methods = set(dir(MockNode)) - set(dir(Node))
+    override_methods = {
+        "_post",
+        "_put",
+        "_delete",
+    }
+    MockNode_added_methods = MockNode_added_methods.union(override_methods)
+
+    for method_name in MockNode_added_methods:
+        method = getattr(MockNode, method_name)
+        setattr(Node, method_name, method)

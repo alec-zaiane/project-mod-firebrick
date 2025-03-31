@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     from likes.models import Like
@@ -54,11 +54,29 @@ class Comment(AuthoredApiObject):
         from comments.serializers import CommentSerializer
         return CommentSerializer().to_representation(self)
 
-    def node2node_get_creation_url(self) -> str:
-        return reverse("comments:node2node_comments-list")
+    def _propagate_post_save_to_other_nodes(self, created: bool) -> None:
+        if not created:
+            return super()._propagate_post_save_to_other_nodes(created)
+        # if this is new, we need to send it to the inbox of the author of the post, as well as all of their followers
+        recipients = [self.post.author] + list(self.post.author.followers.all())
+        for recipient in recipients:
+            if recipient.host_node.is_local_node:
+                # don't send to self
+                return
+            # send to the inbox of the author of the post
+            recipient.host_node.send_create(
+                self.node2node_encode_as_class_json_dict(),
+                to=self.node2node_get_creation_url(recipient)
+            )
+
+    def node2node_get_creation_url(self, author_for_inbox: Optional[Author] = None) -> str:
+        if not author_for_inbox:
+            return reverse("comments:node2node_comments-list")
+        return author_for_inbox.node2node_get_inbox_url()
 
     def node2node_get_update_url(self) -> str:
-        return reverse("comments:node2node_comments-detail", kwargs={"fqid": self.get_encoded_fqid()})
+        return self.fqid
+        # return reverse("comments:node2node_comments-detail", kwargs={"uuid": self.uuid})
 
     def node2node_get_deletion_url(self) -> str:
         return self.node2node_get_update_url()

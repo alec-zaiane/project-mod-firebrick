@@ -3,14 +3,22 @@ from typing import Optional
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.authentication import BasicAuthentication
 
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
+from django.shortcuts import get_object_or_404
+from user_management.models import Author
+
 
 from posts.models import Post
 from comments.models import Comment
 from likes.models import Like
 
 from core.utils.request_viewer import get_request_viewer
+from likes.serializers import LikeSerializer
+
+from uuid import UUID
 
 # Create your views here.
 
@@ -139,3 +147,21 @@ class LikeByViewer(APIView):
             return Response({"error": "You have not liked this post or comment"}, status=404)
         target.likes.filter(author=viewer).delete()
         return Response(status=204)
+
+
+class AuthorLikesAPIView(APIView):
+    """API endpoint that returns all likes by an author, used for node synchronization"""
+    authentication_classes = [BasicAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request, author_uuid: UUID) -> Response:
+        author = Author.local_authors.find_by_uuid(author_uuid)
+        if author is None:
+            return Response({"detail": "author not found"}, status=404)
+
+        likes = Like.objects.filter(author=author)
+        serializer = LikeSerializer(likes, many=True)
+        return Response({
+            "type": "likes",
+            "src": serializer.data
+        })

@@ -26,7 +26,8 @@ class TestUserStory38(GeneralUserStoryApiTest):
         self.initialize_sample_text_posts(posts_per_author=1)
 
         self.client.force_authenticate(user=self.sample_authors[0].user)
-        url = reverse("user_management:node2node_inbox", args=[self.sample_authors[1].uuid])
+        url = reverse("user_management:node2node_inbox", args=[
+                      self.sample_authors[1].uuid])
         comment_json = {
             "type": "comment",
             "author": AuthorSerializer().to_representation(self.sample_authors[0]),
@@ -34,7 +35,7 @@ class TestUserStory38(GeneralUserStoryApiTest):
             "contentType": "text/plain",
             "published": "2021-03-01T00:00:00Z",
             "id": f"{Node.objects.get_local_node().host_url}/comments/1",
-            "post": self.sample_posts[1][0].get_encoded_fqid(),
+            "post": self.sample_posts[1][0].fqid,
         }
         response = self.client.post(url, comment_json, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -53,7 +54,8 @@ class TestUserStory38(GeneralUserStoryApiTest):
             posts_per_author=1, visibility_type=VisibilityTypes.FRIENDS_ONLY)
 
         self.client.force_authenticate(user=self.sample_authors[0].user)
-        url = reverse("user_management:node2node_inbox", args=[self.sample_authors[1].uuid])
+        url = reverse("user_management:node2node_inbox", args=[
+                      self.sample_authors[1].uuid])
         comment_json = {
             "type": "comment",
             "author": AuthorSerializer().to_representation(self.sample_authors[0]),
@@ -61,7 +63,7 @@ class TestUserStory38(GeneralUserStoryApiTest):
             "contentType": "text/plain",
             "published": "2021-03-01T00:00:00Z",
             "id": f"{Node.objects.get_local_node().host_url}/comments/1",
-            "post": self.sample_posts[1][0].get_encoded_fqid(),
+            "post": self.sample_posts[1][0].fqid,
         }
         response = self.client.post(url, comment_json, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
@@ -75,7 +77,8 @@ class TestUserStory38(GeneralUserStoryApiTest):
             posts_per_author=1, visibility_type=VisibilityTypes.UNLISTED)
 
         self.client.force_authenticate(user=self.sample_authors[0].user)
-        url = reverse("user_management:node2node_inbox", args=[self.sample_authors[1].uuid])
+        url = reverse("user_management:node2node_inbox", args=[
+                      self.sample_authors[1].uuid])
         comment_json = {
             "type": "comment",
             "author": AuthorSerializer().to_representation(self.sample_authors[0]),
@@ -83,7 +86,7 @@ class TestUserStory38(GeneralUserStoryApiTest):
             "contentType": "text/plain",
             "published": "2021-03-01T00:00:00Z",
             "id": f"{Node.objects.get_local_node().host_url}/comments/1",
-            "post": self.sample_posts[1][0].get_encoded_fqid(),
+            "post": self.sample_posts[1][0].fqid,
         }
         response = self.client.post(url, comment_json, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)

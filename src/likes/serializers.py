@@ -51,11 +51,15 @@ class LikeSerializer(serializers.ModelSerializer[Like]):
 
     def to_internal_value(self, data: dict[str, Any]) -> dict[str, Any]:
         if data.get("type") != "like":
-            raise ValidationError("Like object must always have type like")
-        maybe_post = Post.visible_posts.find_by_encoded_fqid(data["object"])
-        maybe_comment = Comment.objects.find_by_encoded_fqid(data["object"])
+            raise ValidationError({"type": "Like object must always have type like"})
+        if 'object' not in data:
+            raise ValidationError({"object": "Like object must have an object field"})
+        maybe_post = Post.visible_posts.find_by_fqid(data["object"])
+        maybe_comment = Comment.objects.find_by_fqid(data["object"])
         if maybe_post is None and maybe_comment is None:
-            raise ValidationError(f"Could not find post or comment with id {data['object']}")
+            raise ValidationError({
+                "object": f"Could not find post or comment with id {data['object']}"
+            })
         return {
             "author": data["author"],
             "fqid": data["id"],
@@ -67,7 +71,7 @@ class LikeSerializer(serializers.ModelSerializer[Like]):
     def create(self, validated_data: dict[str, Any]) -> Like:
         author = validated_data.get("author")
         if isinstance(author, dict):
-            author = Author.objects.find_by_encoded_fqid(author["id"])
+            author = Author.objects.find_by_fqid(author["id"])
         if not isinstance(author, Author):
             raise ValueError(f"author must be an Author object, got {author}")
         target = self.get_target()
@@ -77,3 +81,15 @@ class LikeSerializer(serializers.ModelSerializer[Like]):
         if self.validated_data.get("_target_post") is not None:
             return self.validated_data["_target_post"]
         return self.validated_data["_target_comment"]
+
+    def get_or_create(self, data: dict[str, Any]) -> Like:
+        # if a like doesn't exist, create it, otherwise update and return it
+        like_dict = self.to_internal_value(data)
+        like = Like.objects.find_by_fqid(like_dict["fqid"])
+        if like is None:
+            like = self.create(like_dict)
+        else:
+            for key, value in like_dict.items():
+                setattr(like, key, value)
+            like.save()
+        return like

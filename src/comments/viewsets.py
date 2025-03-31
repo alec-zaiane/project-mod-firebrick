@@ -5,6 +5,8 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiRespon
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from rest_framework.exceptions import ValidationError
+
 from comments.serializers import CommentSerializer
 from comments.models import Comment
 
@@ -12,19 +14,19 @@ from urllib.parse import unquote
 
 
 class CommentViewSet(viewsets.ModelViewSet[Comment]):
-    # suggested by copilot: lookup_field/lookup_url_kwarg/lookup_value_regex to change the lookup field to an encoded fqid
-    lookup_field = "fqid"
-    lookup_url_kwarg = "fqid"
+    # suggested by copilot: lookup_field/lookup_url_kwarg/lookup_value_regex to change the lookup field to an encoded uuid
+    lookup_field = "uuid"
+    lookup_url_kwarg = "uuid"
     lookup_value_regex = ".+"
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
 
     def get_object(self) -> Comment:
-        """Allow for encoded fqid based lookup"""
-        fqid = self.kwargs.get("fqid", None)
-        if fqid is not None:
-            lookup_field = "fqid"
-            lookup_value = unquote(fqid)
+        """Allow for encoded uuid based lookup"""
+        uuid = self.kwargs.get("uuid", None)
+        if uuid is not None:
+            lookup_field = "uuid"
+            lookup_value = unquote(uuid)
             return self.get_queryset().get(**{lookup_field: lookup_value})
         return super().get_object()
 
@@ -43,7 +45,7 @@ class CommentViewSet(viewsets.ModelViewSet[Comment]):
             super_data = super_data["results"]
         return Response({
             "type": "comments",
-            "items": super_data
+            "author": super_data
         })
 
     @extend_schema(
@@ -62,17 +64,18 @@ class CommentViewSet(viewsets.ModelViewSet[Comment]):
     )
     def create(self, request: Request) -> Response:
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            return Response({"detail": "malformed comment", "comment": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         validated_data: dict[str, Any] = serializer.validated_data
         comment = serializer.create(validated_data)
         return Response(serializer.to_representation(comment), status=status.HTTP_201_CREATED)
 
     @extend_schema(
         summary="Get comment details",
-        description="Get details of a specific comment using its fully qualified ID (FQID)",
+        description="Get details of a specific comment using its fully qualified ID (uuid)",
         parameters=[
             OpenApiParameter(
-                name="fqid",
+                name="uuid",
                 type=str,
                 location=OpenApiParameter.PATH,
                 description="The fully qualified ID of the comment",
@@ -93,7 +96,7 @@ class CommentViewSet(viewsets.ModelViewSet[Comment]):
         description="Fully update a comment. All fields must be provided.",
         parameters=[
             OpenApiParameter(
-                name="fqid",
+                name="uuid",
                 type=str,
                 location=OpenApiParameter.PATH,
                 description="The fully qualified ID of the comment",
@@ -117,7 +120,7 @@ class CommentViewSet(viewsets.ModelViewSet[Comment]):
         description="Partially update a comment. Only provided fields will be updated.",
         parameters=[
             OpenApiParameter(
-                name="fqid",
+                name="uuid",
                 type=str,
                 location=OpenApiParameter.PATH,
                 description="The fully qualified ID of the comment",

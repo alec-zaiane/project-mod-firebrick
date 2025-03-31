@@ -29,7 +29,7 @@ class TestUserStory01(GeneralUserStoryApiTest):
         post = self.sample_authors[0].posts.get()
         # delete the post
         url = reverse("posts:api_posts-detail",
-                      kwargs={"fqid": post.get_encoded_fqid()})
+                      kwargs={"uuid": post.uuid})
         self.client.force_authenticate(user=self.sample_authors[0].user)
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
@@ -46,7 +46,7 @@ class TestUserStory01(GeneralUserStoryApiTest):
         self.initialize_sample_text_posts(posts_per_author=1)
 
         url = reverse("posts:api_posts-detail",
-                      kwargs={"fqid": self.sample_authors[0].posts.get().get_encoded_fqid()})
+                      kwargs={"uuid": self.sample_authors[0].posts.get().uuid})
         self.client.force_authenticate(user=self.sample_authors[1].user)
         response = self.client.delete(url)
         self.assertEqual(response.status_code, 403)

@@ -6,10 +6,12 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
 
-
+from comments.serializers import CommentSerializer
 from comments.models import Comment
 from posts.models import Post, PostTypes
 from core.utils.request_viewer import get_request_viewer
+
+from uuid import UUID
 
 
 # Create your views here.
@@ -28,3 +30,19 @@ class InternalCommentView(APIView):
             return Response({"detail": "comment is required"}, status=400)
         Comment.objects.create_comment(viewer, post, comment_text, PostTypes.PLAINTEXT)
         return Response({"detail": "comment created"}, status=201)
+
+
+class PostCommentsAPIView(APIView):
+    def get(self, request: Request, post_uuid: UUID) -> Response:
+        post = Post.visible_posts.filter(
+            uuid=post_uuid,
+            host_node__is_local_node=True,
+        ).first()
+        if post is None:
+            return Response({"error": "Post not found"}, status=status.HTTP_404_NOT_FOUND)
+        comments = Comment.objects.filter(post=post)
+        return Response({
+            "type": "comments",
+            "post": post.fqid,
+            "src": [CommentSerializer(c).data for c in comments]
+        })

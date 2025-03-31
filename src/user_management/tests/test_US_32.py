@@ -7,7 +7,7 @@ from user_management.models import FollowRequest
 from user_management.serializers import AuthorSerializer
 
 
-@tag("US-Following/Friends")
+@tag("US-following/friends")
 class TestUserStory32(GeneralUserStoryApiTest):
     """
     Tests for User Story 32
@@ -40,7 +40,7 @@ class TestUserStory32(GeneralUserStoryApiTest):
 
         # deny it
         deny_url = reverse("user_management:node2node_follow_requests-deny",
-                           kwargs={"fqid": fr.get_encoded_fqid()})
+                           kwargs={"uuid": fr.uuid})
         deny_response = self.client.post(deny_url)
         self.assertEqual(deny_response.status_code, status.HTTP_200_OK)
 
@@ -72,7 +72,7 @@ class TestUserStory32(GeneralUserStoryApiTest):
 
         # approve it
         approve_url = reverse("user_management:node2node_follow_requests-approve",
-                              kwargs={"fqid": fr2.get_encoded_fqid()})
+                              kwargs={"uuid": fr2.uuid})
         approve_response = self.client.post(approve_url)
         self.assertEqual(approve_response.status_code, status.HTTP_200_OK)
 

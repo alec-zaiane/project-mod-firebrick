@@ -7,7 +7,7 @@ from core.utils.testing_utils import GeneralUserStoryApiTest
 from posts.models import Post, VisibilityTypes
 
 
-@tag("US-Reading")
+@tag("US-reading")
 class TestProfilePublicPosts(GeneralUserStoryApiTest):
     """
     Tests for User Story 08:

@@ -5,6 +5,7 @@ from django.db.models import QuerySet
 from django.http import HttpRequest
 
 from core.utils.adminpanel import admin_action_on_queryset
+from user_management.forms import NodeAdminForm
 
 from . import models
 # Register your models here.
@@ -34,6 +35,36 @@ class AuthorAdmin(admin.ModelAdmin[models.Author]):
 @admin.register(models.Node)
 class NodeAdmin(admin.ModelAdmin[models.Node]):
     list_display = ('name', 'host_url', 'is_local_node')
+    form = NodeAdminForm
+    actions = ('synchronize',)
+    fieldsets = (
+        (None, {
+            'fields': ('name', 'host_url', 'host_site_url')
+        }), ("Remote Node User", {
+            "fields": ('internal_username', 'internal_password'),
+            "description": "These are the credentials used to authenticate with the remote node. These should be identical to the ones stored on the remote node."
+        }), ("Local User", {
+            "fields": ('external_username', 'external_password'),
+            "description": "These are the credentials the remote node would use to authenticate with the local node. The remote node should authenticate identically with these credentials when attempting connection."
+        }), ("Properties", {
+            'fields': ('is_local_node', 'is_disabled')
+        })
+    )
+
+    @admin.action(description="Synchronize selected nodes")
+    def synchronize(self, request: HttpRequest, queryset: QuerySet[models.Node]) -> None:
+        """
+        Synchronize the selected nodes with the remote nodes.
+        """
+        success = 0
+        for node in queryset:
+            try:
+                node.synchronize_all()
+                success += 1
+            except Exception as e:
+                messages.error(
+                    request, f"Failed to synchronize {node.name}: {e}")
+        messages.success(request, f"Successfully synchronized {success} nodes.")
 
 
 @admin.register(models.JoinRequest)
@@ -94,3 +125,9 @@ class JoinRequestAdmin(admin.ModelAdmin[models.JoinRequest]):
         actions = super().get_actions(request)
         actions.pop('delete_selected', None)
         return actions
+
+
+@admin.register(models.FollowRequest)
+class FollowRequestAdmin(admin.ModelAdmin[models.FollowRequest]):
+    list_display = ('uuid', 'follower', 'followee')
+    list_display_links = ('uuid', 'follower', 'followee')

@@ -35,11 +35,13 @@
             "file": "docs/testing-conventions.md"
         }
     ],
-    "python.testing.unittestEnabled": true,
-    "python.testing.cwd": "./src",
-    "python.testing.unittestArgs": [
-        "-p",
-        "*test*.py"
+    "python.testing.unittestEnabled": false,
+    "python.testing.cwd": "${workspaceFolder}/src",
+    "python.testing.pytestEnabled": true,
+    "python.testing.pytestArgs": [
+        "-n=auto",
     ],
-    "python.testing.pytestEnabled": false
+    "testing.displayedCoveragePercent": "minimum",
+    "testing.defaultGutterClickAction": "debug",
+    "testing.automaticallyOpenTestResults": "openOnTestFailure",
 }

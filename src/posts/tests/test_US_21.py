@@ -8,7 +8,7 @@ from posts.models import Post, VisibilityTypes
 from core.utils.testing_utils import UITestCase
 
 
-@tag("US-Visibility")
+@tag("US-visibility")
 class TestUserStory21(UITestCase):
     """
     Tests for User Story 21

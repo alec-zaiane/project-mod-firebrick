@@ -5,7 +5,7 @@ from core.utils.testing_utils import GeneralUserStoryApiTest
 from user_management.serializers import AuthorSerializer
 
 
-@tag("US-Following/Friends")
+@tag("US-following/friends")
 class TestUserStory31(GeneralUserStoryApiTest):
     """
     Tests for User Story 31
@@ -18,9 +18,8 @@ class TestUserStory31(GeneralUserStoryApiTest):
         author0 = self.sample_authors[0]  # follower
         author1 = self.sample_authors[1]  # target followee
 
-
         follow_json = {
-                    "type": "follow",
+            "type": "follow",
                     "summary": f"{author0.display_name} wants to follow {author1.display_name}",
                     "actor": AuthorSerializer(author0).data,
                     "object": AuthorSerializer(author1).data,

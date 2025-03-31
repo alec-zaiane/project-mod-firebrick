@@ -1,7 +1,7 @@
 from typing import Any
 from rest_framework import serializers
 from rest_framework.serializers import ValidationError
-from posts.models import Post, CONTENT_TYPE_WEB_MAP, CONTENT_TYPE_WEB_MAP_REVERSE
+from posts.models import Post, CONTENT_TYPE_WEB_MAP, CONTENT_TYPE_WEB_MAP_REVERSE, VISIBILITY_TYPE_WEB_MAP, VISIBILITY_TYPE_WEB_MAP_REVERSE
 from comments.models import Comment
 from user_management.models import Author
 from user_management.serializers import AuthorSerializer
@@ -84,31 +84,31 @@ class PostSerializer(serializers.ModelSerializer[Post]):
             "contentType": content_type,
             "content": instance.content,
             "author": AuthorSerializer(instance.author).data,
-            "comments": CommentSerializer(instance.comments.all(), many=True).data,
-            "likes": LikeSerializer(instance.likes.all(), many=True).data,
+            "comments": {"type": "comments",
+                         "src": CommentSerializer(instance.comments.all(), many=True).data
+                         },
+            "likes": {"type": "likes",
+                      "src": LikeSerializer(instance.likes.all(), many=True).data,
+                      },
             "published": instance.created_at.isoformat(),
-            "visibility": instance.visibility_type,
+            "visibility": VISIBILITY_TYPE_WEB_MAP.get(instance.visibility_type),
+            "page": instance.author.page_url,
         }
 
     def to_internal_value(self, data: dict[str, Any]) -> dict[str, Any]:
         """Convert JSON data into a dictionary compatible with Post model."""
         if data.get("type") != "post":
-            raise ValidationError("Post object must always have type 'post'")
+            raise ValidationError({
+                "type": "Post object must always have type 'post'"
+            })
+        if "contentType" not in data:
+            raise ValidationError({
+                "contentType": "Post object must always have contentType"
+            })
 
         post_type = CONTENT_TYPE_WEB_MAP_REVERSE.get(data["contentType"], None)
         if post_type is None:
             raise ValidationError(f"Invalid contentType: {data['contentType']}")
-
-        # before returning, make sure that all `likes` and `comments` are copied into our database if they don't exist
-        # TODO verify that this is the correct way to handle this
-        if "comments" in data:
-            for comment in data["comments"]:
-                comment_dict = CommentSerializer().to_internal_value(comment)
-                Comment.objects.get_or_create(**comment_dict)
-        if "likes" in data:
-            for like in data["likes"]:
-                like_dict = LikeSerializer().to_internal_value(like)
-                Like.objects.get_or_create(**like_dict)
 
         author = AuthorSerializer().get_or_create(data["author"])
 
@@ -119,7 +119,7 @@ class PostSerializer(serializers.ModelSerializer[Post]):
             "post_type": post_type,  # contentType
             "content": data["content"],
             "author": author,
-            "visibility_type": data["visibility"],
+            "visibility_type": VISIBILITY_TYPE_WEB_MAP_REVERSE.get(data["visibility"]),
         }
 
     def create(self, validated_data: dict[str, Any]) -> Post:
@@ -130,3 +130,15 @@ class PostSerializer(serializers.ModelSerializer[Post]):
         author: Author = validated_data["author"]
         host_node = author.host_node
         return Post.objects.create(fqid=fqid, **validated_data, host_node=host_node)
+
+    def get_or_create(self, data: dict[str, Any]) -> Post:
+        # if a post doesn't exist, create it, otherwise update and return it
+        post_dict = self.to_internal_value(data)
+        post = Post.objects.find_by_fqid(post_dict["fqid"])
+        if post is None:
+            post = self.create(post_dict)
+        else:
+            for key, value in post_dict.items():
+                setattr(post, key, value)
+            post.save()
+        return post
