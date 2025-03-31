@@ -81,7 +81,7 @@ class AuthorViewSet(viewsets.ModelViewSet[Author]):
             super_data = super_data["results"]  # fix for pagination
         return Response({
             "type": "authors",
-            "items": super_data
+            "authors": super_data
         })
 
     @extend_schema(
