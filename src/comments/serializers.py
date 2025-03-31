@@ -139,3 +139,9 @@ class CommentSerializer(serializers.ModelSerializer[Comment]):
             # TODO this doesn't feel right, but maybe it works?
             validated_data["host_node"] = Node.objects.get_local_node()
         return Comment.objects.create(**validated_data)
+
+    def get_or_create(self, data: dict[str, Any]) -> Comment:
+        try:
+            return Comment.objects.get_by_fqid(data["id"])
+        except Comment.DoesNotExist:
+            return self.create(self.to_internal_value(data))

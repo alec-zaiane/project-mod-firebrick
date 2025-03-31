@@ -81,3 +81,9 @@ class LikeSerializer(serializers.ModelSerializer[Like]):
         if self.validated_data.get("_target_post") is not None:
             return self.validated_data["_target_post"]
         return self.validated_data["_target_comment"]
+
+    def get_or_create(self, data: dict[str, Any]) -> Like:
+        try:
+            return Like.objects.get_by_fqid(data["id"])
+        except Like.DoesNotExist:
+            return self.create(data)

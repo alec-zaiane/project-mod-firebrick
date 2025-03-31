@@ -557,8 +557,26 @@ class Node(models.Model):
             pass
 
     def _synchronize_authors(self) -> None:
+        from user_management.serializers import AuthorSerializer
         print(f"[Node {self.name}] Synchronizing authors...")
-        raise NotImplementedError("Synchronizing authors is not implemented yet")
+        assert self.internal_user is not None
+        assert self.internal_user.password_plain is not None  # for mypy
+        response = requests.get(
+            self._make_absolute_url("/authors"),
+            headers={"Accept": "application/json"},
+            auth=HTTPBasicAuth(self.internal_user.username, self.internal_user.password_plain)
+        )
+        if response.status_code != 200:
+            print(f"[Node {self.name}] Failed to synchronize authors: {response.status_code}")
+            return
+        authors = response.json()
+        print(f"[Node {self.name}] Found {len(authors)} authors to synchronize")
+        for author in authors:
+            try:
+                AuthorSerializer().get_or_create(author)
+            except Exception as e:
+                print(f"[Node {self.name}] Failed to synchronize author {author}: {e}")
+                continue
 
     def _synchronize_posts(self) -> None:
         author_list = self.get_hosted_users()
@@ -567,23 +585,53 @@ class Node(models.Model):
             raise NotImplementedError("Synchronizing posts is not implemented yet")
 
     def _synchronize_comments(self) -> None:
+        assert self.internal_user is not None
+        assert self.internal_user.password_plain is not None  # for mypy
         from posts.models import Post
+        from comments.serializers import CommentSerializer
         post_list = Post.objects.filter(host_node=self)
         print(f"[Node {self.name}] Synchronizing comments for {len(post_list)} posts...")
         for post in post_list:
-            raise NotImplementedError("Synchronizing comments is not implemented yet")
+            response = requests.get(
+                self._make_absolute_url(f"/posts/{post.get_encoded_fqid()}/comments"),
+                headers={"Accept": "application/json"},
+                auth=HTTPBasicAuth(self.internal_user.username, self.internal_user.password_plain)
+            )
+            if response.status_code != 200:
+                print(
+                    f"[Node {self.name}] Failed to synchronize comments for post {post}: {response.status_code}")
+                continue
+            comments = response.json()
+            for comment in comments['src']:
+                try:
+                    CommentSerializer().get_or_create(comment)
+                except Exception as e:
+                    print(f"[Node {self.name}] Failed to synchronize comment {comment}: {e}")
+                    continue
 
     def _synchronize_likes(self) -> None:
-        from posts.models import Post
-        from comments.models import Comment
-        post_list = Post.objects.filter(host_node=self)
-        comment_list = Comment.objects.filter(host_node=self)
-        print(
-            f"[Node {self.name}] Synchronizing likes for {len(post_list)} posts and {len(comment_list)} comments...")
-        for post in post_list:
-            raise NotImplementedError("Synchronizing likes for posts is not implemented yet")
-        for comment in comment_list:
-            raise NotImplementedError("Synchronizing likes for comments is not implemented yet")
+        assert self.internal_user is not None
+        assert self.internal_user.password_plain is not None
+        from likes.serializers import LikeSerializer
+        hosted_users = self.get_hosted_users()
+        print(f"[Node {self.name}] Synchronizing likes for {len(hosted_users)} authors...")
+        for author in hosted_users:
+            response = requests.get(
+                self._make_absolute_url(f"/authors/{author.get_encoded_fqid()}/likes"),
+                headers={"Accept": "application/json"},
+                auth=HTTPBasicAuth(self.internal_user.username, self.internal_user.password_plain)
+            )
+            if response.status_code != 200:
+                print(
+                    f"[Node {self.name}] Failed to synchronize likes for author {author}: {response.status_code}")
+                continue
+            likes = response.json()
+            for like in likes['src']:
+                try:
+                    LikeSerializer().get_or_create(like)
+                except Exception as e:
+                    print(f"[Node {self.name}] Failed to synchronize like {like}: {e}")
+                    continue
 
     def synchronize_all(self) -> None:
         """Synchronize with this node by sending GET requests to its API"""
@@ -592,7 +640,7 @@ class Node(models.Model):
             print(f"[Node {self.name}] Node is disabled, skipping synchronization")
             return
         self._synchronize_authors()
-        self._synchronize_posts()
+        # self._synchronize_posts()
         self._synchronize_comments()
         self._synchronize_likes()
 
