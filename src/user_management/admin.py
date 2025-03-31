@@ -36,6 +36,7 @@ class AuthorAdmin(admin.ModelAdmin[models.Author]):
 class NodeAdmin(admin.ModelAdmin[models.Node]):
     list_display = ('name', 'host_url', 'is_local_node')
     form = NodeAdminForm
+    actions = ('synchronize',)
     fieldsets = (
         (None, {
             'fields': ('name', 'host_url', 'host_site_url')
