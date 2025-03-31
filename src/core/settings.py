@@ -33,6 +33,7 @@ SECRET_KEY = os.getenv(
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DJANGO_DEBUG", str(True)) == "True"
+DEBUG_DONT_DISABLE_NODES = os.getenv("DJANGO_DEBUG_DONT_DISABLE_NODES", str(False)) == "True"
 
 ALLOWED_HOSTS: list[str] = os.getenv("DJANGO_ALLOWED_HOSTS", "*").split(" ")
 
@@ -166,11 +167,12 @@ REST_FRAMEWORK = {
         "rest_framework.parsers.FormParser",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.AllowAny",
+        "rest_framework.permissions.IsAuthenticated",
+
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "user_management.authentication.NodeUserBasicAuthentication",
-        # "rest_framework.authentication.SessionAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
     ],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }

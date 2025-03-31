@@ -36,6 +36,7 @@ class AuthorAdmin(admin.ModelAdmin[models.Author]):
 class NodeAdmin(admin.ModelAdmin[models.Node]):
     list_display = ('name', 'host_url', 'is_local_node')
     form = NodeAdminForm
+    actions = ('synchronize',)
     fieldsets = (
         (None, {
             'fields': ('name', 'host_url', 'host_site_url')
@@ -49,6 +50,21 @@ class NodeAdmin(admin.ModelAdmin[models.Node]):
             'fields': ('is_local_node', 'is_disabled')
         })
     )
+
+    @admin.action(description="Synchronize selected nodes")
+    def synchronize(self, request: HttpRequest, queryset: QuerySet[models.Node]) -> None:
+        """
+        Synchronize the selected nodes with the remote nodes.
+        """
+        success = 0
+        for node in queryset:
+            try:
+                node.synchronize_all()
+                success += 1
+            except Exception as e:
+                messages.error(
+                    request, f"Failed to synchronize {node.name}: {e}")
+        messages.success(request, f"Successfully synchronized {success} nodes.")
 
 
 @admin.register(models.JoinRequest)
@@ -109,3 +125,9 @@ class JoinRequestAdmin(admin.ModelAdmin[models.JoinRequest]):
         actions = super().get_actions(request)
         actions.pop('delete_selected', None)
         return actions
+
+
+@admin.register(models.FollowRequest)
+class FollowRequestAdmin(admin.ModelAdmin[models.FollowRequest]):
+    list_display = ('uuid', 'follower', 'followee')
+    list_display_links = ('uuid', 'follower', 'followee')

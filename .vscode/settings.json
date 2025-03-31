@@ -40,5 +40,8 @@
     "python.testing.pytestEnabled": true,
     "python.testing.pytestArgs": [
         "-n=auto",
-    ]
+    ],
+    "testing.displayedCoveragePercent": "minimum",
+    "testing.defaultGutterClickAction": "debug",
+    "testing.automaticallyOpenTestResults": "openOnTestFailure",
 }

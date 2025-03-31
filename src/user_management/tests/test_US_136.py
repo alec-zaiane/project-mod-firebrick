@@ -31,7 +31,8 @@ class UserStory132TestUI(AdminUITestCase):
         node_user = User.nodes.create_user("node_abc", password="password")
 
         # create the node
-        node = MockNode.mock_nodes.create_node("http://example.com/api", node_user)
+        node = MockNode.mock_nodes.create_node(
+            name="mock node", host_url="http://example.com/api", user=node_user)
 
         # make sure the node was created
         self.assertEqual(Node.external_nodes.all().count(), 1)

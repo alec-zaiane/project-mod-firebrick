@@ -18,7 +18,7 @@ from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import AbstractUser, UserManager
 from django.urls import reverse
 
-from core.settings import DEBUG
+from core.settings import DEBUG, DEBUG_DONT_DISABLE_NODES
 from core.utils.api_object import ApiObject, ApiObjectManager
 from core.utils.validators import validate_url_returns_image
 
@@ -252,7 +252,8 @@ class Author(ApiObject):
         return super().delete(using, keep_parents)
 
     def __str__(self) -> str:
-        location = "External" if self.is_external else "Local"
+        host_name = self.host_node.name if self.host_node and self.host_node.name else "External"
+        location = host_name if self.is_external else "Local"
         return f"{self.display_name} ({location})"
 
     def generate_fqid(self) -> str:
@@ -278,7 +279,7 @@ class Author(ApiObject):
         from user_management.serializers import AuthorSerializer
         return AuthorSerializer().to_representation(self)
 
-    def node2node_get_creation_url(self) -> str:
+    def node2node_get_creation_url(self, author_for_inbox: Optional[Author] = None) -> str:
         return reverse("user_management:node2node_authors-list")
 
     def node2node_get_update_url(self) -> str:
@@ -351,8 +352,26 @@ class FollowRequest(ApiObject):
         from user_management.serializers import FollowRequestSerializer
         return FollowRequestSerializer().to_representation(self)
 
-    def node2node_get_creation_url(self) -> str:
-        return reverse("user_management:node2node_follow_requests-list")
+    def _propagate_post_save_to_other_nodes(self, created: bool) -> None:
+        if not created:
+            return super()._propagate_post_save_to_other_nodes(created)
+        # send it to the target's inbox
+        recipient = self.followee
+        if recipient.host_node.is_local_node:
+            # don't send to self
+            return
+        # send to the inbox of the author of the post
+        recipient.host_node.send_create(
+            self.node2node_encode_as_class_json_dict(),
+            to=self.node2node_get_creation_url(recipient)
+        )
+
+    def node2node_get_creation_url(self, author_for_inbox: Optional[Author] = None) -> str:
+        if author_for_inbox is None:
+            return reverse("user_management:node2node_follow_requests-list")
+        return reverse("user_management:node2node_inbox", args=[
+            author_for_inbox.get_encoded_fqid()
+        ])
 
     def node2node_get_update_url(self) -> str:
         return reverse("user_management:node2node_follow_requests-detail", kwargs={"fqid": self.get_encoded_fqid()})
@@ -499,8 +518,8 @@ class Node(models.Model):
             response.raise_for_status()
             print(f"[Node {self.name}] Update sent to {to}")
         except requests.RequestException as e:
-            if DEBUG:
-                print(f"[Node {self.name}] Failed to send UPDATE to {to}: {e}")
+            if not DEBUG and not DEBUG_DONT_DISABLE_NODES:
+                print(f"[Node {self.name}] Failed to send UPDATE to {to}: {e}, disabling node...")
                 # Disables a node that ever sends an invalid update
                 self.is_disabled = True
                 self.save()
@@ -514,8 +533,8 @@ class Node(models.Model):
             response = self._post(json, self._make_absolute_url(to))
             response.raise_for_status()
         except requests.RequestException as e:
-            if DEBUG:
-                print(f"[Node {self.name}] Failed to send CREATE to {to}: {e}")
+            if not DEBUG and not DEBUG_DONT_DISABLE_NODES:
+                print(f"[Node {self.name}] Failed to send CREATE to {to}: {e}, disabling node...")
                 # Disables a node that ever sends an invalid update
                 self.is_disabled = True
                 self.save()
@@ -531,12 +550,101 @@ class Node(models.Model):
             response.raise_for_status()
             print(f"[Node {self.name}] Delete sent to {to}")
         except requests.RequestException as e:
-            if DEBUG:
-                print(f"[Node {self.name}] Failed to send DELETE to {to}: {e}")
+            if not DEBUG and not DEBUG_DONT_DISABLE_NODES:
+                print(f"[Node {self.name}] Failed to send DELETE to {to}: {e}, disabling node...")
                 # Disables a node that ever sends an invalid update
                 self.is_disabled = True
                 self.save()
             pass
+
+    def _synchronize_authors(self) -> None:
+        from user_management.serializers import AuthorSerializer
+        print(f"[Node {self.name}] Synchronizing authors...")
+        assert self.internal_user is not None
+        assert self.internal_user.password_plain is not None  # for mypy
+        response = requests.get(
+            self._make_absolute_url("/authors"),
+            headers={"Accept": "application/json"},
+            auth=HTTPBasicAuth(self.internal_user.username, self.internal_user.password_plain)
+        )
+        if response.status_code != 200:
+            print(f"[Node {self.name}] Failed to synchronize authors: {response.status_code}")
+            return
+        authors = response.json()
+        print(f"[Node {self.name}] Found {len(authors)} authors to synchronize")
+        for author in authors["authors"]:
+            try:
+                AuthorSerializer().get_or_create(author)
+            except Exception as e:
+                print(f"[Node {self.name}] Failed to synchronize author {author}: {e}")
+                continue
+
+    def _synchronize_posts(self) -> None:
+        author_list = self.get_hosted_users()
+        print(f"[Node {self.name}] Synchronizing posts for {len(author_list)} authors...")
+        for author in author_list:
+            raise NotImplementedError("Synchronizing posts is not implemented yet")
+
+    def _synchronize_comments(self) -> None:
+        assert self.internal_user is not None
+        assert self.internal_user.password_plain is not None  # for mypy
+        from posts.models import Post
+        from comments.serializers import CommentSerializer
+        post_list = Post.objects.filter(host_node=self)
+        print(f"[Node {self.name}] Synchronizing comments for {len(post_list)} posts...")
+        for post in post_list:
+            response = requests.get(
+                self._make_absolute_url(f"/posts/{post.get_encoded_fqid()}/comments"),
+                headers={"Accept": "application/json"},
+                auth=HTTPBasicAuth(self.internal_user.username, self.internal_user.password_plain)
+            )
+            if response.status_code != 200:
+                print(
+                    f"[Node {self.name}] Failed to synchronize comments for post {post}: {response.status_code}")
+                continue
+            comments = response.json()
+            for comment in comments['src']:
+                try:
+                    CommentSerializer().get_or_create(comment)
+                except Exception as e:
+                    print(f"[Node {self.name}] Failed to synchronize comment {comment}: {e}")
+                    continue
+
+    def _synchronize_likes(self) -> None:
+        assert self.internal_user is not None
+        assert self.internal_user.password_plain is not None
+        from likes.serializers import LikeSerializer
+        hosted_users = self.get_hosted_users()
+        print(f"[Node {self.name}] Synchronizing likes for {len(hosted_users)} authors...")
+        for author in hosted_users:
+            response = requests.get(
+                self._make_absolute_url(f"/authors/{author.get_encoded_fqid()}/liked"),
+                headers={"Accept": "application/json"},
+                auth=HTTPBasicAuth(self.internal_user.username, self.internal_user.password_plain)
+            )
+            if response.status_code != 200:
+                print(
+                    f"[Node {self.name}] Failed to synchronize likes for author {author}: {response.status_code}")
+                continue
+            likes = response.json()
+            for like in likes['src']:
+                try:
+                    LikeSerializer().get_or_create(like)
+                except Exception as e:
+                    print(f"[Node {self.name}] Failed to synchronize like {like}: {e}")
+                    continue
+
+    def synchronize_all(self) -> None:
+        """Synchronize with this node by sending GET requests to its API"""
+        print(f"[Node {self.name}] Synchronizing...")
+        if self.is_disabled:
+            print(f"[Node {self.name}] Node is disabled, skipping synchronization")
+            return
+        self._synchronize_authors()
+        # self._synchronize_posts()
+        self._synchronize_comments()
+        self._synchronize_likes()
+
 
 # =============================================================================
 # Join requests

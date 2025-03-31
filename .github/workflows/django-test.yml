@@ -1,12 +1,12 @@
 
-name: Run Django Tests (Docker)
+name: Run Django Tests
 
 on:
   pull_request:
     branches: [ "**" ]
 
 jobs:
-  django-test:
+  django-test-no-ui-or-node2node:
     name: django testing
     runs-on: ubuntu-latest
 
@@ -16,6 +16,7 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.13'
+        cache: 'pip'
     - name: Install dependencies
       run: |
         pip install -r src/requirements.txt
@@ -39,8 +40,91 @@ jobs:
     - name: Run the Docker containers
       run: |
         docker compose up -d
+    - name: Run all tests and generate coverage report
+      run: |
+        mkdir -p coverage
+        docker compose run --rm -T -v $PWD/coverage:/coverage socialnetwork sh -c "pytest -n auto -m 'not ui and not node2node' --cov=. && cp .coverage /coverage/.coverage"
+        cp coverage/.coverage .coverage
+    # - name: Upload coverage db
+    #   uses: actions/upload-artifact@v4
+    #   with:
+    #     name: coverage-no-ui-or-node2node
+    #     path:
+    #     overwrite: true
+
+
+  # https://chrisguitarguy.com/2023/01/13/docker-compose-exec-on-github-actions/
+  django-test-ui-node2node:
+    name: django testing
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: setup python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.13'
+        cache: 'pip'
+
+    - name: Install geckodriver
+      uses: browser-actions/setup-geckodriver@latest
+
+    - name: Install dependencies
+      run: |
+        pip install -r src/requirements.txt
+    - name: Install dev dependencies
+      run: |
+        pip install -r src/requirements-dev.txt
+    - name: Collect static files
+      run: |
+        python src/manage.py collectstatic --noinput
     - name: Run all tests
       run: |
-        docker compose run -T socialnetwork pytest -n auto -m "not ui"
+        pytest src -n auto -m "ui or node2node" --cov=src
+    # - name: Upload coverage db
+    #   uses: actions/upload-artifact@v4
+    #   with:
+    #     name: coverage-ui-node2node
+    #     path: .coverage
+    #     overwrite: true
 
-# https://chrisguitarguy.com/2023/01/13/docker-compose-exec-on-github-actions/
+  # show-coverage:
+  #   # Written with ChatGPT: Can I send a message to the pull request that an action has run from?
+  #   # also using https://coverage.readthedocs.io/en/latest/cmd.html#cmd-combine
+  #   name: comment coverage on PR
+  #   runs-on: ubuntu-latest
+  #   needs: [django-test-no-ui-or-node2node, django-test-ui-node2node]
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-python@v4
+  #       with:
+  #         python-version: '3.13'
+  #         cache: 'pip'
+  #     - name: Install dependencies
+  #       run: |
+  #         pip install -r src/requirements.txt
+  #     - name: Install dev dependencies
+  #       run: |
+  #         pip install -r src/requirements-dev.txt
+  #     - uses: actions/download-artifact@v4
+  #       with:
+  #         name: coverage-no-ui-or-node2node
+  #         path: coverage-no-ui-or-node2node
+  #     - uses: actions/download-artifact@v4
+  #       with:
+  #         name: coverage-ui-node2node
+  #         path: coverage-ui-node2node
+  #     - name: generate coverage report
+  #       run: |
+  #           coverage combine coverage-no-ui-or-node2node/.coverage coverage-ui-node2node/.coverage
+  #           coverage report -m --omit="*/tests/*,*/migrations/* --skip-covered" > report.txt
+  #     - name: format coverage report
+  #       run: |
+  #           echo "## Coverage report" > coverage-report.md
+  #           echo "\`\`\`" >> coverage-report.md
+  #           cat report.txt >> coverage-report.md
+  #           echo "\`\`\`" >> coverage-report.md
+  #     - name: comment coverage on PR
+  #       uses: thollander/actions-comment-pull-request@v3
+  #       with:
+  #         file-path: coverage-report.md

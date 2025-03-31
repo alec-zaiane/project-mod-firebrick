@@ -119,9 +119,7 @@ class AuthorModifyView(View):
         viewer = get_request_viewer(request)
         if viewer is None or (viewer != target_author and not viewer.user.is_superuser):
             # Send the user back to the author's profile if they are not the author or an admin
-            return render(request, "author_profile.html", {
-                "author": target_author,
-            })
+            return HttpResponseRedirect(reverse("user_management:author_profile", args=[target_author.uuid]))
 
         form = AuthorModifyForm(instance=target_author)
         return render(request, "author_modify.html", {
@@ -149,9 +147,7 @@ class AuthorModifyView(View):
         viewer = get_request_viewer(request)
         if viewer is None or (viewer != target_author and not viewer.user.is_superuser):
             # Send the user back to the author's profile if they are not the author or an admin
-            return render(request, "author_profile.html", {
-                "author": target_author,
-            })
+            return HttpResponseRedirect(reverse("user_management:author_profile", args=[target_author.uuid]))
 
         form = AuthorModifyForm(request.POST, instance=target_author)
         if form.is_valid():

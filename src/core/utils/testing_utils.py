@@ -21,7 +21,7 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-from user_management.models import Author, JoinRequest
+from user_management.models import Author, JoinRequest, User, Node
 from posts.models import Post, PostTypes, VisibilityTypes
 
 
@@ -129,16 +129,9 @@ class UITestCase(LiveServerTestCase, GeneralUserStoryApiTest):
     def _get_driver(self) -> webdriver.Firefox:
         # https://stackoverflow.com/questions/73973332/check-if-were-in-a-github-action-travis-ci-circle-ci-etc-testing-environme
         self.is_in_github_actions = bool(os.getenv("GITHUB_ACTIONS"))
-        if self.is_in_github_actions:
-            # grab the installded geckodriver version (will be installed on the runner by the django-tests.yml before this is run)
-            geckodriver_root = "/opt/hostedtoolcache/geckodriver"
-            geckodriver_version = os.listdir(geckodriver_root)[0]
-            geckodriver_path = f"{geckodriver_root}/{geckodriver_version}/x64/geckodriver"
-
-            driver_service = webdriver.FirefoxService(
-                executable_path=geckodriver_path)
-
-            options = webdriver.FirefoxOptions()
+        self.is_in_headless = bool(os.getenv("TEST_HEADLESS"))
+        options = webdriver.FirefoxOptions()
+        if self.is_in_headless or self.is_in_github_actions:
             options.add_argument('--no-sandbox')
             options.add_argument('--disable-dev-shm-usage')
             options.add_argument('--headless')
@@ -149,9 +142,18 @@ class UITestCase(LiveServerTestCase, GeneralUserStoryApiTest):
             # auto-accept alerts (From ChatGPT)
             options.set_capability("unhandledPromptBehavior", "accept")  # Auto-accept alerts
 
+        if self.is_in_github_actions:
+            # grab the installed geckodriver version (will be installed on the runner by the django-tests.yml before this is run)
+            geckodriver_root = "/opt/hostedtoolcache/geckodriver"
+            geckodriver_version = os.listdir(geckodriver_root)[0]
+            geckodriver_path = f"{geckodriver_root}/{geckodriver_version}/x64/geckodriver"
+
+            driver_service = webdriver.FirefoxService(
+                executable_path=geckodriver_path)
+
             return webdriver.Firefox(service=driver_service, options=options)
         else:
-            return webdriver.Firefox(options=webdriver.FirefoxOptions())
+            return webdriver.Firefox(options=options)
 
     def _get_logger(self) -> logging.Logger:
         """Set up a logger for the test case"""
@@ -385,3 +387,32 @@ class AdminUITestCase(UITestCase):
         self.find_element_by_name("index").click()
         if confirm_needed:
             self.find_elements_by_selector("input[type=submit]")[0].click()
+
+
+@tag("node2node")
+class Node2NodeReceptionTestCase(LiveServerTestCase, GeneralUserStoryApiTest):
+    """Test case parent class for testing reception of node2node messages"""
+
+    def setUp(self) -> None:
+        # from copilot: use Class.setUp(self) to not have to deal with super() shenanigans
+        GeneralUserStoryApiTest.setUp(self)
+        LiveServerTestCase.setUp(self)
+        self.external_authors: list[Author] = []
+
+    def initialize_other_node(self) -> None:
+        self.other_node_user = User.nodes.create_user("node_other2me", password="node")
+        self.other_node = Node.external_nodes.create_node(
+            "other node",
+            "http://localhost:10000/api",
+            self.other_node_user,
+            "http://localhost:10000",
+        )
+
+    def initialize_external_authors(self, num_authors: int = 5) -> None:
+        """Initialize some sample authors for testing"""
+        for i in range(num_authors):
+            author = Author.external_authors.create(
+                host_node=self.other_node,
+                display_name=f"Mr External {i}"
+            )
+            self.external_authors.append(author)

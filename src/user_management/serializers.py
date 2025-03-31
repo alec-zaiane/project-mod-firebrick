@@ -47,7 +47,9 @@ class AuthorSerializer(serializers.ModelSerializer[Author]):
 
     def to_internal_value(self, data: dict[str, Any]) -> dict[str, Any]:
         if data.get("type") != "author":
-            raise ValidationError("Author object must always have type author")
+            raise ValidationError({
+                "type": "Author object must always have type author",
+            })
         return {
             "fqid": data["id"],
             "host__host_url": data["host"],
@@ -86,15 +88,21 @@ class FollowRequestSerializer(serializers.ModelSerializer[FollowRequest]):
 
     def to_internal_value(self, data: dict[str, Any]) -> dict[str, Any]:
         if data.get("type") != "follow":
-            raise ValidationError("Follow request object must always have type follow")
+            raise ValidationError({
+                "type": "Follow request object must always have type follow",
+            })
         try:
             follower = Author.objects.get_by_fqid(data["actor"]["id"])
         except Exception as e:
-            raise ValidationError(f"Invalid actor: {e}")
+            raise ValidationError({
+                'actor': f"Invalid actor: {e}",
+            })
         try:
             followee = Author.objects.get_by_fqid(data["object"]["id"])
         except Exception as e:
-            raise ValidationError(f"Invalid object: {e}")
+            raise ValidationError({
+                "object": f"Invalid object: {e}",
+            })
 
         host_node = followee.host_node
 

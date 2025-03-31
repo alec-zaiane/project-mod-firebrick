@@ -18,3 +18,7 @@ def REDIRECT_TO_LOGIN(original_request: Optional[HttpRequest] = None) -> HttpRes
 
 def API_UNAUTHORIZED() -> Response:
     return Response({"error": "Authentication required."}, status=401)
+
+
+def API_FORBIDDEN() -> Response:
+    return Response({"error": "You do not have permission to perform this action."}, status=403)

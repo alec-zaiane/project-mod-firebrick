@@ -37,7 +37,7 @@ class ApiObjectManager(models.Manager[ModelT], Generic[ModelT]):
         """Find by a percent-encoded fqid"""
         return self.find_by_fqid(unquote(fqid))
 
-    def find_by_uuid(self, uuid: str) -> Optional[ModelT]:
+    def find_by_uuid(self, uuid: str | UUID) -> Optional[ModelT]:
         return self.filter(uuid=uuid).first()
 
 
@@ -90,6 +90,9 @@ class ApiObject(models.Model):
     def _propagate_post_save_to_other_nodes(self, created: bool) -> None:
         if not self.host_node.is_local_node:
             return
+        if hasattr(self, '_deleted_propagated') and getattr(self, '_deleted_propagated'):
+            print(f"Skipping propagation for deleted {self.__class__.__name__}")
+            return
         from user_management.models import Node  # janky but needed for circular import prevention
         for node in Node.external_nodes.all():
             if created:
@@ -107,8 +110,13 @@ class ApiObject(models.Model):
         if not self.host_node.is_local_node:
             return
         from user_management.models import Node
+        setattr(self, '_deleted_propagated', True)
         for node in Node.external_nodes.all():
-            node.send_delete(self.node2node_get_deletion_url())
+            try:
+                deletion_url = self.node2node_get_deletion_url()
+                node.send_delete(deletion_url)
+            except Exception as e:
+                print(f"Error propagating deletion to {node.name}: {e}")
 
     # =====================================
     # Node2node methods, these must be implemented by subclasses
@@ -121,7 +129,7 @@ class ApiObject(models.Model):
         raise NotImplementedError(
             f"encode_as_json must be implemented by subclasses (perhaps in `{self.__class__}`?)")
 
-    def node2node_get_creation_url(self) -> str:
+    def node2node_get_creation_url(self, author_for_inbox: Optional["Author"] = None) -> str:
         raise NotImplementedError(
             f"node2node_get_creation_url must be implemented by subclasses (perhaps in `{self.__class__}`?)")
 

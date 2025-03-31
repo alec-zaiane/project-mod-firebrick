@@ -3,21 +3,32 @@ from typing import Optional, Any
 import abc
 
 from rest_framework import views
+from rest_framework.viewsets import ModelViewSet
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.serializers import Serializer
 
 from likes.serializers import LikeSerializer
+from likes.viewsets import LikeViewSet
+
+from comments.models import Comment
 from comments.serializers import CommentSerializer
+from comments.viewsets import CommentViewSet
+
 from posts.models import Post
+from posts.serializers import PostSerializer
+from posts.viewsets import PostViewSet
 
+from user_management.serializers import FollowRequestSerializer
+from user_management.viewsets import FollowRequestViewSet
+from user_management.models import Author
 
-from core.utils.request_viewer import get_request_viewer
-
+from core.utils.request_viewer import get_request_node, get_request_viewer
+from core.utils.redirects import API_UNAUTHORIZED, API_FORBIDDEN
 
 from drf_spectacular.utils import extend_schema
-from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, OpenApiExample, PolymorphicProxySerializer
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer
 
 # ======================================================================================
 # Inbox handling
@@ -33,6 +44,13 @@ def register_inbox_handler(handler: InboxHandler) -> None:
 
 def _get_serializer_map() -> dict[str, Serializer[Any] | type[Serializer[Any]]]:
     return {handler.handlable_type: handler.serializer for handler in _INBOX_HANDLERS}
+
+
+class ResolverMatchStub:
+    """A stub class to mimic Django's ResolverMatch for type checking purposes"""
+
+    def __init__(self) -> None:
+        self.kwargs: dict[str, Any] = {}
 
 
 class InboxHandler(abc.ABC):
@@ -53,8 +71,15 @@ class InboxHandler(abc.ABC):
         return type == self.handlable_type
 
     @abc.abstractmethod
-    def post(self, request: Request) -> Response:
+    def post(self, request: Request, target_author: Author) -> Response:
+        """Process the inbox item for the inbox of the target author, return a response"""
         ...
+
+    def _post_to_viewset(self, request: Request, viewset_instance: ModelViewSet[Any]) -> Response:
+        """Post to a viewset with the request object *calls the `create` method*"""
+        viewset_instance.setup(request)
+        viewset_instance.initial(request)
+        return viewset_instance.create(request)
 
 
 class InboxView(views.APIView):
@@ -85,9 +110,9 @@ class InboxView(views.APIView):
     - Comment objects""",
         parameters=[
             OpenApiParameter(
-                name="target_author_uuid",
+                name="target_author_fqid",
                 location=OpenApiParameter.PATH,
-                description="UUID of the target author",
+                description="FQID of the target author",
                 required=True,
                 type=str,
             )
@@ -117,14 +142,27 @@ class InboxView(views.APIView):
         },
         tags=["Inbox"],
     )
-    def post(self, request: Request, target_author_uuid: str) -> Response:
+    def post(self, request: Request, target_author_fqid: str) -> Response:
         """Send an inbox item to this author's inbox"""
         type = request.data.get("type")
         if type is None:
             return Response({"error": "missing 'type' field under inbox item"}, 400)
+
+        # make sure the author FQID is valid
+        if not target_author_fqid:
+            return Response({"error": "missing 'target_author_fqid' field"}, 400)
+        target_author = Author.local_authors.find_by_encoded_fqid(target_author_fqid)
+        if target_author is None:
+            return Response({"error": "Author not found", "fqid": target_author_fqid}, 404)
+
         handler = self._find_handler_for_type(type)
         if handler is not None:
-            return handler.post(request)
+            # if not hasattr(request, 'resolver_match') or request.resolver_match is None:
+            #     stub = ResolverMatchStub()
+            #     setattr(request, 'resolver_match', stub)
+            # resolver_match = getattr(request, 'resolver_match')
+            # resolver_match.kwargs['target_author_fqid'] = target_author_fqid
+            return handler.post(request, target_author)
         return Response({"error": "invalid 'type' field under inbox item",
                          "type": type}, 400)
 
@@ -141,28 +179,31 @@ class LikesInboxHandler(InboxHandler):
 
     @property
     def serializer(self) -> type[LikeSerializer]:
-        return LikeSerializer
+        return LikeSerializer  # pragma: no cover
 
-    def post(self, request: Request) -> Response:
-        serializer = LikeSerializer(data=request.data)
-        viewer = get_request_viewer(request)
-        if viewer is None:
-            return Response("User must be authenticated", status.HTTP_401_UNAUTHORIZED)
-        if serializer.is_valid():
-            # double check that the author has access to the target object
-            like_target = serializer.get_target()
-            if not like_target.check_can_be_seen_by(viewer):
-                return Response("User does not have access to target object", status.HTTP_403_FORBIDDEN)
-            like = serializer.create(serializer.validated_data)
-            return Response({
-                "detail": "Like Created",
-                "like": serializer.to_representation(like)
-            }, status.HTTP_201_CREATED)
-        else:
-            return Response({
-                "error": "Invalid Like",
-                "like": serializer.errors
-            }, status.HTTP_400_BAD_REQUEST)
+    def post(self, request: Request, target_author: Author) -> Response:
+        # make sure the request's owner has access to the post
+        if get_request_node(request) is None:  # if they are a node, we're good
+            # otherwise, make sure the author can see the targeted post
+            viewer = get_request_viewer(request)
+            if viewer is None:
+                return API_UNAUTHORIZED()
+            post_id = request.data.get("object")
+            if post_id is None:
+                return Response({"error": "missing 'object' field"}, 400)
+            post = Post.visible_posts.find_by_fqid(post_id)
+            comment = Comment.objects.find_by_fqid(post_id)
+            if post is None and comment is None:
+                return Response({"error": "`object` not found", "fqid": post_id}, 404)
+            if comment is not None:
+                post = comment.post
+            if post is None:
+                # this shouldn't ever happen, just a sanity check
+                return Response({"error": "Post not found", "fqid": post_id}, 404)
+            if not post.check_can_be_seen_by(viewer):
+                return API_FORBIDDEN()
+
+        return self._post_to_viewset(request, LikeViewSet())
 
 
 register_inbox_handler(LikesInboxHandler())
@@ -180,23 +221,77 @@ class CommentInboxHandler(InboxHandler):
 
     @property
     def serializer(self) -> type[CommentSerializer]:
-        return CommentSerializer
+        return CommentSerializer  # pragma: no cover
 
-    def post(self, request: Request) -> Response:
-        viewer = get_request_viewer(request)
-        serializer = CommentSerializer(data=request.data)
-        if viewer is None:
-            return Response("User must be authenticated", 401)
-        if serializer.is_valid():
-            # double check that the viewer has access to the target object
-            target = serializer.validated_data["post"]
-            if not isinstance(target, Post):
-                return Response("Target post is malformed", 404)
-            if not target.check_can_be_seen_by(viewer):
-                return Response("Viewer does not have access to the target post", 403)
-            comment = serializer.create(serializer.validated_data)
-            return Response({"detail": "Comment created", "comment": serializer.to_representation(comment)}, 201)
-        return Response({"error": "Error creating comment", "comment": serializer.errors}, 400)
+    def post(self, request: Request, target_author: Author) -> Response:
+        # make sure the request's owner has access to the post
+        if get_request_node(request) is None:  # if they are a node, we're good
+            # otherwise, make sure the author can see the targeted post
+            viewer = get_request_viewer(request)
+            if viewer is None:
+                return API_UNAUTHORIZED()
+            post_id = request.data.get("post")
+            if post_id is None:
+                return Response({"error": "missing 'post' field"}, 400)
+            post = Post.visible_posts.find_by_fqid(post_id)
+            if post is None:
+                return Response({"error": "Post not found", "fqid": post_id}, 404)
+            if not post.check_can_be_seen_by(viewer):
+                return API_FORBIDDEN()
+
+        return self._post_to_viewset(request, CommentViewSet())
 
 
 register_inbox_handler(CommentInboxHandler())
+
+
+class FollowRequestInboxHandler(InboxHandler):
+    """
+    - URL: ://service/api/authors/{AUTHOR_SERIAL}/inbox
+        - POST [remote]: follow request to AUTHOR_SERIAL
+        - Body is a follow request object
+    """
+
+    def __init__(self) -> None:
+        super().__init__("follow")
+
+    @property
+    def serializer(self) -> type[FollowRequestSerializer]:
+        return FollowRequestSerializer  # pragma: no cover
+
+    def post(self, request: Request, target_author: Author) -> Response:
+        request_object: dict[str, Any] = request.data.get('object', {})
+        request_object_id = request_object.get('id')
+
+        if not request_object_id or request_object_id != target_author.fqid:
+            return Response(
+                {"error": "Follow request target doesn't match the inbox owner"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return self._post_to_viewset(request, FollowRequestViewSet())
+
+
+register_inbox_handler(FollowRequestInboxHandler())
+
+
+class PostInboxHandler(InboxHandler):
+    """
+    - URL: ://service/api/authors/{AUTHOR_SERIAL}/inbox
+        - POST [remote]: post to AUTHOR_SERIAL
+        - Body is a post object
+    """
+
+    def __init__(self) -> None:
+        super().__init__("post")
+
+    @property
+    def serializer(self) -> type[PostSerializer]:
+        return PostSerializer  # pragma: no cover
+
+    def post(self, request: Request, target_author: Author) -> Response:
+        # since a post is being created, we don't need to check if the author can see it
+        return self._post_to_viewset(request, PostViewSet())
+
+
+register_inbox_handler(PostInboxHandler())
