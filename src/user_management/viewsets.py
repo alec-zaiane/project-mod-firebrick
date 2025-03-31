@@ -499,6 +499,7 @@ class FollowRequestViewSet(viewsets.ModelViewSet[FollowRequest]):
             )
 
         # approve by adding the follow relationship and deleting the request
+        print("adding follower to followee")
         follow_request.follower.following.add(follow_request.followee)
         follow_request.delete()
         return Response({"detail": "Follow request approved."}, status=status.HTTP_200_OK)
