@@ -579,7 +579,7 @@ class Node(models.Model):
                 AuthorSerializer().get_or_create(author)
             except Exception as e:
                 print(f"[Node {self.name}] Failed to synchronize author {author}: {e}")
-                print(f"\t {e.__class__}, {e.__traceback__}")
+                print(f"\t {e.__class__}, {str(e.__traceback__)}")
                 continue
 
     def _synchronize_posts(self) -> None:
