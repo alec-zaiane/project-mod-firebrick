@@ -166,7 +166,7 @@ class LikesInboxHandler(InboxHandler):
 
     @property
     def serializer(self) -> type[LikeSerializer]:
-        return LikeSerializer
+        return LikeSerializer  # pragma: no cover
 
     def post(self, request: Request, target_author: Author) -> Response:
         serializer = LikeSerializer(data=request.data)
@@ -205,7 +205,7 @@ class CommentInboxHandler(InboxHandler):
 
     @property
     def serializer(self) -> type[CommentSerializer]:
-        return CommentSerializer
+        return CommentSerializer  # pragma: no cover
 
     def post(self, request: Request, target_author: Author) -> Response:
         viewer = get_request_viewer(request)
@@ -239,7 +239,7 @@ class FollowRequestInboxHandler(InboxHandler):
 
     @property
     def serializer(self) -> type[FollowRequestSerializer]:
-        return FollowRequestSerializer
+        return FollowRequestSerializer  # pragma: no cover
 
     def post(self, request: Request, target_author: Author) -> Response:
         request_object: dict[str, Any] = request.data.get('object', {})

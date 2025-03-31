@@ -50,6 +50,7 @@
 - https://stackoverflow.com/a/8342249
 - https://gist.github.com/dmlap/5643609
 - https://stackoverflow.com/questions/45926539/how-to-assert-django-uses-particular-template-in-pytest
+- https://coverage.readthedocs.io/en/latest/config.html
 
 ##GPT/Copilot Documentation:
 1. Copilot auto-complete was used in VS Code
