@@ -252,7 +252,8 @@ class Author(ApiObject):
         return super().delete(using, keep_parents)
 
     def __str__(self) -> str:
-        location = "External" if self.is_external else "Local"
+        host_name = self.host_node.name if self.host_node and self.host_node.name else "External"
+        location = host_name if self.is_external else "Local"
         return f"{self.display_name} ({location})"
 
     def generate_fqid(self) -> str:

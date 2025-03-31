@@ -125,3 +125,9 @@ class JoinRequestAdmin(admin.ModelAdmin[models.JoinRequest]):
         actions = super().get_actions(request)
         actions.pop('delete_selected', None)
         return actions
+
+
+@admin.register(models.FollowRequest)
+class FollowRequestAdmin(admin.ModelAdmin[models.FollowRequest]):
+    list_display = ('uuid', 'follower', 'followee')
+    list_display_links = ('uuid', 'follower', 'followee')
