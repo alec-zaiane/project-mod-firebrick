@@ -17,6 +17,8 @@ from comments.serializers import CommentSerializer
 from comments.viewsets import CommentViewSet
 
 from posts.models import Post
+from posts.serializers import PostSerializer
+from posts.viewsets import PostViewSet
 
 from user_management.serializers import FollowRequestSerializer
 from user_management.viewsets import FollowRequestViewSet
@@ -271,3 +273,25 @@ class FollowRequestInboxHandler(InboxHandler):
 
 
 register_inbox_handler(FollowRequestInboxHandler())
+
+
+class PostInboxHandler(InboxHandler):
+    """
+    - URL: ://service/api/authors/{AUTHOR_SERIAL}/inbox
+        - POST [remote]: post to AUTHOR_SERIAL
+        - Body is a post object
+    """
+
+    def __init__(self) -> None:
+        super().__init__("post")
+
+    @property
+    def serializer(self) -> type[PostSerializer]:
+        return PostSerializer  # pragma: no cover
+
+    def post(self, request: Request, target_author: Author) -> Response:
+        # since a post is being created, we don't need to check if the author can see it
+        return self._post_to_viewset(request, PostViewSet())
+
+
+register_inbox_handler(PostInboxHandler())
