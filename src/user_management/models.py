@@ -283,7 +283,8 @@ class Author(ApiObject):
         return reverse("user_management:node2node_authors-list")
 
     def node2node_get_update_url(self) -> str:
-        return reverse("user_management:node2node_authors-detail", kwargs={"fqid": self.get_encoded_fqid()})
+        return self.fqid
+        # return reverse("user_management:node2node_authors-detail", kwargs={"fqid": self.get_encoded_fqid()})
 
     def node2node_get_deletion_url(self) -> str:
         return self.node2node_get_update_url()

@@ -74,7 +74,8 @@ class Comment(AuthoredApiObject):
         return author_for_inbox.node2node_get_inbox_url()
 
     def node2node_get_update_url(self) -> str:
-        return reverse("comments:node2node_comments-detail", kwargs={"fqid": self.get_encoded_fqid()})
+        return self.fqid
+        # return reverse("comments:node2node_comments-detail", kwargs={"uuid": self.uuid})
 
     def node2node_get_deletion_url(self) -> str:
         return self.node2node_get_update_url()
