@@ -51,7 +51,7 @@ class TestNode2NodeAuthors(GeneralUserStoryApiTest):
         self.assertEqual(result.status_code, 200)
         expected = {
             "type": "authors",
-            "items": [
+            "authors": [
                 {
                     "type": "author",
                     "id": author.fqid,
@@ -77,7 +77,7 @@ class TestNode2NodeAuthors(GeneralUserStoryApiTest):
         self.assertEqual(response2.status_code, 200)
         expected2 = {
             "type": "authors",
-            "items": [
+            "authors": [
                 {
                     "type": "author",
                     "id": author.fqid,
@@ -95,7 +95,7 @@ class TestNode2NodeAuthors(GeneralUserStoryApiTest):
         self.assertEqual(response3.status_code, 200)
         expected3 = {
             "type": "authors",
-            "items": [
+            "authors": [
                 {
                     "type": "author",
                     "id": author.fqid,
