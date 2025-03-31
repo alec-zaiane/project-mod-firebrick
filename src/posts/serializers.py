@@ -1,7 +1,7 @@
 from typing import Any
 from rest_framework import serializers
 from rest_framework.serializers import ValidationError
-from posts.models import Post, CONTENT_TYPE_WEB_MAP, CONTENT_TYPE_WEB_MAP_REVERSE
+from posts.models import Post, CONTENT_TYPE_WEB_MAP, CONTENT_TYPE_WEB_MAP_REVERSE, VISIBILITY_TYPE_WEB_MAP, VISIBILITY_TYPE_WEB_MAP_REVERSE
 from comments.models import Comment
 from user_management.models import Author
 from user_management.serializers import AuthorSerializer
@@ -87,13 +87,19 @@ class PostSerializer(serializers.ModelSerializer[Post]):
             "comments": CommentSerializer(instance.comments.all(), many=True).data,
             "likes": LikeSerializer(instance.likes.all(), many=True).data,
             "published": instance.created_at.isoformat(),
-            "visibility": instance.visibility_type,
+            "visibility": VISIBILITY_TYPE_WEB_MAP.get(instance.visibility_type),
         }
 
     def to_internal_value(self, data: dict[str, Any]) -> dict[str, Any]:
         """Convert JSON data into a dictionary compatible with Post model."""
         if data.get("type") != "post":
-            raise ValidationError("Post object must always have type 'post'")
+            raise ValidationError({
+                "type": "Post object must always have type 'post'"
+            })
+        if "contentType" not in data:
+            raise ValidationError({
+                "contentType": "Post object must always have contentType"
+            })
 
         post_type = CONTENT_TYPE_WEB_MAP_REVERSE.get(data["contentType"], None)
         if post_type is None:
@@ -102,11 +108,19 @@ class PostSerializer(serializers.ModelSerializer[Post]):
         # before returning, make sure that all `likes` and `comments` are copied into our database if they don't exist
         # TODO verify that this is the correct way to handle this
         if "comments" in data:
-            for comment in data["comments"]:
+            if "src" not in data["comments"]:
+                raise ValidationError({
+                    "comments": "Post object must always have comments src"
+                })
+            for comment in data["comments"]["src"]:
                 comment_dict = CommentSerializer().to_internal_value(comment)
                 Comment.objects.get_or_create(**comment_dict)
         if "likes" in data:
-            for like in data["likes"]:
+            if "src" not in data["comments"]:
+                raise ValidationError({
+                    "likes": "Post object must always have likes src"
+                })
+            for like in data["likes"]["src"]:
                 like_dict = LikeSerializer().to_internal_value(like)
                 Like.objects.get_or_create(**like_dict)
 
@@ -119,7 +133,7 @@ class PostSerializer(serializers.ModelSerializer[Post]):
             "post_type": post_type,  # contentType
             "content": data["content"],
             "author": author,
-            "visibility_type": data["visibility"],
+            "visibility_type": VISIBILITY_TYPE_WEB_MAP_REVERSE.get(data["visibility"]),
         }
 
     def create(self, validated_data: dict[str, Any]) -> Post:

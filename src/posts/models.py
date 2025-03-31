@@ -57,6 +57,20 @@ class VisibilityTypes(models.TextChoices):
     UNLISTED = "UL", _("Unlisted")
 
 
+# There are for mapping from web `visibility` field to the visibility type
+VISIBILITY_TYPE_WEB_MAP: dict[str, str] = {
+    VisibilityTypes.PUBLIC: "PUBLIC",
+    VisibilityTypes.FRIENDS_ONLY: "FRIENDS",
+    VisibilityTypes.UNLISTED: "UNLISTED",
+}
+
+VISIBILITY_TYPE_WEB_MAP_REVERSE: dict[str, str] = {
+    "PUBLIC": VisibilityTypes.PUBLIC,
+    "FRIENDS": VisibilityTypes.FRIENDS_ONLY,
+    "UNLISTED": VisibilityTypes.UNLISTED,
+}
+
+
 class VisibilityTypeResolver:
     """Modified an existing Q object with a visibility type"""
     @staticmethod

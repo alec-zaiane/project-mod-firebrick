@@ -6,9 +6,7 @@ from rest_framework import status
 
 from core.utils.testing_utils import Node2NodeReceptionTestCase
 
-from posts.models import Post, PostTypes, VisibilityTypes
 from comments.models import Comment
-from user_management.models import Node, User, Author, JoinRequest
 
 import requests
 
