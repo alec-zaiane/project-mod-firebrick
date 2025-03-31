@@ -50,19 +50,17 @@
                                 <input type="hidden" name="summary" value="{{ viewer.display_name }} wants to follow {{ author.display_name }}">
 
                                 <input type="hidden" name="actor__type" value="author">
-                                <input type="hidden" name="actor__id" value="{{ viewer.id }}">
+                                <input type="hidden" name="actor__id" value="{{ viewer.encoded_fqid }}">
                                 <input type="hidden" name="actor__host" value="{{ viewer.host_node.host_url }}">
                                 <input type="hidden" name="actor__displayName" value="{{ viewer.display_name }}">
-                                <input type="hidden" name="actor__github" value="{{ viewer.github }}">
                                 <input type="hidden" name="actor__profileImage" value="{{ viewer.profile_image }}">
                                 <input type="hidden" name="actor__page" value="{{ viewer.host_node.host_site_url }}authors/{{ viewer.uuid }}">
 
                                 <input type="hidden" name="object__type" value="author">
-                                <input type="hidden" name="object__id" value="{{ author.id }}">
+                                <input type="hidden" name="object__id" value="{{ author.encoded_fqid }}">
                                 <input type="hidden" name="object__host" value="{{ author.host_node.host_url }}">
                                 <input type="hidden" name="object__displayName" value="{{ author.display_name }}">
                                 <input type="hidden" name="object__page" value="{{ author.host_node.host_site_url }}authors/{{ author.uuid }}">
-                                <input type="hidden" name="object__github" value="{{ author.github }}">
                                 <input type="hidden" name="object__profileImage" value="{{ author.profile_image }}">
 
                                 <button class="profile-button" type="submit">Follow</button>

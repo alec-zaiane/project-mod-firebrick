@@ -37,7 +37,7 @@ class ApiObjectManager(models.Manager[ModelT], Generic[ModelT]):
         """Find by a percent-encoded fqid"""
         return self.find_by_fqid(unquote(fqid))
 
-    def find_by_uuid(self, uuid: str) -> Optional[ModelT]:
+    def find_by_uuid(self, uuid: str | UUID) -> Optional[ModelT]:
         return self.filter(uuid=uuid).first()
 
 
@@ -73,6 +73,11 @@ class ApiObject(models.Model):
     def get_encoded_fqid(self) -> str:
         """Get a percent-encoded fqid"""
         return quote(self.fqid, safe="")
+
+    @property
+    def encoded_fqid(self) -> str:
+        """same as get_encoded_fqid, but for readability"""
+        return self.get_encoded_fqid()
 
     def clean(self) -> None:
         super().clean()

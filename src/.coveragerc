@@ -14,3 +14,4 @@ exclude_lines =
     def __str__
     ^from .* import
     ^import
+skip_covered = True
