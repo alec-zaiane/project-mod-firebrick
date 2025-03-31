@@ -45,7 +45,7 @@ class CommentViewSet(viewsets.ModelViewSet[Comment]):
             super_data = super_data["results"]
         return Response({
             "type": "comments",
-            "items": super_data
+            "author": super_data
         })
 
     @extend_schema(

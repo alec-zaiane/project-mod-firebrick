@@ -64,9 +64,9 @@ class AuthorViewSet(viewsets.ModelViewSet[Author]):
                     "type": "object",
                     "properties": {
                         "type": {"type": "string", "example": "authors"},
-                        "items": {
+                        "author": {
                             "type": "array",
-                            "items": {"$ref": "#/components/schemas/Author"},
+                            "author": {"$ref": "#/components/schemas/Author"},
                         },
                     },
                 },

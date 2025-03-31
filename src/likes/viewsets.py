@@ -39,7 +39,7 @@ class LikeViewSet(viewsets.ModelViewSet[Like]):
             super_data = super_data["results"]
         return Response({
             "type": "likes",
-            "items": super_data
+            "author": super_data
         })
 
     def create(self, request: Request) -> Response:

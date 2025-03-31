@@ -68,9 +68,9 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
                     "type": "object",
                     "properties": {
                         "type": {"type": "string", "example": "posts"},
-                        "items": {
+                        "author": {
                             "type": "array",
-                            "items": {"$ref": "#/components/schemas/Post"}
+                            "author": {"$ref": "#/components/schemas/Post"}
                         }
                     }
                 },
