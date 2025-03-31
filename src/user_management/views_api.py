@@ -362,3 +362,6 @@ class FollowDecisionInboxHandler(InboxHandler):
         if existing_follow_request:
             existing_follow_request.delete()
         return Response({"status": "success"}, status=200)
+
+
+register_inbox_handler(FollowDecisionInboxHandler())
