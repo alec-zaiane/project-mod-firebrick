@@ -222,7 +222,7 @@ class TestNode2NodeProperSending(GeneralUserStoryApiTest):
         action = node.actions_log[0]
         self.assertEqual(action.action_type, ActionType.POST)
         self.assertEqual(
-            action.url, f"http://example.com{reverse('user_management:node2node_inbox', args=[external_author.get_encoded_fqid()])}")
+            action.url, f"http://example.com{reverse('user_management:node2node_inbox', args=[external_author.uuid])}")
         self.assertEqual(action.json, FollowRequestSerializer().to_representation(follow_request))
 
     # CRUD FOR POSTS ===========================================================
@@ -246,7 +246,7 @@ class TestNode2NodeProperSending(GeneralUserStoryApiTest):
         action = node.actions_log[0]
         self.assertEqual(action.action_type, ActionType.POST)
         self.assertEqual(
-            action.url, f"http://example.com{reverse('user_management:node2node_inbox', args=[external_author.get_encoded_fqid()])}")
+            action.url, f"http://example.com{reverse('user_management:node2node_inbox', args=[external_author.uuid])}")
         self.assertEqual(action.json, PostSerializer().to_representation(post))
 
     def test_update_of_post(self) -> None:
@@ -302,7 +302,7 @@ class TestNode2NodeProperSending(GeneralUserStoryApiTest):
         action = node.actions_log[0]
         self.assertEqual(action.action_type, ActionType.POST)
         self.assertEqual(
-            action.url, f"http://example.com{reverse('user_management:node2node_inbox', args=[external_author.get_encoded_fqid()])}")
+            action.url, f"http://example.com{reverse('user_management:node2node_inbox', args=[external_author.uuid])}")
         self.assertEqual(action.json, CommentSerializer().to_representation(comment))
 
     def test_update_of_comment(self) -> None:
@@ -358,7 +358,7 @@ class TestNode2NodeProperSending(GeneralUserStoryApiTest):
         action = node.actions_log[0]
         self.assertEqual(action.action_type, ActionType.POST)
         self.assertEqual(
-            action.url, f"http://example.com{reverse('user_management:node2node_inbox', args=[external_author.get_encoded_fqid()])}")
+            action.url, f"http://example.com{reverse('user_management:node2node_inbox', args=[external_author.uuid])}")
         self.assertEqual(action.json, LikeSerializer().to_representation(like))
 
     def test_creation_of_like_comment(self) -> None:
@@ -378,7 +378,7 @@ class TestNode2NodeProperSending(GeneralUserStoryApiTest):
         action = node.actions_log[0]
         self.assertEqual(action.action_type, ActionType.POST)
         self.assertEqual(
-            action.url, f"http://example.com{reverse('user_management:node2node_inbox', args=[external_author.get_encoded_fqid()])}")
+            action.url, f"http://example.com{reverse('user_management:node2node_inbox', args=[external_author.uuid])}")
         self.assertEqual(action.json, LikeSerializer().to_representation(like))
 
     def test_deletion_of_like(self) -> None:

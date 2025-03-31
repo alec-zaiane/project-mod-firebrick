@@ -511,6 +511,8 @@ class Node(models.Model):
 
     def _make_absolute_url(self, url: str) -> str:
         host_url_no_slash = self.host_url.rstrip("/")
+        if url.startswith(host_url_no_slash):
+            return url
         to_no_slash = url.lstrip("/")
         # horrible but worky
         return f"{host_url_no_slash}/{to_no_slash}".replace("/api/api", "/api")
