@@ -113,17 +113,27 @@ class PostSerializer(serializers.ModelSerializer[Post]):
         # TODO verify that this is the correct way to handle this
         if "comments" in data:
             if "src" not in data["comments"]:
-                raise ValidationError({
-                    "comments": "Post object must always have comments src"
-                })
+                # gracefully handle:
+                data["comments"] = {
+                    "type": "comments",
+                    "src": data["comments"],
+                }
+                # raise ValidationError({
+                #     "comments": "Post object must always have comments src"
+                # })
             for comment in data["comments"]["src"]:
                 comment_dict = CommentSerializer().to_internal_value(comment)
                 Comment.objects.get_or_create(**comment_dict)
         if "likes" in data:
             if "src" not in data["comments"]:
-                raise ValidationError({
-                    "likes": "Post object must always have likes src"
-                })
+                # gracefully handle:
+                data["likes"] = {
+                    "type": "likes",
+                    "src": data["likes"],
+                }
+                # raise ValidationError({
+                #     "likes": "Post object must always have likes src"
+                # })
             for like in data["likes"]["src"]:
                 like_dict = LikeSerializer().to_internal_value(like)
                 Like.objects.get_or_create(**like_dict)
