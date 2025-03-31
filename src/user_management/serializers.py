@@ -50,6 +50,8 @@ class AuthorSerializer(serializers.ModelSerializer[Author]):
             raise ValidationError({
                 "type": "Author object must always have type author",
             })
+        if data.get("profileImage", None) is None:
+            data["profileImage"] = ""
         return {
             "fqid": data["id"],
             "host__host_url": data["host"],
