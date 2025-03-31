@@ -57,6 +57,30 @@ function nestify_formData(formData) {
     return outputFormData;
 }
 
+// possible inspiration for alec
+
+// function nestify_formData(formData) {
+//     const outputObj = {};
+
+//     for (const [key, value] of formData.entries()) {
+//         const keys = key.split("__");
+//         let current = outputObj;
+
+//         for (let i = 0; i < keys.length - 1; i++) {
+//             const part = keys[i];
+//             if (!(part in current)) {
+//                 current[part] = {};
+//             }
+//             current = current[part];
+//         }
+
+//         current[keys[keys.length - 1]] = value;
+//     }
+
+//     return outputObj;
+// }
+
+
 function flatten_object(responseData) {
     // take in a nested object and return a flat list of key-value pairs (the opposite of nestify_formData)
     // eg: {user: {username: "test"}} -> {"user__username": "test"}
