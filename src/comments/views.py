@@ -11,6 +11,8 @@ from comments.models import Comment
 from posts.models import Post, PostTypes
 from core.utils.request_viewer import get_request_viewer
 
+from uuid import UUID
+
 
 # Create your views here.
 
@@ -31,8 +33,11 @@ class InternalCommentView(APIView):
 
 
 class PostCommentsAPIView(APIView):
-    def get(self, request: Request, encoded_post_fqid: str) -> Response:
-        post = Post.objects.find_by_encoded_fqid(encoded_post_fqid)
+    def get(self, request: Request, post_uuid: UUID) -> Response:
+        post = Post.visible_posts.filter(
+            uuid=post_uuid,
+            host_node__is_local_node=True,
+        ).first()
         if post is None:
             return Response({"error": "Post not found"}, status=status.HTTP_404_NOT_FOUND)
         comments = Comment.objects.filter(post=post)

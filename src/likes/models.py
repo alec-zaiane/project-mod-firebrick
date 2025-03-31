@@ -121,9 +121,7 @@ class Like(AuthoredApiObject):
     def node2node_get_creation_url(self, author_for_inbox: Optional[Author] = None) -> str:
         if not author_for_inbox:
             return reverse("likes:node2node_likes-list")
-        return reverse("user_management:node2node_inbox", args=[
-            author_for_inbox.get_encoded_fqid()
-        ])
+        return author_for_inbox.node2node_get_inbox_url()
 
     def node2node_get_update_url(self) -> str:
         return reverse("likes:node2node_likes-detail", kwargs={"fqid": self.get_encoded_fqid()})

@@ -8,7 +8,7 @@ from likes import views
 app_name = "likes"
 urlpatterns: list[URLPattern | URLResolver] = [
     path("api/likes/<str:target_fqid>/like", views.LikeByViewer.as_view(), name="like_by_viewer"),
-    path("authors/<str:encoded_author_fqid>/liked", AuthorLikesAPIView.as_view(), name="node2node_author_likes"),
+    path("authors/<uuid:author_uuid>/liked", AuthorLikesAPIView.as_view(), name="node2node_author_likes"),
 ]
 
 router = routers.SimpleRouter()

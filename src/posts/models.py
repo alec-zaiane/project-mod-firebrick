@@ -378,7 +378,7 @@ class Post(AuthoredApiObject):
         # the _propagate_save_to_other_nodes method will handle this as it needs some custom logic
         if author_for_inbox is None:
             return reverse("posts:node2node_posts-list")
-        return reverse("user_management:node2node_inbox", args=[author_for_inbox.get_encoded_fqid()])
+        return author_for_inbox.node2node_get_inbox_url()
 
     def node2node_get_update_url(self) -> str:
         return reverse("posts:api_posts-detail", kwargs={"fqid": self.get_encoded_fqid()})

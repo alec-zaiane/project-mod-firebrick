@@ -30,6 +30,8 @@ from core.utils.redirects import API_UNAUTHORIZED, API_FORBIDDEN
 from drf_spectacular.utils import extend_schema
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer
 
+from uuid import UUID
+
 # ======================================================================================
 # Inbox handling
 # A combined view for all calls to `://service/api/authors/{AUTHOR_SERIAL}/inbox`
@@ -142,18 +144,18 @@ class InboxView(views.APIView):
         },
         tags=["Inbox"],
     )
-    def post(self, request: Request, target_author_fqid: str) -> Response:
+    def post(self, request: Request, target_author_uuid: UUID) -> Response:
         """Send an inbox item to this author's inbox"""
         type = request.data.get("type")
         if type is None:
             return Response({"error": "missing 'type' field under inbox item"}, 400)
 
         # make sure the author FQID is valid
-        if not target_author_fqid:
-            return Response({"error": "missing 'target_author_fqid' field"}, 400)
-        target_author = Author.local_authors.find_by_encoded_fqid(target_author_fqid)
+        if not target_author_uuid:
+            return Response({"error": "missing 'target_author_uuid' field"}, 400)
+        target_author = Author.local_authors.find_by_uuid(target_author_uuid)
         if target_author is None:
-            return Response({"error": "Author not found", "fqid": target_author_fqid}, 404)
+            return Response({"error": "Author not found", "uuid": target_author_uuid}, 404)
 
         handler = self._find_handler_for_type(type)
         if handler is not None:

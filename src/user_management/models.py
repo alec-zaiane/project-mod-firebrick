@@ -288,6 +288,9 @@ class Author(ApiObject):
     def node2node_get_deletion_url(self) -> str:
         return self.node2node_get_update_url()
 
+    def node2node_get_inbox_url(self) -> str:
+        return self.fqid.rstrip("/") + "/inbox"
+
 
 # === Proxy Classes for Authors ===
 
@@ -369,9 +372,7 @@ class FollowRequest(ApiObject):
     def node2node_get_creation_url(self, author_for_inbox: Optional[Author] = None) -> str:
         if author_for_inbox is None:
             return reverse("user_management:node2node_follow_requests-list")
-        return reverse("user_management:node2node_inbox", args=[
-            author_for_inbox.get_encoded_fqid()
-        ])
+        return author_for_inbox.node2node_get_inbox_url()
 
     def node2node_get_update_url(self) -> str:
         return reverse("user_management:node2node_follow_requests-detail", kwargs={"fqid": self.get_encoded_fqid()})
