@@ -52,6 +52,8 @@ class LikeSerializer(serializers.ModelSerializer[Like]):
     def to_internal_value(self, data: dict[str, Any]) -> dict[str, Any]:
         if data.get("type") != "like":
             raise ValidationError({"type": "Like object must always have type like"})
+        if 'object' not in data:
+            raise ValidationError({"object": "Like object must have an object field"})
         maybe_post = Post.visible_posts.find_by_fqid(data["object"])
         maybe_comment = Comment.objects.find_by_fqid(data["object"])
         if maybe_post is None and maybe_comment is None:

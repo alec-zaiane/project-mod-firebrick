@@ -1,11 +1,10 @@
 """Tests for node2node issues"""
 
-from django.test import tag, override_settings
 from django.urls import reverse
 
 from rest_framework import status
 
-from core.utils.testing_utils import Node2NodeTestCase
+from core.utils.testing_utils import Node2NodeReceptionTestCase
 
 from posts.models import Post, PostTypes, VisibilityTypes
 from comments.models import Comment
@@ -16,8 +15,7 @@ import requests
 import json
 
 
-@tag("node2node")
-class TestNode2NodeComments(Node2NodeTestCase):
+class TestNode2NodeComments(Node2NodeReceptionTestCase):
     def setUp(self) -> None:
         super().setUp()
         # create a user and a post to comment on

@@ -389,7 +389,10 @@ class AdminUITestCase(UITestCase):
             self.find_elements_by_selector("input[type=submit]")[0].click()
 
 
-class Node2NodeTestCase(LiveServerTestCase, GeneralUserStoryApiTest):
+@tag("node2node")
+class Node2NodeReceptionTestCase(LiveServerTestCase, GeneralUserStoryApiTest):
+    """Test case parent class for testing reception of node2node messages"""
+
     def setUp(self) -> None:
         # from copilot: use Class.setUp(self) to not have to deal with super() shenanigans
         GeneralUserStoryApiTest.setUp(self)
