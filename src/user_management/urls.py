@@ -50,7 +50,7 @@ urlpatterns: list[URLPattern | URLResolver] = [
 
     path("api/authors/<uuid:target_author_uuid>/inbox/",
          InboxView.as_view(),
-         name="node2node_inbox"
+         name="node2node_inbox_slash"
          ),
 
     path("api/authors/search/",
