@@ -360,8 +360,25 @@ class Post(AuthoredApiObject):
         from posts.serializers import PostSerializer
         return PostSerializer().to_representation(self)
 
-    def node2node_get_creation_url(self) -> str:
-        return reverse("posts:api_posts-list")
+    def _propagate_post_save_to_other_nodes(self, created: bool) -> None:
+        if not created:
+            return super()._propagate_post_save_to_other_nodes(created)
+        # otherwise we need to send the post to the inboxes of followers of the author
+        for follower in self.author.followers.all():
+            if follower.is_local:
+                continue
+            # send the post to the follower's inbox
+            url = self.node2node_get_creation_url(author_for_inbox=follower)
+            follower.host_node.send_create(
+                self.node2node_encode_as_class_json_dict(),
+                to=url,
+            )
+
+    def node2node_get_creation_url(self, author_for_inbox: Optional[Author] = None) -> str:
+        # the _propagate_save_to_other_nodes method will handle this as it needs some custom logic
+        if author_for_inbox is None:
+            return reverse("posts:node2node_posts-list")
+        return reverse("user_management:node2node_inbox", args=[author_for_inbox.get_encoded_fqid()])
 
     def node2node_get_update_url(self) -> str:
         return reverse("posts:api_posts-detail", kwargs={"fqid": self.get_encoded_fqid()})

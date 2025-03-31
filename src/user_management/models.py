@@ -278,7 +278,7 @@ class Author(ApiObject):
         from user_management.serializers import AuthorSerializer
         return AuthorSerializer().to_representation(self)
 
-    def node2node_get_creation_url(self) -> str:
+    def node2node_get_creation_url(self, author_for_inbox: Optional[Author] = None) -> str:
         return reverse("user_management:node2node_authors-list")
 
     def node2node_get_update_url(self) -> str:
@@ -351,8 +351,26 @@ class FollowRequest(ApiObject):
         from user_management.serializers import FollowRequestSerializer
         return FollowRequestSerializer().to_representation(self)
 
-    def node2node_get_creation_url(self) -> str:
-        return reverse("user_management:node2node_follow_requests-list")
+    def _propagate_post_save_to_other_nodes(self, created: bool) -> None:
+        if not created:
+            return super()._propagate_post_save_to_other_nodes(created)
+        # send it to the target's inbox
+        recipient = self.followee
+        if recipient.host_node.is_local_node:
+            # don't send to self
+            return
+        # send to the inbox of the author of the post
+        recipient.host_node.send_create(
+            self.node2node_encode_as_class_json_dict(),
+            to=self.node2node_get_creation_url(recipient)
+        )
+
+    def node2node_get_creation_url(self, author_for_inbox: Optional[Author] = None) -> str:
+        if author_for_inbox is None:
+            return reverse("user_management:node2node_follow_requests-list")
+        return reverse("user_management:node2node_inbox", args=[
+            author_for_inbox.get_encoded_fqid()
+        ])
 
     def node2node_get_update_url(self) -> str:
         return reverse("user_management:node2node_follow_requests-detail", kwargs={"fqid": self.get_encoded_fqid()})
