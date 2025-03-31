@@ -92,6 +92,7 @@ class PostSerializer(serializers.ModelSerializer[Post]):
                       },
             "published": instance.created_at.isoformat(),
             "visibility": VISIBILITY_TYPE_WEB_MAP.get(instance.visibility_type),
+            "page": instance.author.page_url,
         }
 
     def to_internal_value(self, data: dict[str, Any]) -> dict[str, Any]:
