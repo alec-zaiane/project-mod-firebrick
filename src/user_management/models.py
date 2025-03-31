@@ -18,7 +18,7 @@ from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import AbstractUser, UserManager
 from django.urls import reverse
 
-from core.settings import DEBUG
+from core.settings import DEBUG, DEBUG_DONT_DISABLE_NODES
 from core.utils.api_object import ApiObject, ApiObjectManager
 from core.utils.validators import validate_url_returns_image
 
@@ -517,8 +517,8 @@ class Node(models.Model):
             response.raise_for_status()
             print(f"[Node {self.name}] Update sent to {to}")
         except requests.RequestException as e:
-            if DEBUG:
-                print(f"[Node {self.name}] Failed to send UPDATE to {to}: {e}")
+            if not DEBUG and not DEBUG_DONT_DISABLE_NODES:
+                print(f"[Node {self.name}] Failed to send UPDATE to {to}: {e}, disabling node...")
                 # Disables a node that ever sends an invalid update
                 self.is_disabled = True
                 self.save()
@@ -532,8 +532,8 @@ class Node(models.Model):
             response = self._post(json, self._make_absolute_url(to))
             response.raise_for_status()
         except requests.RequestException as e:
-            if DEBUG:
-                print(f"[Node {self.name}] Failed to send CREATE to {to}: {e}")
+            if not DEBUG and not DEBUG_DONT_DISABLE_NODES:
+                print(f"[Node {self.name}] Failed to send CREATE to {to}: {e}, disabling node...")
                 # Disables a node that ever sends an invalid update
                 self.is_disabled = True
                 self.save()
@@ -549,8 +549,8 @@ class Node(models.Model):
             response.raise_for_status()
             print(f"[Node {self.name}] Delete sent to {to}")
         except requests.RequestException as e:
-            if DEBUG:
-                print(f"[Node {self.name}] Failed to send DELETE to {to}: {e}")
+            if not DEBUG and not DEBUG_DONT_DISABLE_NODES:
+                print(f"[Node {self.name}] Failed to send DELETE to {to}: {e}, disabling node...")
                 # Disables a node that ever sends an invalid update
                 self.is_disabled = True
                 self.save()
