@@ -84,8 +84,12 @@ class PostSerializer(serializers.ModelSerializer[Post]):
             "contentType": content_type,
             "content": instance.content,
             "author": AuthorSerializer(instance.author).data,
-            "comments": CommentSerializer(instance.comments.all(), many=True).data,
-            "likes": LikeSerializer(instance.likes.all(), many=True).data,
+            "comments": {"type": "comments",
+                         "src": CommentSerializer(instance.comments.all(), many=True).data
+                         },
+            "likes": {"type": "likes",
+                      "src": LikeSerializer(instance.likes.all(), many=True).data,
+                      },
             "published": instance.created_at.isoformat(),
             "visibility": VISIBILITY_TYPE_WEB_MAP.get(instance.visibility_type),
         }
