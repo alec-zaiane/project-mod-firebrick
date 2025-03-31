@@ -481,6 +481,10 @@ class Node(models.Model):
     def get_hosted_users(self) -> models.QuerySet[Author]:
         return Author.objects.filter(host_node=self)
 
+    def get_host_url_slash(self) -> str:
+        """Get the host URL with a trailing slash"""
+        return self.host_url.rstrip("/") + "/"
+
     # Node2Node communication
 
     # HTTP METHODS ====== IF YOU ADD ONE MAKE SURE TO ADD TO user_management.tests.mock_node.py AS WELL

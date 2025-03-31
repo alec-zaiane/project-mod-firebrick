@@ -35,7 +35,7 @@ class TestNode2NodePosts(Node2NodeReceptionTestCase):
             "author": {
                 "type": "author",
                 "id": external_author.fqid,
-                "host": self.other_node.host_url,
+                "host": self.other_node.get_host_url_slash(),
                 "displayName": external_author.display_name,
                 "profileImage": "",
                 "page": "http://localhost:10000/api/authors/3f3c2376-c0eb-401e-abd9-3a1ab6c5cfca",

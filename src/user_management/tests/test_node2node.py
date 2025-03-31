@@ -35,7 +35,7 @@ class TestNode2NodeAuthors(GeneralUserStoryApiTest):
         expected = {
             "type": "author",
             "id": self.sample_authors[0].fqid,
-            "host": self.sample_authors[0].host_node.host_url,
+            "host": self.sample_authors[0].host_node.get_host_url_slash(),
             "displayName": self.sample_authors[0].display_name,
             "profileImage": self.sample_authors[0].profile_image,
             "page": self.sample_authors[0].page_url,
@@ -55,7 +55,7 @@ class TestNode2NodeAuthors(GeneralUserStoryApiTest):
                 {
                     "type": "author",
                     "id": author.fqid,
-                    "host": author.host_node.host_url,
+                    "host": author.host_node.get_host_url_slash(),
                     "displayName": author.display_name,
                     "profileImage": author.profile_image,
                     "page": author.page_url,
@@ -81,7 +81,7 @@ class TestNode2NodeAuthors(GeneralUserStoryApiTest):
                 {
                     "type": "author",
                     "id": author.fqid,
-                    "host": author.host_node.host_url,
+                    "host": author.host_node.get_host_url_slash(),
                     "displayName": author.display_name,
                     "profileImage": author.profile_image,
                     "page": author.page_url,
@@ -99,7 +99,7 @@ class TestNode2NodeAuthors(GeneralUserStoryApiTest):
                 {
                     "type": "author",
                     "id": author.fqid,
-                    "host": author.host_node.host_url,
+                    "host": author.host_node.get_host_url_slash(),
                     "displayName": author.display_name,
                     "profileImage": author.profile_image,
                     "page": author.page_url,
@@ -413,7 +413,7 @@ class TestNode2NodeReceiveFollowRequests(Node2NodeReceptionTestCase):
             "actor": {
                 "type": "author",
                 "id": self.external_authors[0].fqid,
-                "host": self.other_node.host_url,
+                "host": self.other_node.get_host_url_slash(),
                 "displayName": self.external_authors[0].display_name,
                 "profileImage": self.external_authors[0].profile_image,
                 "page": self.external_authors[0].page_url,
@@ -421,7 +421,7 @@ class TestNode2NodeReceiveFollowRequests(Node2NodeReceptionTestCase):
             "object": {
                 "type": "author",
                 "id": self.sample_authors[0].fqid,
-                "host": self.sample_authors[0].host_node.host_url,
+                "host": self.sample_authors[0].host_node.get_host_url_slash(),
                 "displayName": self.sample_authors[0].display_name,
                 "profileImage": self.sample_authors[0].profile_image,
                 "page": self.sample_authors[0].page_url,

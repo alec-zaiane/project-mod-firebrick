@@ -35,7 +35,7 @@ class AuthorSerializer(serializers.ModelSerializer[Author]):
     def to_representation(self, instance: Author) -> dict[str, Any]:
         if not isinstance(instance, Author):
             raise ValueError(f"AuthorSerializer can only serialize Author objects, got {instance}")
-        author_node_url = instance.host_node.host_url
+        author_node_url = instance.host_node.get_host_url_slash()
         return {
             "type": "author",
             "id": instance.fqid,
