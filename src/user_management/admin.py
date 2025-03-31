@@ -56,15 +56,15 @@ class NodeAdmin(admin.ModelAdmin[models.Node]):
         """
         Synchronize the selected nodes with the remote nodes.
         """
-        success, fail = 0, 0
+        success = 0
         for node in queryset:
             try:
                 node.synchronize_all()
                 success += 1
             except Exception as e:
-                fail += 1
-        messages.warning(
-            request, f"Synchronized {success} nodes, failed to synchronize {fail} nodes. check logs for details")
+                messages.error(
+                    request, f"Failed to synchronize {node.name}: {e}")
+        messages.success(request, f"Successfully synchronized {success} nodes.")
 
 
 @admin.register(models.JoinRequest)
