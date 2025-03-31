@@ -3,7 +3,7 @@
 from django.test import tag
 from django.urls import reverse
 
-from core.utils.testing_utils import GeneralUserStoryApiTest
+from core.utils.testing_utils import GeneralUserStoryApiTest, Node2NodeReceptionTestCase
 
 from user_management.models import FollowRequest, Author, Node, User
 from user_management.tests.mock_node import MockNode, Action, ActionType, monkeypatch_mock_nodes
@@ -18,6 +18,8 @@ from likes.serializers import LikeSerializer
 from user_management.serializers import AuthorSerializer, FollowRequestSerializer
 
 import base64
+import json
+import requests
 
 
 @tag("node2node")
@@ -394,3 +396,87 @@ class TestNode2NodeProperSending(GeneralUserStoryApiTest):
         self.assertEqual(action.action_type, ActionType.DELETE)
         self.assertEqual(
             action.url, f"http://example.com{reverse('likes:node2node_likes-detail', kwargs={"fqid": like.get_encoded_fqid()})}")
+
+
+class TestNode2NodeReceiveFollowRequests(Node2NodeReceptionTestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.initialize_sample_authors(1)
+        self.initialize_other_node()
+        self.initialize_external_authors(1)
+        self.author0_inbox_url = self.live_server_url + reverse("user_management:node2node_inbox", args=[
+            self.sample_authors[0].get_encoded_fqid()
+        ])
+        self.receive_json = {
+            "type": "follow",
+            "summary": "A wants to follow B",
+            "actor": {
+                "type": "author",
+                "id": self.external_authors[0].fqid,
+                "host": self.other_node.host_url,
+                "displayName": self.external_authors[0].display_name,
+                "profileImage": self.external_authors[0].profile_image,
+                "page": self.external_authors[0].page_url,
+            },
+            "object": {
+                "type": "author",
+                "id": self.sample_authors[0].fqid,
+                "host": self.sample_authors[0].host_node.host_url,
+                "displayName": self.sample_authors[0].display_name,
+                "profileImage": self.sample_authors[0].profile_image,
+                "page": self.sample_authors[0].page_url,
+            }
+        }
+
+    def test_create_followrequest(self) -> None:
+        """Simulate receiving a follow request from external -> local user via node2node"""
+        receive_json_string = json.dumps(self.receive_json)
+        response = requests.post(
+            self.author0_inbox_url,
+            data=receive_json_string,
+            headers={"Content-Type": "application/json"},
+            auth=(self.other_node_user.username, "node"),
+        )
+        # make sure it was created
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(FollowRequest.objects.count(), 1)
+        follow_request = FollowRequest.objects.get()
+        self.assertEqual(follow_request.follower, self.external_authors[0])
+        self.assertEqual(follow_request.followee, self.sample_authors[0])
+        self.assertEqual(follow_request.host_node, Node.objects.get_local_node())
+
+    def test_create_followrequest_unauthorized(self) -> None:
+        """Fail to make a follow request with invalid credentials or no credentials"""
+        receive_json_string = json.dumps(self.receive_json)
+        # invalid credentials
+        response = requests.post(
+            self.author0_inbox_url,
+            data=receive_json_string,
+            headers={"Content-Type": "application/json"},
+            auth=("invalid_user", "invalid_password"),
+        )
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(FollowRequest.objects.count(), 0)
+
+        # no credentials
+        response = requests.post(
+            self.author0_inbox_url,
+            data=receive_json_string,
+            headers={"Content-Type": "application/json"},
+        )
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(FollowRequest.objects.count(), 0)
+
+    def test_create_followrequest_invalid(self) -> None:
+        """Fail to make a follow request with invalid data"""
+        # invalid data
+        self.receive_json["type"] = "invalid"
+        receive_json_string = json.dumps(self.receive_json)
+        response = requests.post(
+            self.author0_inbox_url,
+            data=receive_json_string,
+            headers={"Content-Type": "application/json"},
+            auth=(self.other_node_user.username, "node"),
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(FollowRequest.objects.count(), 0)
