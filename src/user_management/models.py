@@ -617,7 +617,7 @@ class Node(models.Model):
         print(f"[Node {self.name}] Synchronizing likes for {len(hosted_users)} authors...")
         for author in hosted_users:
             response = requests.get(
-                self._make_absolute_url(f"/authors/{author.get_encoded_fqid()}/likes"),
+                self._make_absolute_url(f"/authors/{author.get_encoded_fqid()}/liked"),
                 headers={"Accept": "application/json"},
                 auth=HTTPBasicAuth(self.internal_user.username, self.internal_user.password_plain)
             )
