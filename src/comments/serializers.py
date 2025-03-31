@@ -105,7 +105,7 @@ class CommentSerializer(serializers.ModelSerializer[Comment]):
             raise ValidationError(
                 f"Unsupported content type {data['contentType']}, expected one of {list(CONTENT_TYPE_WEB_MAP_REVERSE.keys())}")
 
-        found_post = Post.visible_posts.find_by_encoded_fqid(data["post"])
+        found_post = Post.visible_posts.find_by_fqid(data["post"])
         if found_post is None:
             raise ValidationError(f"Could not find post with id {data['post']}")
 
@@ -115,7 +115,7 @@ class CommentSerializer(serializers.ModelSerializer[Comment]):
                 like_dict = LikeSerializer().to_internal_value(like)
                 Like.objects.get_or_create(**like_dict)
 
-        found_author = Author.objects.find_by_encoded_fqid(data["author"]["id"])
+        found_author = AuthorSerializer().get_or_create(data["author"])
         if found_author is None:
             raise ValidationError(f"Could not find author with id {data['author']['id']}")
 

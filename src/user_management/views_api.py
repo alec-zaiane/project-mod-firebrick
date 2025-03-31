@@ -18,7 +18,7 @@ from user_management.viewsets import FollowRequestViewSet
 from user_management.models import Author
 
 from core.utils.request_viewer import get_request_viewer
-
+from core.utils.redirects import API_UNAUTHORIZED
 
 from drf_spectacular.utils import extend_schema
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer
@@ -211,7 +211,7 @@ class CommentInboxHandler(InboxHandler):
         viewer = get_request_viewer(request)
         serializer = CommentSerializer(data=request.data)
         if viewer is None:
-            return Response("User must be authenticated", 401)
+            return API_UNAUTHORIZED()
         if serializer.is_valid():
             # double check that the viewer has access to the target object
             target = serializer.validated_data["post"]

@@ -74,11 +74,6 @@ class ApiObject(models.Model):
         """Get a percent-encoded fqid"""
         return quote(self.fqid, safe="")
 
-    @property
-    def encoded_fqid(self) -> str:
-        """same as get_encoded_fqid, but for readability"""
-        return self.get_encoded_fqid()
-
     def clean(self) -> None:
         super().clean()
         if not self.fqid:
