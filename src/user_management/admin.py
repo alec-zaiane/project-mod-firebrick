@@ -50,6 +50,21 @@ class NodeAdmin(admin.ModelAdmin[models.Node]):
         })
     )
 
+    @admin.action(description="Synchronize selected nodes")
+    def synchronize(self, request: HttpRequest, queryset: QuerySet[models.Node]) -> None:
+        """
+        Synchronize the selected nodes with the remote nodes.
+        """
+        success, fail = 0, 0
+        for node in queryset:
+            try:
+                node.synchronize_all()
+                success += 1
+            except Exception as e:
+                fail += 1
+        messages.warning(
+            request, f"Synchronized {success} nodes, failed to synchronize {fail} nodes. check logs for details")
+
 
 @admin.register(models.JoinRequest)
 class JoinRequestAdmin(admin.ModelAdmin[models.JoinRequest]):
