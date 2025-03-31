@@ -148,3 +148,15 @@ class PostSerializer(serializers.ModelSerializer[Post]):
         author: Author = validated_data["author"]
         host_node = author.host_node
         return Post.objects.create(fqid=fqid, **validated_data, host_node=host_node)
+
+    def get_or_create(self, data: dict[str, Any]) -> Post:
+        # if a post doesn't exist, create it, otherwise update and return it
+        post_dict = self.to_internal_value(data)
+        post = Post.objects.find_by_fqid(post_dict["fqid"])
+        if post is None:
+            post = self.create(post_dict)
+        else:
+            for key, value in post_dict.items():
+                setattr(post, key, value)
+            post.save()
+        return post

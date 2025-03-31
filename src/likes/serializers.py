@@ -83,7 +83,13 @@ class LikeSerializer(serializers.ModelSerializer[Like]):
         return self.validated_data["_target_comment"]
 
     def get_or_create(self, data: dict[str, Any]) -> Like:
-        try:
-            return Like.objects.get_by_fqid(data["id"])
-        except Like.DoesNotExist:
-            return self.create(data)
+        # if a like doesn't exist, create it, otherwise update and return it
+        like_dict = self.to_internal_value(data)
+        like = Like.objects.find_by_fqid(like_dict["fqid"])
+        if like is None:
+            like = self.create(like_dict)
+        else:
+            for key, value in like_dict.items():
+                setattr(like, key, value)
+            like.save()
+        return like

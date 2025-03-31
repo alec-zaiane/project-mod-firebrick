@@ -592,9 +592,27 @@ class Node(models.Model):
 
     def _synchronize_posts(self) -> None:
         author_list = self.get_hosted_users()
+        assert self.internal_user is not None
+        assert self.internal_user.password_plain is not None  # for mypy
         print(f"[Node {self.name}] Synchronizing posts for {len(author_list)} authors...")
         for author in author_list:
-            raise NotImplementedError("Synchronizing posts is not implemented yet")
+            response = requests.get(
+                self._make_absolute_url(author.fqid + "/posts"),
+                headers={"Accept": "application/json"},
+                auth=HTTPBasicAuth(self.internal_user.username, self.internal_user.password_plain)
+            )
+            if response.status_code != 200:
+                print(
+                    f"[Node {self.name}] Failed to synchronize posts for author {author}: {response.status_code}")
+                continue
+            posts = response.json()
+            from posts.serializers import PostSerializer
+            for post in posts['src']:
+                try:
+                    PostSerializer().get_or_create(post)
+                except Exception as e:
+                    print(f"[Node {self.name}] Failed to synchronize post {post}: {e}")
+                    continue
 
     def _synchronize_comments(self) -> None:
         assert self.internal_user is not None
@@ -652,7 +670,7 @@ class Node(models.Model):
             print(f"[Node {self.name}] Node is disabled, skipping synchronization")
             return
         self._synchronize_authors()
-        # self._synchronize_posts()
+        self._synchronize_posts()
         self._synchronize_comments()
         self._synchronize_likes()
 
