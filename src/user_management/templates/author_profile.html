@@ -24,7 +24,7 @@
             {% if viewer %}
                 {% if author != viewer %}
                     {% if is_following %}
-                        <form id="unfollow-form"  action="{% url 'user_management:node2node_authors-unfollow' author.get_encoded_fqid %}">
+                        <form id="unfollow-form" name="generic-form" action="{% url 'user_management:node2node_authors-unfollow' author.get_encoded_fqid %}">
                             {% csrf_token %}
                             <input type="hidden" name="_method" value="POST">
                             <input type="hidden" name="_after_action" value="reload">
