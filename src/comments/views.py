@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
 
-
+from comments.serializers import CommentSerializer
 from comments.models import Comment
 from posts.models import Post, PostTypes
 from core.utils.request_viewer import get_request_viewer
@@ -28,3 +28,16 @@ class InternalCommentView(APIView):
             return Response({"detail": "comment is required"}, status=400)
         Comment.objects.create_comment(viewer, post, comment_text, PostTypes.PLAINTEXT)
         return Response({"detail": "comment created"}, status=201)
+
+
+class PostCommentsAPIView(APIView):
+    def get(self, request: Request, encoded_post_fqid: str) -> Response:
+        post = Post.objects.find_by_encoded_fqid(encoded_post_fqid)
+        if post is None:
+            return Response({"error": "Post not found"}, status=status.HTTP_404_NOT_FOUND)
+        comments = Comment.objects.filter(post=post)
+        return Response({
+            "type": "comments",
+            "post": post.fqid,
+            "src": [CommentSerializer(c).data for c in comments]
+        })
