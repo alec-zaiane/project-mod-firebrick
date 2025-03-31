@@ -1,7 +1,6 @@
 {% extends 'return-meta-base.html' %}
 
 {% load static %}
-{% load get_absolute_inbox_url %}
 
 {% block title %}{{ author.display_name }}'s Profile | {% endblock %}
 
@@ -42,28 +41,10 @@
                                 <div name="errorresponse-error"></div>
                             </form>
                         {% else %}
-                        <form id="follow-form" name="generic-form" action="{% get_absolute_inbox_url author %}">
+                        <form id="follow-form" name="generic-form" action="{% url 'user_management:follow_request' author.fqid|urlencode:"" %}">
                                 {% csrf_token %}
                                 <input type="hidden" name="_method" value="POST">
                                 <input type="hidden" name="_after_action" value="reload">
-
-                                <input type="hidden" name="type" value="follow">
-                                <input type="hidden" name="summary" value="{{ viewer.display_name }} wants to follow {{ author.display_name }}">
-
-                                <input type="hidden" name="actor__type" value="author">
-                                <input type="hidden" name="actor__id" value="{{ viewer.fqid }}">
-                                <input type="hidden" name="actor__host" value="{{ viewer.host_node.host_url }}">
-                                <input type="hidden" name="actor__displayName" value="{{ viewer.display_name }}">
-                                <input type="hidden" name="actor__profileImage" value="{{ viewer.profile_image }}">
-                                <input type="hidden" name="actor__page" value="{{ viewer.host_node.host_site_url }}authors/{{ viewer.uuid }}">
-
-                                <input type="hidden" name="object__type" value="author">
-                                <input type="hidden" name="object__id" value="{{ author.fqid }}">
-                                <input type="hidden" name="object__host" value="{{ author.host_node.host_url }}">
-                                <input type="hidden" name="object__displayName" value="{{ author.display_name }}">
-                                <input type="hidden" name="object__page" value="{{ author.host_node.host_site_url }}authors/{{ author.uuid }}">
-                                <input type="hidden" name="object__profileImage" value="{{ author.profile_image }}">
-
                                 <button class="profile-button" type="submit">Follow</button>
                                 <div name="errorresponse-error"></div>
                             </form>
