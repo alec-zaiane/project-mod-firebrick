@@ -1363,6 +1363,7 @@ a:link:active, a:visited:active  {
     display: grid;
     grid: "a a";
     justify-items: center;
+    gap: 20px;
 }
 
 .search .search-results .search-result {
