@@ -96,6 +96,18 @@ class InboxHandler(abc.ABC):
         viewset_instance.setup(request)
         viewset_instance.initial(request)
 
+        lookup_field = getattr(viewset_instance, 'lookup_field', 'pk')
+        lookup_url_kwarg = getattr(viewset_instance, 'lookup_url_kwarg', lookup_field)
+        lookup_value = request.data.get(lookup_field) or request.data.get("id")
+
+        if method.upper() in ("PUT", "DELETE"):
+            if not lookup_value:
+                return Response({"error": f"Missing '{lookup_field}' in request data"}, status=400)
+
+            # Inject kwargs so get_object() works
+            request.parser_context = request.parser_context or {}
+            request.parser_context["kwargs"] = {lookup_url_kwarg: lookup_value}
+
         match method.upper():
             case "POST":
                 return viewset_instance.create(request)
