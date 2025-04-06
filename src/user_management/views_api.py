@@ -77,11 +77,26 @@ class InboxHandler(abc.ABC):
         """Process the inbox item for the inbox of the target author, return a response"""
         ...
 
-    def _post_to_viewset(self, request: Request, viewset_instance: ModelViewSet[Any]) -> Response:
-        """Post to a viewset with the request object *calls the `create` method*"""
+    # def _post_to_viewset(self, request: Request, viewset_instance: ModelViewSet[Any]) -> Response:
+    #     """Post to a viewset with the request object *calls the `create` method*"""
+    #     viewset_instance.setup(request)
+    #     viewset_instance.initial(request)
+    #     return viewset_instance.create(request)
+
+    def _request_to_viewset(self, request: Request, viewset_instance: ModelViewSet[Any], method: str = "POST") -> Response:
+        """Make a request to a viewset with the specified method (POST/PUT/DELETE)"""
         viewset_instance.setup(request)
         viewset_instance.initial(request)
-        return viewset_instance.create(request)
+
+        match method.upper():
+            case "POST":
+                return viewset_instance.create(request)
+            case "PUT":
+                return viewset_instance.update(request)
+            case "DELETE":
+                return viewset_instance.destroy(request)
+            case _:
+                return Response({"error": f"Unsupported method {method}"}, status=405)
 
 
 class InboxView(views.APIView):
@@ -205,7 +220,8 @@ class LikesInboxHandler(InboxHandler):
             if not post.check_can_be_seen_by(viewer):
                 return API_FORBIDDEN()
 
-        return self._post_to_viewset(request, LikeViewSet())
+        # return self._post_to_viewset(request, LikeViewSet())
+        return self._request_to_viewset(request, LikeViewSet(), method="POST")
 
 
 register_inbox_handler(LikesInboxHandler())
@@ -241,7 +257,7 @@ class CommentInboxHandler(InboxHandler):
             if not post.check_can_be_seen_by(viewer):
                 return API_FORBIDDEN()
 
-        return self._post_to_viewset(request, CommentViewSet())
+        return self._request_to_viewset(request, CommentViewSet(), method="POST")
 
 
 register_inbox_handler(CommentInboxHandler())
@@ -271,7 +287,7 @@ class FollowRequestInboxHandler(InboxHandler):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        return self._post_to_viewset(request, FollowRequestViewSet())
+        return self._request_to_viewset(request, FollowRequestViewSet(), method="POST")
 
 
 register_inbox_handler(FollowRequestInboxHandler())
@@ -293,7 +309,8 @@ class PostInboxHandler(InboxHandler):
 
     def post(self, request: Request, target_author: Author) -> Response:
         # since a post is being created, we don't need to check if the author can see it
-        return self._post_to_viewset(request, PostViewSet())
+        # return self._post_to_viewset(request, PostViewSet())
+        return self._request_to_viewset(request, PostViewSet(), method="POST")
 
 
 register_inbox_handler(PostInboxHandler())
@@ -378,3 +395,28 @@ class FollowDecisionInboxHandler(InboxHandler):
 
 
 register_inbox_handler(FollowDecisionInboxHandler())
+
+
+class DeletePostInboxHandler(InboxHandler):
+    """
+    - URL: ://service/api/authors/{AUTHOR_UUID}/inbox
+        - POST [remote]: delete a post remotely
+        - Body must include type: "post", and method: "DELETE"
+    """
+
+    def __init__(self) -> None:
+        super().__init__("post")  # reuse the type field "post"
+
+    @property
+    def serializer(self) -> type[PostSerializer]:
+        return PostSerializer  # not actually used here, but required
+
+    def post(self, request: Request, target_author: Author) -> Response:
+        if request.data.get("method", "").upper() != "DELETE":
+            return Response({"error": "method must be DELETE for post deletion"}, status=400)
+
+        # Optional: do extra validation if needed (e.g., confirm post author matches)
+        return self._request_to_viewset(request, PostViewSet(), method="DELETE")
+
+
+register_inbox_handler(DeletePostInboxHandler())
