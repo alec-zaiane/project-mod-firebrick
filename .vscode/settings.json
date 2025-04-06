@@ -43,5 +43,4 @@
     ],
     "testing.displayedCoveragePercent": "minimum",
     "testing.defaultGutterClickAction": "debug",
-    "testing.automaticallyOpenTestResults": "openOnTestFailure",
 }

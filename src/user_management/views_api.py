@@ -133,7 +133,7 @@ class InboxView(views.APIView):
         self.inbox_handlers = _INBOX_HANDLERS
         super().__init__(*args, **kwargs)
 
-    def _handle_method(self, request: Request, target_author_uuid: UUID, method: str) -> Response:
+    def _handle_method(self, request: Request, target_author_uuid: UUID, method: Literal["POST","PUT","DELETE"]) -> Response:
         type = request.data.get("type")
         if type is None:
             return Response({"error": "missing 'type' field under inbox item"}, 400)
@@ -210,30 +210,6 @@ class InboxView(views.APIView):
 
     def delete(self, request: Request, target_author_uuid: UUID) -> Response:
         return self._handle_method(request, target_author_uuid, "DELETE")
-
-    # def post(self, request: Request, target_author_uuid: UUID) -> Response:
-    #     """Send an inbox item to this author's inbox"""
-    #     type = request.data.get("type")
-    #     if type is None:
-    #         return Response({"error": "missing 'type' field under inbox item"}, 400)
-
-    #     # make sure the author FQID is valid
-    #     if not target_author_uuid:
-    #         return Response({"error": "missing 'target_author_uuid' field"}, 400)
-    #     target_author = Author.local_authors.find_by_uuid(target_author_uuid)
-    #     if target_author is None:
-    #         return Response({"error": "Author not found", "uuid": target_author_uuid}, 404)
-
-    #     handler = self._find_handler_for_type(type)
-    #     if handler is not None:
-    #         # if not hasattr(request, 'resolver_match') or request.resolver_match is None:
-    #         #     stub = ResolverMatchStub()
-    #         #     setattr(request, 'resolver_match', stub)
-    #         # resolver_match = getattr(request, 'resolver_match')
-    #         # resolver_match.kwargs['target_author_fqid'] = target_author_fqid
-    #         return handler.post(request, target_author)
-    #     return Response({"error": "invalid 'type' field under inbox item",
-    #                      "type": type}, 400)
 
 
 class LikesInboxHandler(InboxHandler):
@@ -383,9 +359,48 @@ class PostInboxHandler(InboxHandler):
         return self._request_to_viewset(request, PostViewSet(), method="POST")
 
     def put(self, request: Request, target_author: Author) -> Response:
+        # updating a post means that we need to make sure the request's owner is allowed to update it (they are either the owning node, or the author)
+        post_fqid = request.data.get("id")
+        if not post_fqid:
+            return Response({"error": "missing 'id' field"}, 400)
+        target_post = Post.visible_posts.find_by_fqid(post_fqid)
+        if target_post is None:
+            return Response({"error": "Post not found", "fqid": post_fqid}, 404)
+        node = get_request_node(request)
+        viewer = get_request_viewer(request)
+        if node is None and viewer is None:
+            return API_UNAUTHORIZED()
+        if viewer is not None:
+            if not target_post.author == viewer:
+                # the viewer is not the author of the post, so they can't update it
+                return API_FORBIDDEN()
+        if node is not None:
+            if not target_post.host_node == node:
+                # the node is not the host of the post, so they can't update it
+                return API_FORBIDDEN()
         return self._request_to_viewset(request, PostViewSet(), method="PUT")
 
     def delete(self, request: Request, target_author: Author) -> Response:
+        # same logic as put ^^ TODO ideally this would be centralized in permission classes
+        # but this is a quick fix
+        post_fqid = request.data.get("id")
+        if not post_fqid:
+            return Response({"error": "missing 'id' field"}, 400)
+        target_post = Post.visible_posts.find_by_fqid(post_fqid)
+        if target_post is None:
+            return Response({"error": "Post not found", "fqid": post_fqid}, 404)
+        node = get_request_node(request)
+        viewer = get_request_viewer(request)
+        if node is None and viewer is None:
+            return API_UNAUTHORIZED()
+        if viewer is not None:
+            if not target_post.author == viewer:
+                # the viewer is not the author of the post, so they can't update it
+                return API_FORBIDDEN()
+        if node is not None:
+            if not target_post.host_node == node:
+                # the node is not the host of the post, so they can't update it
+                return API_FORBIDDEN()
         return self._request_to_viewset(request, PostViewSet(), method="DELETE")
 
 
