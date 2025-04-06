@@ -124,10 +124,10 @@ class Like(AuthoredApiObject):
             return reverse("likes:node2node_likes-list")
         return author_for_inbox.node2node_get_inbox_url()
 
-    def node2node_get_update_url(self) -> str:
+    def node2node_get_update_url(self, author_for_inbox: Optional[Author] = None) -> str:
         return reverse("likes:node2node_likes-detail", kwargs={"fqid": self.get_encoded_fqid()})
 
-    def node2node_get_deletion_url(self) -> str:
+    def node2node_get_deletion_url(self, author_for_inbox: Optional[Author] = None) -> str:
         return self.node2node_get_update_url()
 
 

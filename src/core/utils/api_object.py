@@ -133,11 +133,11 @@ class ApiObject(models.Model):
         raise NotImplementedError(
             f"node2node_get_creation_url must be implemented by subclasses (perhaps in `{self.__class__}`?)")
 
-    def node2node_get_update_url(self) -> str:
+    def node2node_get_update_url(self, author_for_inbox: Optional["Author"] = None) -> str:
         raise NotImplementedError(
             f"node2node_get_update_url must be implemented by subclasses (perhaps in `{self.__class__}`?)")
 
-    def node2node_get_deletion_url(self) -> str:
+    def node2node_get_deletion_url(self, author_for_inbox: Optional["Author"] = None) -> str:
         raise NotImplementedError(
             f"node2node_get_deletion_url must be implemented by subclasses (perhaps in `{self.__class__}`?)")
     # =====================================
