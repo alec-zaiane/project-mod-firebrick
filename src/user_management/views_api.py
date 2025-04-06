@@ -343,11 +343,18 @@ class FollowDecisionInboxHandler(InboxHandler):
             return Response({"error": "missing 'decision' field"}, 400)
         if not json.get("object") or not json.get("actor"):
             return Response({"error": "missing 'object' or 'actor' field"}, 400)
-        actor = AuthorSerializer().to_internal_value(json["actor"])
-        object = AuthorSerializer().to_internal_value(json["object"])
+        # actor = AuthorSerializer().to_internal_value(json["actor"])
+        actor_serializer = AuthorSerializer(data=json["actor"])
+        if not actor_serializer.is_valid():
+            return Response({"error": "invalid 'actor' field",
+                             "actor": actor_serializer.errors}, 400)
+        actor = actor_serializer.get_or_create(json["actor"])
+        object_serializer = AuthorSerializer(data=json["object"])
+        if not object_serializer.is_valid():
+            return Response({"error": "invalid 'object' field",
+                             "object": object_serializer.errors}, 400)
+        object = object_serializer.get_or_create(json["object"])
         if not actor or not object:
-            return Response({"error": "invalid 'object' or 'actor' field"}, 400)
-        if not isinstance(actor, Author) or not isinstance(object, Author):
             return Response({"error": "invalid 'object' or 'actor' field"}, 400)
         try:
             decision = bool(json.get("decision"))
