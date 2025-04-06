@@ -43,7 +43,7 @@
                 <form class="setting-container" name="generic-form" action="{% url 'posts:api_posts-detail' post.uuid %}" method="post">
                     {% csrf_token %}
                     <input type="hidden" name="_method" value="DELETE">
-                    <input type="hidden" name="_after_action" value="url:{{request.get_host}} {% if request.GET.next %}url:{{request.GET.next}}{% endif %} reload confirm">
+                    <input type="hidden" name="_after_action" value="url:{% url posts:stream %} reload confirm">
                     <input type="hidden" name="_confirm_text" value="Are you sure you want to delete this post?">
                     <button type="submit" class="delete-button" id="delete-button-{{post.uuid}}">
                         <div class="setting delete">
