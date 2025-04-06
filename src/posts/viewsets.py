@@ -248,9 +248,9 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        post._propagate_deletion_to_other_nodes()
 
         post.soft_delete()
+        # post._propagate_deletion_to_other_nodes()
         return Response({"detail": "Post soft deleted"}, status=status.HTTP_204_NO_CONTENT)
 
 class AuthorPostViewSet(viewsets.ModelViewSet[Post]):

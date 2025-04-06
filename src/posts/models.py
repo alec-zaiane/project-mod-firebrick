@@ -55,6 +55,7 @@ class VisibilityTypes(models.TextChoices):
     PUBLIC = "PB", _("Public")
     FRIENDS_ONLY = "FO", _("Friends Only")
     UNLISTED = "UL", _("Unlisted")
+    DELETED = "DL", _("Deleted")
 
 
 # There are for mapping from web `visibility` field to the visibility type
@@ -253,6 +254,7 @@ class Post(AuthoredApiObject):
         if self.is_soft_deleted:
             raise ValidationError("Post is already soft-deleted")
         self.is_soft_deleted = True
+        self.visibility_type = VisibilityTypes.DELETED
         self.save()
 
     def restore(self) -> None:
@@ -260,6 +262,7 @@ class Post(AuthoredApiObject):
         if not self.is_soft_deleted:
             raise ValidationError("Post is not soft-deleted")
         self.is_soft_deleted = False
+        self.visibility_type = VisibilityTypes.UNLISTED
         self.save()
 
     def generate_fqid(self) -> str:
@@ -374,7 +377,7 @@ class Post(AuthoredApiObject):
                 to=url,
             )
 
-    def _propagate_post_delete_to_other_nodes(self) -> None:
+    def _propagate_deletion_to_other_nodes(self) -> None:
         for follower in self.author.followers.all():
             if follower.is_local:
                 continue
