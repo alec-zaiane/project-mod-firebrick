@@ -1,7 +1,8 @@
+import base64
 from typing import Any
 from rest_framework import serializers
 from rest_framework.serializers import ValidationError
-from posts.models import Post, CONTENT_TYPE_WEB_MAP, CONTENT_TYPE_WEB_MAP_REVERSE, VISIBILITY_TYPE_WEB_MAP, VISIBILITY_TYPE_WEB_MAP_REVERSE
+from posts.models import Post, CONTENT_TYPE_WEB_MAP, CONTENT_TYPE_WEB_MAP_REVERSE, VISIBILITY_TYPE_WEB_MAP, VISIBILITY_TYPE_WEB_MAP_REVERSE, PostTypes
 from comments.models import Comment
 from user_management.models import Author
 from user_management.serializers import AuthorSerializer
@@ -76,13 +77,32 @@ class PostSerializer(serializers.ModelSerializer[Post]):
         # Determine the content type
         content_type = CONTENT_TYPE_WEB_MAP.get(instance.post_type)
 
+        if instance.post_type == PostTypes.IMAGE and instance.image:
+            try:
+                instance.image.open("rb")
+                image_bytes = instance.image.read()
+                encoded_content = base64.b64encode(image_bytes).decode('utf-8')
+            except Exception as e:
+                print(e)
+                encoded_content = instance.content or ""
+        elif instance.post_type == PostTypes.VIDEO and instance.video:
+            try:
+                instance.video.open("rb")
+                video_bytes = instance.video.read()
+                encoded_content = base64.b64encode(video_bytes).decode('utf-8')
+            except Exception as e:
+                print(e)
+                encoded_content = instance.content or ""
+        else:
+            encoded_content = instance.content or ""
+
         return {
             "type": "post",
             "title": instance.title,
             "id": instance.fqid,
             "description": instance.description,
             "contentType": content_type,
-            "content": instance.content,
+            "content": encoded_content,
             "author": AuthorSerializer(instance.author).data,
             "comments": {"type": "comments",
                          "src": CommentSerializer(instance.comments.all(), many=True).data
