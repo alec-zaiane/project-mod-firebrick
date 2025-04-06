@@ -55,7 +55,6 @@ class VisibilityTypes(models.TextChoices):
     PUBLIC = "PB", _("Public")
     FRIENDS_ONLY = "FO", _("Friends Only")
     UNLISTED = "UL", _("Unlisted")
-    DELETED = "DL", _("Deleted")
 
 
 # There are for mapping from web `visibility` field to the visibility type
@@ -63,14 +62,12 @@ VISIBILITY_TYPE_WEB_MAP: dict[str, str] = {
     VisibilityTypes.PUBLIC: "PUBLIC",
     VisibilityTypes.FRIENDS_ONLY: "FRIENDS",
     VisibilityTypes.UNLISTED: "UNLISTED",
-    VisibilityTypes.DELETED: "DELETED",
 }
 
 VISIBILITY_TYPE_WEB_MAP_REVERSE: dict[str, str] = {
     "PUBLIC": VisibilityTypes.PUBLIC,
     "FRIENDS": VisibilityTypes.FRIENDS_ONLY,
     "UNLISTED": VisibilityTypes.UNLISTED,
-    "DELETED": VisibilityTypes.DELETED,
 }
 
 
@@ -89,8 +86,6 @@ class VisibilityTypeResolver:
                     author__followers__in=[author]) & Q(author__following__in=[author]))
             case VisibilityTypes.UNLISTED:
                 query_filter = existing_q | Q(visibility_type=VisibilityTypes.UNLISTED)
-            case VisibilityTypes.DELETED:
-                pass # don't show deleted posts to anyone
             case _:
                 raise ValueError("Invalid visibility type")
         if query_filter != Q():
@@ -258,7 +253,6 @@ class Post(AuthoredApiObject):
         if self.is_soft_deleted:
             raise ValidationError("Post is already soft-deleted")
         self.is_soft_deleted = True
-        self.visibility_type = VisibilityTypes.DELETED
         self.save()
 
     def restore(self) -> None:
@@ -338,11 +332,6 @@ class Post(AuthoredApiObject):
                     video.close()
                 if temp_video_path and os.path.exists(temp_video_path):
                     os.remove(temp_video_path)
-
-        if self.is_soft_deleted or self.visibility_type == VisibilityTypes.DELETED:
-            # if one of the deletion markers is set, we need to set the other one
-            self.visibility_type = VisibilityTypes.DELETED
-            self.is_soft_deleted = True
         super().clean()
 
     # https://stackoverflow.com/a/8342249
