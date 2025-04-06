@@ -14,4 +14,4 @@ def get_request_node(request: HttpRequest) -> Optional[Node]:
     """Get the viewing Node from the request object"""
     if not request.user.is_authenticated:
         return None
-    return Node.objects.filter(internal_user=request.user).first()
+    return Node.objects.filter(external_user=request.user).first()

@@ -198,7 +198,7 @@ class VisiblePostManager(PostManager):
         # still, your own posts are always in your stream
         query_filter = query_filter | Q(author=author)
         # slicing an un-fetched queryset reduces the database load :)
-        return base_queryset.filter(query_filter).order_by('-created_at')[paginate_start:paginate_start + paginate_count]
+        return base_queryset.filter(query_filter).distinct().order_by('-created_at')[paginate_start:paginate_start + paginate_count]
 
 
 class Post(AuthoredApiObject):
@@ -260,10 +260,11 @@ class Post(AuthoredApiObject):
         if not self.is_soft_deleted:
             raise ValidationError("Post is not soft-deleted")
         self.is_soft_deleted = False
+        self.visibility_type = VisibilityTypes.UNLISTED
         self.save()
 
     def generate_fqid(self) -> str:
-        return self.host_node.host_url + reverse('posts:view_post', kwargs={'post_uuid': self.uuid}).replace("/api/api", "/api")
+        return (self.host_node.host_url + reverse('user_management:node2node_authors_posts-detail', kwargs={'post_uuid': self.uuid, 'author_uuid': self.author.uuid})).replace("/api/api", "/api")
 
     def get_absolute_url(self) -> str:
         if self.visibility_type == VisibilityTypes.FRIENDS_ONLY:
@@ -361,17 +362,27 @@ class Post(AuthoredApiObject):
         return PostSerializer().to_representation(self)
 
     def _propagate_post_save_to_other_nodes(self, created: bool) -> None:
-        if not created:
-            return super()._propagate_post_save_to_other_nodes(created)
-        # otherwise we need to send the post to the inboxes of followers of the author
         for follower in self.author.followers.all():
             if follower.is_local:
                 continue
             # send the post to the follower's inbox
-            url = self.node2node_get_creation_url(author_for_inbox=follower)
+            if created:
+                url = self.node2node_get_creation_url(author_for_inbox=follower)
+            else:
+                url = self.node2node_get_update_url(author_for_inbox=follower)
             follower.host_node.send_create(
                 self.node2node_encode_as_class_json_dict(),
                 to=url,
+            )
+
+    def _propagate_deletion_to_other_nodes(self) -> None:
+        for follower in self.author.followers.all():
+            if follower.is_local:
+                continue
+            # send the post to the follower's inbox
+            url = self.node2node_get_deletion_url(author_for_inbox=follower)
+            follower.host_node.send_delete(
+                url,
             )
 
     def node2node_get_creation_url(self, author_for_inbox: Optional[Author] = None) -> str:
@@ -380,12 +391,12 @@ class Post(AuthoredApiObject):
             return reverse("posts:node2node_posts-list")
         return author_for_inbox.node2node_get_inbox_url()
 
-    def node2node_get_update_url(self) -> str:
-        return self.fqid
+    def node2node_get_update_url(self, author_for_inbox: Optional[Author] = None) -> str:
+        return self.node2node_get_creation_url(author_for_inbox=author_for_inbox)
         # return reverse("posts:api_posts-detail", kwargs={"fqid": self.get_encoded_fqid()})
 
-    def node2node_get_deletion_url(self) -> str:
-        return self.node2node_get_update_url()
+    def node2node_get_deletion_url(self, author_for_inbox: Optional[Author] = None) -> str:
+        return self.node2node_get_update_url(author_for_inbox=author_for_inbox)
 
     @property
     def markdown_image_link(self) -> str | None:

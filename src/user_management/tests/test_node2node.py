@@ -442,7 +442,7 @@ class TestNode2NodeReceiveFollowRequests(Node2NodeReceptionTestCase):
             self.author0_inbox_url,
             data=receive_json_string,
             headers={"Content-Type": "application/json"},
-            auth=(self.other_node_user.username, "node"),
+            auth=(self.other_node_user_incoming.username, "node"),
         )
         # make sure it was created
         self.assertEqual(response.status_code, 201)
@@ -483,7 +483,7 @@ class TestNode2NodeReceiveFollowRequests(Node2NodeReceptionTestCase):
             self.author0_inbox_url,
             data=receive_json_string,
             headers={"Content-Type": "application/json"},
-            auth=(self.other_node_user.username, "node"),
+            auth=(self.other_node_user_incoming.username, "node"),
         )
         self.assertEqual(response.status_code, 400)
         self.assertEqual(FollowRequest.objects.count(), 0)

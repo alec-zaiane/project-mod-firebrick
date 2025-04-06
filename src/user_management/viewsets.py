@@ -21,6 +21,8 @@ from urllib.parse import unquote
 from user_management.authentication import NodeUserBasicAuthentication
 from rest_framework.permissions import IsAuthenticated
 
+import requests
+
 
 class AuthorViewSet(viewsets.ModelViewSet[Author]):
     # suggested by copilot: lookup_field/lookup_url_kwarg/lookup_value_regex to change the lookup field to an encoded fqid
@@ -499,9 +501,8 @@ class FollowRequestViewSet(viewsets.ModelViewSet[FollowRequest]):
             )
 
         # approve by adding the follow relationship and deleting the request
-        print("adding follower to followee")
-        follow_request.follower.following.add(follow_request.followee)
-        follow_request.delete()
+        follow_request.approve()
+
         return Response({"detail": "Follow request approved."}, status=status.HTTP_200_OK)
 
     @extend_schema(
@@ -571,7 +572,7 @@ class FollowRequestViewSet(viewsets.ModelViewSet[FollowRequest]):
                 {"error": "You do not have permission to deny this follow request."},
                 status=status.HTTP_403_FORBIDDEN
             )
-        follow_request.delete()
+        follow_request.deny()
         return Response({"detail": "Follow request denied."}, status=status.HTTP_200_OK)
 
     @extend_schema(

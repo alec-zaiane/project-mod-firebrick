@@ -58,7 +58,7 @@ class TestNode2NodeComments(Node2NodeReceptionTestCase):
         # this is a little bit brittle, if requests gets changed in Node.send_create, etc it will need a rework
         # simulate receiving the commend via node2node
         response = requests.post(self.author0_inbox_url, data=receive_json_string, headers={"Content-Type": "application/json"},
-                                 auth=(self.other_node_user.username, "node"))
+                                 auth=(self.other_node_user_incoming.username, "node"))
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Comment.objects.count(), 1)
 
@@ -90,7 +90,7 @@ class TestNode2NodeComments(Node2NodeReceptionTestCase):
         # this is a little bit brittle, if requests gets changed in Node.send_create, etc it will need a rework
         # simulate receiving the commend via node2node
         response = requests.post(self.author0_inbox_url, data=receive_json_string, headers={"Content-Type": "application/json"},
-                                 auth=(self.other_node_user.username, "bad_password"))
+                                 auth=(self.other_node_user_incoming.username, "bad_password"))
         # make sure we get a 403/401 and the comment is not created
         self.assertIn(response.status_code, [
                       status.HTTP_403_FORBIDDEN, status.HTTP_401_UNAUTHORIZED])
@@ -119,7 +119,7 @@ class TestNode2NodeComments(Node2NodeReceptionTestCase):
         }
         receive_json_string = json.dumps(receive_json)
         response = requests.post(self.author0_inbox_url, data=receive_json_string, headers={"Content-Type": "application/json"},
-                                 auth=(self.other_node_user.username, "node"))
+                                 auth=(self.other_node_user_incoming.username, "node"))
         # make sure we get a 400 and the comment is not created
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(Comment.objects.count(), 0)

@@ -1,6 +1,8 @@
 import base64
 from typing import Any
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
+
+from django.db.models import QuerySet
 from django.contrib.auth.models import AnonymousUser
 
 from rest_framework.permissions import IsAuthenticated
@@ -248,9 +250,9 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        post._propagate_deletion_to_other_nodes()
 
         post.soft_delete()
+        # post._propagate_deletion_to_other_nodes()
         return Response({"detail": "Post soft deleted"}, status=status.HTTP_204_NO_CONTENT)
 
     @extend_schema(
@@ -322,3 +324,11 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
             return Response({"error": "Video not found."}, status=status.HTTP_404_NOT_FOUND)
 
         return Response(encoded_video, status=status.HTTP_200_OK)
+
+class AuthorPostViewSet(viewsets.ModelViewSet[Post]):
+    serializer_class = PostSerializer
+    lookup_url_kwarg = "post_uuid"
+
+    def get_queryset(self) -> QuerySet[Post]:
+        author_uuid = self.kwargs.get("author_uuid")
+        return Post.objects.filter(author__uuid=author_uuid)

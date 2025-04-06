@@ -71,7 +71,7 @@ class TestNode2NodePosts(Node2NodeReceptionTestCase):
             self.author0_inbox_url,
             data=receive_json_string,
             headers={"Content-Type": "application/json"},
-            auth=(self.other_node_user.username, "node")
+            auth=(self.other_node_user_incoming.username, "node")
         )
         # make sure the post was created
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -97,7 +97,7 @@ class TestNode2NodePosts(Node2NodeReceptionTestCase):
             self.author0_inbox_url,
             data=receive_json_string,
             headers={"Content-Type": "application/json"},
-            auth=(self.other_node_user.username, "badpassword")
+            auth=(self.other_node_user_incoming.username, "badpassword")
         )
         # make sure the post was not created
         self.assertIn(response.status_code, [
@@ -126,7 +126,7 @@ class TestNode2NodePosts(Node2NodeReceptionTestCase):
             self.author0_inbox_url,
             data=receive_json_string,
             headers={"Content-Type": "application/json"},
-            auth=(self.other_node_user.username, "node")
+            auth=(self.other_node_user_incoming.username, "node")
         )
         # make sure the post was not created
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

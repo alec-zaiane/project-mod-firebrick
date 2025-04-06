@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, Any
+from typing import Optional, Any, Literal
 import abc
 
 from rest_framework import views
@@ -77,11 +77,48 @@ class InboxHandler(abc.ABC):
         """Process the inbox item for the inbox of the target author, return a response"""
         ...
 
-    def _post_to_viewset(self, request: Request, viewset_instance: ModelViewSet[Any]) -> Response:
-        """Post to a viewset with the request object *calls the `create` method*"""
+    @abc.abstractmethod
+    def put(self, request: Request, target_author: Author) -> Response:
+        ...
+
+    @abc.abstractmethod
+    def delete(self, request: Request, target_author: Author) -> Response:
+        ...
+
+    def _request_to_viewset(self, request: Request, viewset_instance: ModelViewSet[Any], method: str = "POST") -> Response:
+        """Make a request to a viewset with the specified method (POST/PUT/DELETE)"""
         viewset_instance.setup(request)
         viewset_instance.initial(request)
-        return viewset_instance.create(request)
+
+        lookup_field = getattr(viewset_instance, 'lookup_field', 'pk')
+        lookup_url_kwarg = getattr(viewset_instance, 'lookup_url_kwarg', lookup_field)
+        lookup_value = request.data.get(lookup_field) or request.data.get("id")
+
+        if lookup_value and isinstance(lookup_value, str) and "/" in lookup_value:
+            lookup_value = lookup_value.rstrip("/").split("/")[-1]
+
+        print(">>> Incoming PUT/DELETE Request")
+        print("lookup_field =", lookup_field)
+        print("lookup_url_kwarg =", lookup_url_kwarg)
+        print("request.data =", request.data)
+        print("lookup_value =", lookup_value)
+        if method.upper() in ("PUT", "DELETE"):
+            if not lookup_value:
+                return Response({"error": f"Missing '{lookup_field}' in request data"}, status=400)
+
+            # Inject kwargs so get_object() works
+            request.parser_context = request.parser_context or {}
+            request.parser_context["kwargs"] = {lookup_url_kwarg: lookup_value}
+
+        match method.upper():
+            case "POST":
+                return viewset_instance.create(request)
+            case "PUT":
+                return viewset_instance.update(request)
+            case "DELETE":
+                return viewset_instance.destroy(request)
+            case _:
+                return Response({"error": f"Unsupported method {method}"}, status=405)
 
 
 class InboxView(views.APIView):
@@ -97,6 +134,29 @@ class InboxView(views.APIView):
     def __init__(self, *args: Any, **kwargs: Any):
         self.inbox_handlers = _INBOX_HANDLERS
         super().__init__(*args, **kwargs)
+
+    def _handle_method(self, request: Request, target_author_uuid: UUID, method: Literal["POST", "PUT", "DELETE"]) -> Response:
+        type = request.data.get("type")
+        if type is None:
+            return Response({"error": "missing 'type' field under inbox item"}, 400)
+
+        target_author = Author.local_authors.find_by_uuid(target_author_uuid)
+        if target_author is None:
+            return Response({"error": "Author not found", "uuid": target_author_uuid}, 404)
+
+        handler = self._find_handler_for_type(type)
+        if handler is None:
+            return Response({"error": f"invalid 'type': {type}"}, 400)
+
+        match method.upper():
+            case "POST":
+                return handler.post(request, target_author)
+            case "PUT":
+                return handler.put(request, target_author)
+            case "DELETE":
+                return handler.delete(request, target_author)
+            case _:
+                return Response({"error": f"Unsupported method {method}"}, 405)
 
     def _find_handler_for_type(self, type: str) -> Optional[InboxHandler]:
         for handler in self.inbox_handlers:
@@ -145,28 +205,13 @@ class InboxView(views.APIView):
         tags=["Inbox"],
     )
     def post(self, request: Request, target_author_uuid: UUID) -> Response:
-        """Send an inbox item to this author's inbox"""
-        type = request.data.get("type")
-        if type is None:
-            return Response({"error": "missing 'type' field under inbox item"}, 400)
+        return self._handle_method(request, target_author_uuid, "POST")
 
-        # make sure the author FQID is valid
-        if not target_author_uuid:
-            return Response({"error": "missing 'target_author_uuid' field"}, 400)
-        target_author = Author.local_authors.find_by_uuid(target_author_uuid)
-        if target_author is None:
-            return Response({"error": "Author not found", "uuid": target_author_uuid}, 404)
+    def put(self, request: Request, target_author_uuid: UUID) -> Response:
+        return self._handle_method(request, target_author_uuid, "PUT")
 
-        handler = self._find_handler_for_type(type)
-        if handler is not None:
-            # if not hasattr(request, 'resolver_match') or request.resolver_match is None:
-            #     stub = ResolverMatchStub()
-            #     setattr(request, 'resolver_match', stub)
-            # resolver_match = getattr(request, 'resolver_match')
-            # resolver_match.kwargs['target_author_fqid'] = target_author_fqid
-            return handler.post(request, target_author)
-        return Response({"error": "invalid 'type' field under inbox item",
-                         "type": type}, 400)
+    def delete(self, request: Request, target_author_uuid: UUID) -> Response:
+        return self._handle_method(request, target_author_uuid, "DELETE")
 
 
 class LikesInboxHandler(InboxHandler):
@@ -205,7 +250,14 @@ class LikesInboxHandler(InboxHandler):
             if not post.check_can_be_seen_by(viewer):
                 return API_FORBIDDEN()
 
-        return self._post_to_viewset(request, LikeViewSet())
+        # return self._post_to_viewset(request, LikeViewSet())
+        return self._request_to_viewset(request, LikeViewSet(), method="POST")
+
+    def put(self, request: Request, target_author: Author) -> Response:
+        return Response({"error": "PUT not supported for likes"}, status=405)
+
+    def delete(self, request: Request, target_author: Author) -> Response:
+        return Response({"error": "DELETE not supported for likes"}, status=405)
 
 
 register_inbox_handler(LikesInboxHandler())
@@ -241,7 +293,13 @@ class CommentInboxHandler(InboxHandler):
             if not post.check_can_be_seen_by(viewer):
                 return API_FORBIDDEN()
 
-        return self._post_to_viewset(request, CommentViewSet())
+        return self._request_to_viewset(request, CommentViewSet(), method="POST")
+
+    def put(self, request: Request, target_author: Author) -> Response:
+        return Response({"error": "PUT not supported for comments"}, status=405)
+
+    def delete(self, request: Request, target_author: Author) -> Response:
+        return Response({"error": "DELETE not supported for comments"}, status=405)
 
 
 register_inbox_handler(CommentInboxHandler())
@@ -271,7 +329,13 @@ class FollowRequestInboxHandler(InboxHandler):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        return self._post_to_viewset(request, FollowRequestViewSet())
+        return self._request_to_viewset(request, FollowRequestViewSet(), method="POST")
+
+    def put(self, request: Request, target_author: Author) -> Response:
+        return Response({"error": "PUT not supported for follow requests"}, status=405)
+
+    def delete(self, request: Request, target_author: Author) -> Response:
+        return Response({"error": "DELETE not supported for follow requests"}, status=405)
 
 
 register_inbox_handler(FollowRequestInboxHandler())
@@ -293,7 +357,53 @@ class PostInboxHandler(InboxHandler):
 
     def post(self, request: Request, target_author: Author) -> Response:
         # since a post is being created, we don't need to check if the author can see it
-        return self._post_to_viewset(request, PostViewSet())
+        # return self._post_to_viewset(request, PostViewSet())
+        return self._request_to_viewset(request, PostViewSet(), method="POST")
+
+    def put(self, request: Request, target_author: Author) -> Response:
+        # updating a post means that we need to make sure the request's owner is allowed to update it (they are either the owning node, or the author)
+        post_fqid = request.data.get("id")
+        if not post_fqid:
+            return Response({"error": "missing 'id' field"}, 400)
+        target_post = Post.visible_posts.find_by_fqid(post_fqid)
+        if target_post is None:
+            return Response({"error": "Post not found", "fqid": post_fqid}, 404)
+        node = get_request_node(request)
+        viewer = get_request_viewer(request)
+        if node is None and viewer is None:
+            return API_UNAUTHORIZED()
+        if viewer is not None:
+            if not target_post.author == viewer:
+                # the viewer is not the author of the post, so they can't update it
+                return API_FORBIDDEN()
+        if node is not None:
+            if not target_post.host_node == node:
+                # the node is not the host of the post, so they can't update it
+                return API_FORBIDDEN()
+        return self._request_to_viewset(request, PostViewSet(), method="PUT")
+
+    def delete(self, request: Request, target_author: Author) -> Response:
+        # same logic as put ^^ TODO ideally this would be centralized in permission classes
+        # but this is a quick fix
+        post_fqid = request.data.get("id")
+        if not post_fqid:
+            return Response({"error": "missing 'id' field"}, 400)
+        target_post = Post.visible_posts.find_by_fqid(post_fqid)
+        if target_post is None:
+            return Response({"error": "Post not found", "fqid": post_fqid}, 404)
+        node = get_request_node(request)
+        viewer = get_request_viewer(request)
+        if node is None and viewer is None:
+            return API_UNAUTHORIZED()
+        if viewer is not None:
+            if not target_post.author == viewer:
+                # the viewer is not the author of the post, so they can't update it
+                return API_FORBIDDEN()
+        if node is not None:
+            if not target_post.host_node == node:
+                # the node is not the host of the post, so they can't update it
+                return API_FORBIDDEN()
+        return self._request_to_viewset(request, PostViewSet(), method="DELETE")
 
 
 register_inbox_handler(PostInboxHandler())
@@ -339,29 +449,48 @@ class FollowDecisionInboxHandler(InboxHandler):
     def post(self, request: Request, target_author: Author) -> Response:
         # TODO this should ideally be a serializer/viewset, not logic here
         json = request.data
+        print(json)
         if not json.get("decision"):
             return Response({"error": "missing 'decision' field"}, 400)
         if not json.get("object") or not json.get("actor"):
             return Response({"error": "missing 'object' or 'actor' field"}, 400)
-        actor = AuthorSerializer().to_internal_value(json["actor"])
-        object = AuthorSerializer().to_internal_value(json["object"])
+        # actor = AuthorSerializer().to_internal_value(json["actor"])
+        actor_serializer = AuthorSerializer(data=json["actor"])
+        if not actor_serializer.is_valid():
+            return Response({"error": "invalid 'actor' field",
+                             "actor": actor_serializer.errors}, 400)
+        actor = actor_serializer.get_or_create(json["actor"])
+        object_serializer = AuthorSerializer(data=json["object"])
+        if not object_serializer.is_valid():
+            return Response({"error": "invalid 'object' field",
+                             "object": object_serializer.errors}, 400)
+        object = object_serializer.get_or_create(json["object"])
         if not actor or not object:
-            return Response({"error": "invalid 'object' or 'actor' field"}, 400)
-        if not isinstance(actor, Author) or not isinstance(object, Author):
             return Response({"error": "invalid 'object' or 'actor' field"}, 400)
         try:
             decision = bool(json.get("decision"))
         except ValueError:
             return Response({"error": "invalid 'decision' field"}, 400)
+        print(decision)
+        print(actor)
+        print(object)
         if decision:
             # approved
-            actor.following.add(target_author)
+            actor.following.add(object)
+            actor.save()
+
         # remove the follow request object
         existing_follow_request = FollowRequest.objects.filter(
             follower=actor, followee=object).first()
         if existing_follow_request:
             existing_follow_request.delete()
         return Response({"status": "success"}, status=200)
+
+    def put(self, request: Request, target_author: Author) -> Response:
+        return Response({"error": "PUT not supported for follow-decision"}, status=405)
+
+    def delete(self, request: Request, target_author: Author) -> Response:
+        return Response({"error": "DELETE not supported for follow-decision"}, status=405)
 
 
 register_inbox_handler(FollowDecisionInboxHandler())
