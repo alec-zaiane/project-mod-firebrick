@@ -334,6 +334,12 @@ class Post(AuthoredApiObject):
                     video.close()
                 if temp_video_path and os.path.exists(temp_video_path):
                     os.remove(temp_video_path)
+
+        if self.is_soft_deleted or self.visibility_type == VisibilityTypes.DELETED:
+            # if one of the deletion markers is set, we need to set the other one
+            self.visibility_type = VisibilityTypes.DELETED
+            self.is_soft_deleted = True
+            self.save()
         super().clean()
 
     # https://stackoverflow.com/a/8342249
