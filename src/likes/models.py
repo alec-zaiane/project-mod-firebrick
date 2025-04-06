@@ -97,7 +97,7 @@ class Like(AuthoredApiObject):
 
     def generate_fqid(self) -> str:
         # TODO replace with reverse() call :)
-        return f"{self.host_node.host_url}likes/{self.uuid}".replace("/api/api", "/api")
+        return f"{self.host_node.host_url}/likes/{self.uuid}".replace("/api/api", "/api")
 
         # node2node stuff
     def node2node_encode_as_class_json_dict(self) -> dict[str, Any]:

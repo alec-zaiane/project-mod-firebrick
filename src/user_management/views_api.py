@@ -339,6 +339,7 @@ class FollowDecisionInboxHandler(InboxHandler):
     def post(self, request: Request, target_author: Author) -> Response:
         # TODO this should ideally be a serializer/viewset, not logic here
         json = request.data
+        print(json)
         if not json.get("decision"):
             return Response({"error": "missing 'decision' field"}, 400)
         if not json.get("object") or not json.get("actor"):
@@ -360,9 +361,14 @@ class FollowDecisionInboxHandler(InboxHandler):
             decision = bool(json.get("decision"))
         except ValueError:
             return Response({"error": "invalid 'decision' field"}, 400)
+        print(decision)
+        print(actor)
+        print(object)
         if decision:
             # approved
-            actor.following.add(target_author)
+            actor.following.add(object)
+            actor.save()
+
         # remove the follow request object
         existing_follow_request = FollowRequest.objects.filter(
             follower=actor, followee=object).first()
