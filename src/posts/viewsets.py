@@ -33,7 +33,6 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
     # suggested by copilot: lookup_field/lookup_url_kwarg/lookup_value_regex to change the lookup field to an encoded uuid
     lookup_field = "uuid"
     lookup_url_kwarg = "uuid"
-    lookup_value_regex = "[0-9a-fA-F-]{36}"
     queryset = Post.visible_posts.all()
     serializer_class = PostSerializer
     # permission_classes = [IsAuthenticated, PostPermission]
@@ -250,7 +249,6 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-
         post.soft_delete()
         # post._propagate_deletion_to_other_nodes()
         return Response({"detail": "Post soft deleted"}, status=status.HTTP_204_NO_CONTENT)
@@ -324,6 +322,7 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
             return Response({"error": "Video not found."}, status=status.HTTP_404_NOT_FOUND)
 
         return Response(encoded_video, status=status.HTTP_200_OK)
+
 
 class AuthorPostViewSet(viewsets.ModelViewSet[Post]):
     serializer_class = PostSerializer
