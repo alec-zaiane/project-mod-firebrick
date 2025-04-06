@@ -381,7 +381,7 @@ class Post(AuthoredApiObject):
         return author_for_inbox.node2node_get_inbox_url()
 
     def node2node_get_update_url(self, author_for_inbox: Optional[Author] = None) -> str:
-        return self.fqid
+        return self.node2node_get_creation_url(author_for_inbox=author_for_inbox)
         # return reverse("posts:api_posts-detail", kwargs={"fqid": self.get_encoded_fqid()})
 
     def node2node_get_deletion_url(self, author_for_inbox: Optional[Author] = None) -> str:
