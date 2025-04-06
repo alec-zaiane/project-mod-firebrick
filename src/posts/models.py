@@ -341,7 +341,6 @@ class Post(AuthoredApiObject):
             # if one of the deletion markers is set, we need to set the other one
             self.visibility_type = VisibilityTypes.DELETED
             self.is_soft_deleted = True
-            self.save()
         super().clean()
 
     # https://stackoverflow.com/a/8342249
