@@ -59,7 +59,7 @@ class TestNode2NodeLikes(Node2NodeReceptionTestCase):
         }
         receive_json_string = json.dumps(receive_json)
         response = requests.post(self.author0_inbox_url, data=receive_json_string, headers={"Content-Type": "application/json"},
-                                 auth=(self.other_node_user.username, "node"))
+                                 auth=(self.other_node_user_incoming.username, "node"))
         # check that the like was created
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Like.objects.count(), 1)
@@ -89,7 +89,7 @@ class TestNode2NodeLikes(Node2NodeReceptionTestCase):
         }
         receive_json_string = json.dumps(receive_json)
         response = requests.post(self.author0_inbox_url, data=receive_json_string, headers={"Content-Type": "application/json"},
-                                 auth=(self.other_node_user.username, "node"))
+                                 auth=(self.other_node_user_incoming.username, "node"))
         # check that the like was created
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Like.objects.count(), 1)
@@ -120,7 +120,7 @@ class TestNode2NodeLikes(Node2NodeReceptionTestCase):
         receive_json_string = json.dumps(receive_json)
         # test with bad auth
         response = requests.post(self.author0_inbox_url, data=receive_json_string, headers={"Content-Type": "application/json"},
-                                 auth=(self.other_node_user.username, "badpassword"))
+                                 auth=(self.other_node_user_incoming.username, "badpassword"))
         # make sure we get a 403/401 and the like is not created
         self.assertIn(response.status_code, [
                       status.HTTP_403_FORBIDDEN, status.HTTP_401_UNAUTHORIZED])
@@ -147,7 +147,7 @@ class TestNode2NodeLikes(Node2NodeReceptionTestCase):
         }
         receive_json_string = json.dumps(receive_json)
         response = requests.post(self.author0_inbox_url, data=receive_json_string, headers={"Content-Type": "application/json"},
-                                 auth=(self.other_node_user.username, "node"))
+                                 auth=(self.other_node_user_incoming.username, "node"))
         # make sure we get a 400 and the like is not created
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(Like.objects.count(), 0)

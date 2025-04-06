@@ -400,13 +400,16 @@ class Node2NodeReceptionTestCase(LiveServerTestCase, GeneralUserStoryApiTest):
         self.external_authors: list[Author] = []
 
     def initialize_other_node(self) -> None:
-        self.other_node_user = User.nodes.create_user("node_other2me", password="node")
+        self.other_node_user_outgoing = User.nodes.create_user("node_me2other", password="node_outgoing")
+        self.other_node_user_incoming = User.nodes.create_user("node_other2me", password="node")
         self.other_node = Node.external_nodes.create_node(
             "other node",
             "http://localhost:10000/api",
-            self.other_node_user,
+            self.other_node_user_outgoing,
             "http://localhost:10000",
         )
+        self.other_node.external_user = self.other_node_user_incoming
+        self.other_node.save()
 
     def initialize_external_authors(self, num_authors: int = 5) -> None:
         """Initialize some sample authors for testing"""
