@@ -1,9 +1,8 @@
 from rest_framework import routers
-from rest_framework_nested import routers as nested_routers
 from django.urls import URLPattern, URLResolver, path
 
 from posts.views import CreatePostView, EditPostView, StreamView, ViewPostView
-from posts.viewsets import PostViewSet, AuthorPostViewSet  # Import PostViewSet from posts.viewsets
+from posts.viewsets import PostViewSet  # Import PostViewSet from posts.viewsets
 
 from django.views import generic
 from posts.models import Post
@@ -30,17 +29,6 @@ router = routers.SimpleRouter()
 
 # Registers /posts/ as an API route
 router.register(r"api/posts", PostViewSet, basename="api_posts")
-
-author_router = nested_routers.NestedSimpleRouter(
-     router,
-     r"/api/authors",
-     lookup="author",
-)
-author_router.register(
-    r"posts",
-    AuthorPostViewSet,
-    basename="node2node_authors_posts",
-)
 
 
 urlpatterns += router.urls  # Add all generated routes

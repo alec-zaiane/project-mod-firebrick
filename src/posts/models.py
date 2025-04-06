@@ -263,7 +263,7 @@ class Post(AuthoredApiObject):
         self.save()
 
     def generate_fqid(self) -> str:
-        return self.host_node.host_url + reverse('posts:node2node_authors_posts', kwargs={'post_uuid': self.uuid, 'author_uuid': self.author.uuid}).replace("/api/api", "/api")
+        return self.host_node.host_url + reverse('user_management:node2node_authors_posts-detail', kwargs={'post_uuid': self.uuid, 'author_uuid': self.author.uuid}).replace("/api/api", "/api")
 
     def get_absolute_url(self) -> str:
         if self.visibility_type == VisibilityTypes.FRIENDS_ONLY:
