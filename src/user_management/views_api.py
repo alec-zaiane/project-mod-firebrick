@@ -94,6 +94,14 @@ class InboxHandler(abc.ABC):
         lookup_url_kwarg = getattr(viewset_instance, 'lookup_url_kwarg', lookup_field)
         lookup_value = request.data.get(lookup_field) or request.data.get("id")
 
+        if lookup_value and isinstance(lookup_value, str) and "/" in lookup_value:
+            lookup_value = lookup_value.rstrip("/").split("/")[-1]
+
+        print(">>> Incoming PUT/DELETE Request")
+        print("lookup_field =", lookup_field)
+        print("lookup_url_kwarg =", lookup_url_kwarg)
+        print("request.data =", request.data)
+        print("lookup_value =", lookup_value)
         if method.upper() in ("PUT", "DELETE"):
             if not lookup_value:
                 return Response({"error": f"Missing '{lookup_field}' in request data"}, status=400)
@@ -127,7 +135,7 @@ class InboxView(views.APIView):
         self.inbox_handlers = _INBOX_HANDLERS
         super().__init__(*args, **kwargs)
 
-    def _handle_method(self, request: Request, target_author_uuid: UUID, method: Literal["POST","PUT","DELETE"]) -> Response:
+    def _handle_method(self, request: Request, target_author_uuid: UUID, method: Literal["POST", "PUT", "DELETE"]) -> Response:
         type = request.data.get("type")
         if type is None:
             return Response({"error": "missing 'type' field under inbox item"}, 400)
