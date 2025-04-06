@@ -1,5 +1,7 @@
 from typing import Any
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
+
+from django.db.models import QuerySet
 from django.contrib.auth.models import AnonymousUser
 
 from rest_framework.permissions import IsAuthenticated
@@ -250,3 +252,11 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
 
         post.soft_delete()
         return Response({"detail": "Post soft deleted"}, status=status.HTTP_204_NO_CONTENT)
+
+class AuthorPostViewSet(viewsets.ModelViewSet[Post]):
+    serializer_class = PostSerializer
+    lookup_url_kwarg = "post_uuid"
+
+    def get_queryset(self) -> QuerySet[Post]:
+        author_uuid = self.kwargs.get("author_uuid")
+        return Post.objects.filter(author__uuid=author_uuid)
