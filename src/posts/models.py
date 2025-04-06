@@ -374,6 +374,16 @@ class Post(AuthoredApiObject):
                 to=url,
             )
 
+    def _propagate_post_delete_to_other_nodes(self) -> None:
+        for follower in self.author.followers.all():
+            if follower.is_local:
+                continue
+            # send the post to the follower's inbox
+            url = self.node2node_get_deletion_url(author_for_inbox=follower)
+            follower.host_node.send_delete(
+                url,
+            )
+
     def node2node_get_creation_url(self, author_for_inbox: Optional[Author] = None) -> str:
         # the _propagate_save_to_other_nodes method will handle this as it needs some custom logic
         if author_for_inbox is None:
@@ -385,7 +395,7 @@ class Post(AuthoredApiObject):
         # return reverse("posts:api_posts-detail", kwargs={"fqid": self.get_encoded_fqid()})
 
     def node2node_get_deletion_url(self, author_for_inbox: Optional[Author] = None) -> str:
-        return self.node2node_get_update_url()
+        return self.node2node_get_update_url(author_for_inbox=author_for_inbox)
 
     @property
     def markdown_image_link(self) -> str | None:
