@@ -376,7 +376,7 @@ class FollowRequest(ApiObject):
         return author_for_inbox.node2node_get_inbox_url()
 
     def node2node_get_update_url(self, author_for_inbox: Optional[Author] = None) -> str:
-        return reverse("user_management:node2node_follow_requests-detail", kwargs={"fqid": self.get_encoded_fqid()})
+        return reverse("user_management:node2node_follow_requests-detail", kwargs={"uuid": self.uuid})
 
     def node2node_get_deletion_url(self, author_for_inbox: Optional[Author] = None) -> str:
         return self.node2node_get_update_url()
