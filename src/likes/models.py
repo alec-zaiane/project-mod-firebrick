@@ -109,6 +109,9 @@ class Like(AuthoredApiObject):
             return super()._propagate_post_save_to_other_nodes(created)
         # if this is new, we need to send it to the inbox of whoever created it, as well as all of their followers
         recipients = [self.target.author] + list(self.target.author.followers.all())
+        if isinstance(self.target, Comment):
+            recipients.extend([self.target.post.author, *
+                              list(self.target.post.author.followers.all())])
         for recipient in recipients:
             if recipient.host_node.is_local_node:
                 # don't send to self
