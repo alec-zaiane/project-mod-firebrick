@@ -85,12 +85,6 @@ class InboxHandler(abc.ABC):
     def delete(self, request: Request, target_author: Author) -> Response:
         ...
 
-    # def _post_to_viewset(self, request: Request, viewset_instance: ModelViewSet[Any]) -> Response:
-    #     """Post to a viewset with the request object *calls the `create` method*"""
-    #     viewset_instance.setup(request)
-    #     viewset_instance.initial(request)
-    #     return viewset_instance.create(request)
-
     def _request_to_viewset(self, request: Request, viewset_instance: ModelViewSet[Any], method: str = "POST") -> Response:
         """Make a request to a viewset with the specified method (POST/PUT/DELETE)"""
         viewset_instance.setup(request)
