@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, Any
+from typing import Optional, Any, Literal
 import abc
 
 from rest_framework import views
@@ -77,6 +77,14 @@ class InboxHandler(abc.ABC):
         """Process the inbox item for the inbox of the target author, return a response"""
         ...
 
+    @abc.abstractmethod
+    def put(self, request: Request, target_author: Author) -> Response:
+        ...
+
+    @abc.abstractmethod
+    def delete(self, request: Request, target_author: Author) -> Response:
+        ...
+
     # def _post_to_viewset(self, request: Request, viewset_instance: ModelViewSet[Any]) -> Response:
     #     """Post to a viewset with the request object *calls the `create` method*"""
     #     viewset_instance.setup(request)
@@ -112,6 +120,29 @@ class InboxView(views.APIView):
     def __init__(self, *args: Any, **kwargs: Any):
         self.inbox_handlers = _INBOX_HANDLERS
         super().__init__(*args, **kwargs)
+
+    def _handle_method(self, request: Request, target_author_uuid: UUID, method: str) -> Response:
+        type = request.data.get("type")
+        if type is None:
+            return Response({"error": "missing 'type' field under inbox item"}, 400)
+
+        target_author = Author.local_authors.find_by_uuid(target_author_uuid)
+        if target_author is None:
+            return Response({"error": "Author not found", "uuid": target_author_uuid}, 404)
+
+        handler = self._find_handler_for_type(type)
+        if handler is None:
+            return Response({"error": f"invalid 'type': {type}"}, 400)
+
+        match method.upper():
+            case "POST":
+                return handler.post(request, target_author)
+            case "PUT":
+                return handler.put(request, target_author)
+            case "DELETE":
+                return handler.delete(request, target_author)
+            case _:
+                return Response({"error": f"Unsupported method {method}"}, 405)
 
     def _find_handler_for_type(self, type: str) -> Optional[InboxHandler]:
         for handler in self.inbox_handlers:
@@ -160,28 +191,37 @@ class InboxView(views.APIView):
         tags=["Inbox"],
     )
     def post(self, request: Request, target_author_uuid: UUID) -> Response:
-        """Send an inbox item to this author's inbox"""
-        type = request.data.get("type")
-        if type is None:
-            return Response({"error": "missing 'type' field under inbox item"}, 400)
+        return self._handle_method(request, target_author_uuid, "POST")
 
-        # make sure the author FQID is valid
-        if not target_author_uuid:
-            return Response({"error": "missing 'target_author_uuid' field"}, 400)
-        target_author = Author.local_authors.find_by_uuid(target_author_uuid)
-        if target_author is None:
-            return Response({"error": "Author not found", "uuid": target_author_uuid}, 404)
+    def put(self, request: Request, target_author_uuid: UUID) -> Response:
+        return self._handle_method(request, target_author_uuid, "PUT")
 
-        handler = self._find_handler_for_type(type)
-        if handler is not None:
-            # if not hasattr(request, 'resolver_match') or request.resolver_match is None:
-            #     stub = ResolverMatchStub()
-            #     setattr(request, 'resolver_match', stub)
-            # resolver_match = getattr(request, 'resolver_match')
-            # resolver_match.kwargs['target_author_fqid'] = target_author_fqid
-            return handler.post(request, target_author)
-        return Response({"error": "invalid 'type' field under inbox item",
-                         "type": type}, 400)
+    def delete(self, request: Request, target_author_uuid: UUID) -> Response:
+        return self._handle_method(request, target_author_uuid, "DELETE")
+
+    # def post(self, request: Request, target_author_uuid: UUID) -> Response:
+    #     """Send an inbox item to this author's inbox"""
+    #     type = request.data.get("type")
+    #     if type is None:
+    #         return Response({"error": "missing 'type' field under inbox item"}, 400)
+
+    #     # make sure the author FQID is valid
+    #     if not target_author_uuid:
+    #         return Response({"error": "missing 'target_author_uuid' field"}, 400)
+    #     target_author = Author.local_authors.find_by_uuid(target_author_uuid)
+    #     if target_author is None:
+    #         return Response({"error": "Author not found", "uuid": target_author_uuid}, 404)
+
+    #     handler = self._find_handler_for_type(type)
+    #     if handler is not None:
+    #         # if not hasattr(request, 'resolver_match') or request.resolver_match is None:
+    #         #     stub = ResolverMatchStub()
+    #         #     setattr(request, 'resolver_match', stub)
+    #         # resolver_match = getattr(request, 'resolver_match')
+    #         # resolver_match.kwargs['target_author_fqid'] = target_author_fqid
+    #         return handler.post(request, target_author)
+    #     return Response({"error": "invalid 'type' field under inbox item",
+    #                      "type": type}, 400)
 
 
 class LikesInboxHandler(InboxHandler):
@@ -223,6 +263,12 @@ class LikesInboxHandler(InboxHandler):
         # return self._post_to_viewset(request, LikeViewSet())
         return self._request_to_viewset(request, LikeViewSet(), method="POST")
 
+    def put(self, request: Request, target_author: Author) -> Response:
+        return Response({"error": "PUT not supported for likes"}, status=405)
+
+    def delete(self, request: Request, target_author: Author) -> Response:
+        return Response({"error": "DELETE not supported for likes"}, status=405)
+
 
 register_inbox_handler(LikesInboxHandler())
 
@@ -259,6 +305,12 @@ class CommentInboxHandler(InboxHandler):
 
         return self._request_to_viewset(request, CommentViewSet(), method="POST")
 
+    def put(self, request: Request, target_author: Author) -> Response:
+        return Response({"error": "PUT not supported for comments"}, status=405)
+
+    def delete(self, request: Request, target_author: Author) -> Response:
+        return Response({"error": "DELETE not supported for comments"}, status=405)
+
 
 register_inbox_handler(CommentInboxHandler())
 
@@ -289,6 +341,12 @@ class FollowRequestInboxHandler(InboxHandler):
 
         return self._request_to_viewset(request, FollowRequestViewSet(), method="POST")
 
+    def put(self, request: Request, target_author: Author) -> Response:
+        return Response({"error": "PUT not supported for follow requests"}, status=405)
+
+    def delete(self, request: Request, target_author: Author) -> Response:
+        return Response({"error": "DELETE not supported for follow requests"}, status=405)
+
 
 register_inbox_handler(FollowRequestInboxHandler())
 
@@ -311,6 +369,12 @@ class PostInboxHandler(InboxHandler):
         # since a post is being created, we don't need to check if the author can see it
         # return self._post_to_viewset(request, PostViewSet())
         return self._request_to_viewset(request, PostViewSet(), method="POST")
+
+    def put(self, request: Request, target_author: Author) -> Response:
+        return self._request_to_viewset(request, PostViewSet(), method="PUT")
+
+    def delete(self, request: Request, target_author: Author) -> Response:
+        return self._request_to_viewset(request, PostViewSet(), method="DELETE")
 
 
 register_inbox_handler(PostInboxHandler())
@@ -393,30 +457,11 @@ class FollowDecisionInboxHandler(InboxHandler):
             existing_follow_request.delete()
         return Response({"status": "success"}, status=200)
 
+    def put(self, request: Request, target_author: Author) -> Response:
+        return Response({"error": "PUT not supported for follow-decision"}, status=405)
+
+    def delete(self, request: Request, target_author: Author) -> Response:
+        return Response({"error": "DELETE not supported for follow-decision"}, status=405)
+
 
 register_inbox_handler(FollowDecisionInboxHandler())
-
-
-class DeletePostInboxHandler(InboxHandler):
-    """
-    - URL: ://service/api/authors/{AUTHOR_UUID}/inbox
-        - POST [remote]: delete a post remotely
-        - Body must include type: "post", and method: "DELETE"
-    """
-
-    def __init__(self) -> None:
-        super().__init__("post")  # reuse the type field "post"
-
-    @property
-    def serializer(self) -> type[PostSerializer]:
-        return PostSerializer  # not actually used here, but required
-
-    def post(self, request: Request, target_author: Author) -> Response:
-        if request.data.get("method", "").upper() != "DELETE":
-            return Response({"error": "method must be DELETE for post deletion"}, status=400)
-
-        # Optional: do extra validation if needed (e.g., confirm post author matches)
-        return self._request_to_viewset(request, PostViewSet(), method="DELETE")
-
-
-register_inbox_handler(DeletePostInboxHandler())
