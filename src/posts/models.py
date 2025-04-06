@@ -198,7 +198,7 @@ class VisiblePostManager(PostManager):
         # still, your own posts are always in your stream
         query_filter = query_filter | Q(author=author)
         # slicing an un-fetched queryset reduces the database load :)
-        return base_queryset.filter(query_filter).order_by('-created_at')[paginate_start:paginate_start + paginate_count]
+        return base_queryset.filter(query_filter).distinct().order_by('-created_at')[paginate_start:paginate_start + paginate_count]
 
 
 class Post(AuthoredApiObject):
