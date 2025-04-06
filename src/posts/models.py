@@ -87,6 +87,8 @@ class VisibilityTypeResolver:
                     author__followers__in=[author]) & Q(author__following__in=[author]))
             case VisibilityTypes.UNLISTED:
                 query_filter = existing_q | Q(visibility_type=VisibilityTypes.UNLISTED)
+            case VisibilityTypes.DELETED:
+                pass # don't show deleted posts to anyone
             case _:
                 raise ValueError("Invalid visibility type")
         if query_filter != Q():
