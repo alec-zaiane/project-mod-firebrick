@@ -286,7 +286,7 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
         except Exception:
             return Response({"error": "Image not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        return Response({"image": encoded_image}, status=status.HTTP_200_OK)
+        return Response(encoded_image, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="Get post video",
@@ -321,4 +321,4 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
         except Exception:
             return Response({"error": "Video not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        return Response({"video": encoded_video}, status=status.HTTP_200_OK)
+        return Response(encoded_video, status=status.HTTP_200_OK)
