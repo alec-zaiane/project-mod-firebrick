@@ -63,12 +63,14 @@ VISIBILITY_TYPE_WEB_MAP: dict[str, str] = {
     VisibilityTypes.PUBLIC: "PUBLIC",
     VisibilityTypes.FRIENDS_ONLY: "FRIENDS",
     VisibilityTypes.UNLISTED: "UNLISTED",
+    VisibilityTypes.DELETED: "DELETED",
 }
 
 VISIBILITY_TYPE_WEB_MAP_REVERSE: dict[str, str] = {
     "PUBLIC": VisibilityTypes.PUBLIC,
     "FRIENDS": VisibilityTypes.FRIENDS_ONLY,
     "UNLISTED": VisibilityTypes.UNLISTED,
+    "DELETED": VisibilityTypes.DELETED,
 }
 
 
