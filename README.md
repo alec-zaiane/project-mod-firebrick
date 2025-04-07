@@ -56,6 +56,7 @@
 ##GPT/Copilot Documentation:
 1. Copilot auto-complete was used in VS Code
 2. Copilot chat was used in VS Code, for the purposes of finding the correct django documentation files
+3. Copilot code reviews were also use, but more for fun than actual use
 
 GPT PROMPT: This is my post_submission_card.html, why is it that when I post an image I'm getting an error showing it's giving a GET req. Linked my html file, along with the error given with the request.
 
