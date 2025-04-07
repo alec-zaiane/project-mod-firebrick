@@ -159,17 +159,18 @@ class PostSerializer(serializers.ModelSerializer[Post]):
             raise ValidationError("Post must have a valid FQID.")
         author: Author = validated_data["author"]
         host_node = author.host_node
-        content_type = validated_data.pop("contentType")
-        if content_type == "image/png;base64" or content_type == "image/jpeg;base64":
+        post_type = validated_data["post_type"]
+        if post_type == PostTypes.IMAGE:
             image_data = base64.b64decode(validated_data["content"])
             validated_data["content"] = None
             filename = f"image_{author.uuid}_{uuid.uuid4().hex}"
+            content_type = self.initial_data.get("contentType", "")
             if content_type == "image/png;base64":
                 filename += ".png"
             elif content_type == "image/jpeg;base64":
                 filename += ".jpeg"
             validated_data["image"] = ContentFile(image_data, name=filename)
-        elif content_type == "video/mp4;base64":
+        elif post_type == PostTypes.VIDEO:
             video_data = base64.b64decode(validated_data["content"])
             validated_data["content"] = None
             filename = f"video_{author.uuid}_{validated_data['title']}.mp4"
