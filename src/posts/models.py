@@ -385,7 +385,7 @@ class Post(AuthoredApiObject):
                 follower.host_node.send_create(
                     json_dict,
                     to=url,
-                    catch_errors= False
+                    catch_errors= True
                 )
 
 
