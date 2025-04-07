@@ -362,6 +362,8 @@ class Post(AuthoredApiObject):
         return PostSerializer().to_representation(self)
 
     def _propagate_post_save_to_other_nodes(self, created: bool) -> None:
+        if not self.host_node.is_local_node:
+            return
         for follower in self.author.followers.all():
             if follower.is_local:
                 continue

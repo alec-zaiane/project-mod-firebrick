@@ -105,6 +105,8 @@ class Like(AuthoredApiObject):
         return LikeSerializer().to_representation(self)
 
     def _propagate_post_save_to_other_nodes(self, created: bool) -> None:
+        if not self.host_node.is_local_node:
+            return
         if not created:
             return super()._propagate_post_save_to_other_nodes(created)
         # if this is new, we need to send it to the inbox of whoever created it, as well as all of their followers
