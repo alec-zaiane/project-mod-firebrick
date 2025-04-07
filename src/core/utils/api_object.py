@@ -31,6 +31,7 @@ class ApiObjectManager(models.Manager[ModelT], Generic[ModelT]):
         return self.get(fqid=fqid)
 
     def find_by_fqid(self, fqid: str) -> Optional[ModelT]:
+        fqid = fqid.rstrip("/")
         no_slash = self.filter(fqid=fqid).first()
         has_slash = self.filter(fqid=f"{fqid}/").first()
         return no_slash or has_slash
