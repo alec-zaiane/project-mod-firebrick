@@ -7,7 +7,7 @@ from django.db.models import QuerySet
 from user_management.models import Node
 from user_management.tests.dummies import create_dummy_local_author
 from posts.models import Post, PostTypes, VisibilityTypes
-from posts.tests.dummies import create_dummy_post
+from posts.tests.dummies import create_dummy_post, create_dummy_post_image, create_dummy_post_video
 
 
 @tag("check-medium")
@@ -20,9 +20,11 @@ class PostUnitTests(TestCase):
         post_plain = create_dummy_post(self.local_node, self.author, post_type=PostTypes.PLAINTEXT)
         post_markdown = create_dummy_post(
             self.local_node, self.author, post_type=PostTypes.MARKDOWN)
-        # post_image = create_dummy_post(self.local_node, self.author, post_type=PostTypes.IMAGE, TODO)
-        # post_video = create_dummy_post(self.local_node, self.author, post_type=PostTypes.VIDEO, TODO)
-        total_posts = 2
+        post_image = create_dummy_post(
+            self.local_node, self.author, post_type=PostTypes.IMAGE, content="", image=create_dummy_post_image())
+        post_video = create_dummy_post(
+            self.local_node, self.author, post_type=PostTypes.VIDEO, content="", video=create_dummy_post_video())
+        total_posts = 4
         # just to make the rest more readable
 
         def get_typed_posts(type: PostTypes) -> QuerySet[Post]:
@@ -32,8 +34,8 @@ class PostUnitTests(TestCase):
         self.assertEqual(Post.visible_posts.count(), total_posts)
         self.assertEqual(get_typed_posts(PostTypes.PLAINTEXT).count(), 1)
         self.assertEqual(get_typed_posts(PostTypes.MARKDOWN).count(), 1)
-        # self.assertEqual(get_typed_posts(PostTypes.IMAGE).count(), 1)
-        # self.assertEqual(get_typed_posts(PostTypes.VIDEO).count(), 1)
+        self.assertEqual(get_typed_posts(PostTypes.IMAGE).count(), 1)
+        self.assertEqual(get_typed_posts(PostTypes.VIDEO).count(), 1)
 
         post_plain.soft_delete()
         self.assertEqual(Post.objects.count(), total_posts)
@@ -47,14 +49,14 @@ class PostUnitTests(TestCase):
         self.assertEqual(Post.deleted_posts.count(), 2)
         self.assertEqual(get_typed_posts(PostTypes.MARKDOWN).count(), 0)
 
-        # post_image.soft_delete()
-        # self.assertEqual(Post.objects.count(), 4)
-        # self.assertEqual(Post.visible_posts.count(), 1)
-        # self.assertEqual(Post.deleted_posts.count(), 3)
-        # self.assertEqual(get_typed_posts(PostTypes.IMAGE).count(), 0)
+        post_image.soft_delete()
+        self.assertEqual(Post.objects.count(), 4)
+        self.assertEqual(Post.visible_posts.count(), 1)
+        self.assertEqual(Post.deleted_posts.count(), 3)
+        self.assertEqual(get_typed_posts(PostTypes.IMAGE).count(), 0)
 
-        # post_video.soft_delete()
-        # self.assertEqual(Post.objects.count(), 4)
-        # self.assertEqual(Post.visible_posts.count(), 0)
-        # self.assertEqual(Post.deleted_posts.count(), 4)
-        # self.assertEqual(get_typed_posts(PostTypes.VIDEO).count(), 0)
+        post_video.soft_delete()
+        self.assertEqual(Post.objects.count(), 4)
+        self.assertEqual(Post.visible_posts.count(), 0)
+        self.assertEqual(Post.deleted_posts.count(), 4)
+        self.assertEqual(get_typed_posts(PostTypes.VIDEO).count(), 0)

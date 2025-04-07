@@ -20,7 +20,7 @@ from user_management.models import Author
 from core.utils.api_object import ApiObjectManager, AuthoredApiObject
 from core.utils.validators import validate_url_returns_image
 from moviepy.editor import VideoFileClip
-
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 # === These are enums for the types of posts ===
 
@@ -141,7 +141,9 @@ class PostManager(ApiObjectManager["Post"]):
         description: str,
         content: str,
         post_type: PostTypes,
-        visibility_type: VisibilityTypes
+        visibility_type: VisibilityTypes,
+        image: Optional[SimpleUploadedFile] = None,
+        video: Optional[SimpleUploadedFile] = None,
     ) -> Post:
         """Creates a post using validated arguments."""
         return self.create(
@@ -151,7 +153,9 @@ class PostManager(ApiObjectManager["Post"]):
             description=description,
             content=content,
             post_type=post_type,
-            visibility_type=visibility_type
+            visibility_type=visibility_type,
+            image=image,
+            video=video,
         )
 
 
@@ -161,7 +165,7 @@ class DeletedPostManager(PostManager):
     def get_queryset(self) -> models.QuerySet[Post]:
         return super().get_queryset().filter(is_soft_deleted=True)
 
-    def create_post(self, author: Author, title: str, description: str, content: str, post_type: PostTypes, visibility_type: VisibilityTypes) -> Post:
+    def create_post(self, author: Author, title: str, description: str, content: str, post_type: PostTypes, visibility_type: VisibilityTypes, image: Optional[SimpleUploadedFile] = None, video: Optional[SimpleUploadedFile] = None) -> Post:
         raise ValidationError(
             "Cannot create a post in the deleted posts manager")
 
