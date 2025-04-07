@@ -416,7 +416,7 @@ class PostInboxHandler(InboxHandler):
         print(f">> Expecting {target_post.author=}, {target_post.host_node=}")
         if node is None and viewer is None:
             return API_UNAUTHORIZED()
-        if viewer is not None:
+        if viewer is not None and node is None:
             if not target_post.author == viewer:
                 # the viewer is not the author of the post, so they can't update it
                 print(">>> Viewer does not have access to update this post")
