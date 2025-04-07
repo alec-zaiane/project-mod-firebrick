@@ -514,7 +514,7 @@ class FollowDecisionInboxHandler(InboxHandler):
         if not actor or not object:
             return Response({"error": "invalid 'object' or 'actor' field"}, 400)
         try:
-            decision = bool(json.get("decision"))
+            decision = True if json["decision"].upper() == "TRUE" else False
         except ValueError:
             return Response({"error": "invalid 'decision' field"}, 400)
         print(decision)

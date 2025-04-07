@@ -487,3 +487,60 @@ class TestNode2NodeReceiveFollowRequests(Node2NodeReceptionTestCase):
         )
         self.assertEqual(response.status_code, 400)
         self.assertEqual(FollowRequest.objects.count(), 0)
+
+    def test_receive_follow_decision(self) -> None:
+        """After sending out a follow request, make sure that if the other node sends a decision, it is received"""
+        # create a follow request
+
+        FollowRequest.objects.create_follow_request(
+            self.sample_authors[0],
+            self.external_authors[0]
+        )
+
+        # simulate receiving a follow decision
+        receive_json = {
+            "type": "follow-decision",
+            "decision": "true",
+            "actor": AuthorSerializer().to_representation(self.sample_authors[0]),
+            "object": AuthorSerializer().to_representation(self.external_authors[0]),
+        }
+        receive_json_string = json.dumps(receive_json)
+        response = requests.post(
+            self.author0_inbox_url,
+            data=receive_json_string,
+            headers={"Content-Type": "application/json"},
+            auth=(self.other_node_user_incoming.username, "node"),
+        )
+        # make sure that the follow request is gone and the follow is created
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(FollowRequest.objects.count(), 0)
+        self.assertEqual(self.sample_authors[0].following.count(), 1)
+        self.assertEqual(self.sample_authors[0].following.first(), self.external_authors[0])
+
+    def test_receive_deny_follow_decision(self) -> None:
+        """After sending out a follow request, make sure that if the other node sends a decision, it is received"""
+        # create a follow request
+
+        FollowRequest.objects.create_follow_request(
+            self.sample_authors[0],
+            self.external_authors[0]
+        )
+
+        # simulate receiving a follow decision
+        receive_json = {
+            "type": "follow-decision",
+            "decision": "false",
+            "actor": AuthorSerializer().to_representation(self.sample_authors[0]),
+            "object": AuthorSerializer().to_representation(self.external_authors[0]),
+        }
+        receive_json_string = json.dumps(receive_json)
+        response = requests.post(
+            self.author0_inbox_url,
+            data=receive_json_string,
+            headers={"Content-Type": "application/json"},
+            auth=(self.other_node_user_incoming.username, "node"),
+        )
+        # make sure that the follow request is gone and the follow is created
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(FollowRequest.objects.count(), 0)
+        self.assertEqual(self.sample_authors[0].following.count(), 0)
