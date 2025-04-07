@@ -19,9 +19,9 @@ class TestNode2NodePosts(Node2NodeReceptionTestCase):
 
         self.initialize_external_authors(1)
 
-        self.author0_inbox_url = self.live_server_url + reverse("user_management:node2node_inbox", args=[
-            self.sample_authors[0].uuid
-        ])
+        self.author0_inbox_url = self.live_server_url + reverse(
+            "user_management:node2node_inbox", args=[self.sample_authors[0].uuid]
+        )
 
         external_author = self.external_authors[0]
         self.receive_json = {
@@ -59,7 +59,7 @@ class TestNode2NodePosts(Node2NodeReceptionTestCase):
                 "src": [],
             },
             "published": "2025-03-29T22:22:35.342617+00:00",
-            "visibility": "FRIENDS"
+            "visibility": "FRIENDS",
         }
 
     def test_create_post_via_json(self) -> None:
@@ -71,7 +71,7 @@ class TestNode2NodePosts(Node2NodeReceptionTestCase):
             self.author0_inbox_url,
             data=receive_json_string,
             headers={"Content-Type": "application/json"},
-            auth=(self.other_node_user_incoming.username, "node")
+            auth=(self.other_node_user_incoming.username, "node"),
         )
         # make sure the post was created
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -97,11 +97,13 @@ class TestNode2NodePosts(Node2NodeReceptionTestCase):
             self.author0_inbox_url,
             data=receive_json_string,
             headers={"Content-Type": "application/json"},
-            auth=(self.other_node_user_incoming.username, "badpassword")
+            auth=(self.other_node_user_incoming.username, "badpassword"),
         )
         # make sure the post was not created
-        self.assertIn(response.status_code, [
-                      status.HTTP_403_FORBIDDEN, status.HTTP_401_UNAUTHORIZED])
+        self.assertIn(
+            response.status_code,
+            [status.HTTP_403_FORBIDDEN, status.HTTP_401_UNAUTHORIZED],
+        )
         self.assertEqual(Post.objects.count(), 0)
 
         # try without auth
@@ -111,8 +113,10 @@ class TestNode2NodePosts(Node2NodeReceptionTestCase):
             headers={"Content-Type": "application/json"},
         )
         # make sure the post was not created
-        self.assertIn(response.status_code, [
-                      status.HTTP_403_FORBIDDEN, status.HTTP_401_UNAUTHORIZED])
+        self.assertIn(
+            response.status_code,
+            [status.HTTP_403_FORBIDDEN, status.HTTP_401_UNAUTHORIZED],
+        )
         self.assertEqual(Post.objects.count(), 0)
 
     def test_create_post_with_invalid_data(self) -> None:
@@ -126,8 +130,64 @@ class TestNode2NodePosts(Node2NodeReceptionTestCase):
             self.author0_inbox_url,
             data=receive_json_string,
             headers={"Content-Type": "application/json"},
-            auth=(self.other_node_user_incoming.username, "node")
+            auth=(self.other_node_user_incoming.username, "node"),
         )
         # make sure the post was not created
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(Post.objects.count(), 0)
+
+    def test_receive_updated_post(self) -> None:
+        """Simulate receiving a PUT request update to a post"""
+
+        # create the post first, guaranteed to work by test higher up
+        receive_json_string = json.dumps(self.receive_json)
+        requests.post(
+            self.author0_inbox_url,
+            data=receive_json_string,
+            headers={"Content-Type": "application/json"},
+            auth=(self.other_node_user_incoming.username, "node"),
+        )
+
+        self.receive_json["title"] = "Updated Test Post"
+        self.receive_json["description"] = "Updated description"
+        receive_json_string = json.dumps(self.receive_json)
+        response = requests.put(
+            self.author0_inbox_url,
+            receive_json_string,
+            headers={"Content-Type": "application/json"},
+            auth=(self.other_node_user_incoming.username, "node"),
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(Post.objects.count(), 1)
+
+        post = Post.objects.get()
+        self.assertEqual(post.title, "Updated Test Post")
+        self.assertEqual(post.description, "Updated description")
+
+    def test_receive_deleted_post(self) -> None:
+        "Simulate receiving a PUT request of a deleted post"
+
+        # create the post first, guaranteed to work by test higher up
+        receive_json_string = json.dumps(self.receive_json)
+        requests.post(
+            self.author0_inbox_url,
+            data=receive_json_string,
+            headers={"Content-Type": "application/json"},
+            auth=(self.other_node_user_incoming.username, "node"),
+        )
+
+        # delete the post
+        self.receive_json["visibility"] = "DELETED"
+        receive_json_string = json.dumps(self.receive_json)
+        response = requests.put(
+            self.author0_inbox_url,
+            receive_json_string,
+            headers={"Content-Type": "application/json"},
+            auth=(self.other_node_user_incoming.username, "node"),
+        )
+        # make sure the post was soft deleted
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(Post.visible_posts.count(), 0)
+        post = Post.objects.get()
+        self.assertEqual(post.is_soft_deleted, True)

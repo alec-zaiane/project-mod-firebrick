@@ -184,6 +184,11 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
                 {"error": "You do not have permission to edit this post."},
                 status=status.HTTP_403_FORBIDDEN
             )
+
+        # soft delete if visibility is set to deleted
+        if request.data.get("visibility") == "DELETED":
+            post.soft_delete()
+            return Response({"detail": "Post soft deleted"}, status=status.HTTP_200_OK)
         return super().update(request, *args, **kwargs)
 
     @extend_schema(
@@ -248,10 +253,10 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-
         post.soft_delete()
         # post._propagate_deletion_to_other_nodes()
         return Response({"detail": "Post soft deleted"}, status=status.HTTP_204_NO_CONTENT)
+
 
 class AuthorPostViewSet(viewsets.ModelViewSet[Post]):
     serializer_class = PostSerializer

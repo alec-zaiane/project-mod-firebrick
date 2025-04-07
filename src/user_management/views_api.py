@@ -1,4 +1,7 @@
 from __future__ import annotations
+from uuid import UUID
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer
+from drf_spectacular.utils import extend_schema
 from typing import Optional, Any, Literal
 import abc
 
@@ -27,10 +30,6 @@ from user_management.models import Author, FollowRequest
 from core.utils.request_viewer import get_request_node, get_request_viewer
 from core.utils.redirects import API_UNAUTHORIZED, API_FORBIDDEN
 
-from drf_spectacular.utils import extend_schema
-from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer
-
-from uuid import UUID
 
 # ======================================================================================
 # Inbox handling
@@ -131,17 +130,20 @@ class InboxHandler(abc.ABC):
 
         lookup_value: Optional[str] = None
         if method.upper() in ("PUT", "DELETE"):
+            # TODO this only works for posts, should be generalized to other APIObjects in the future
             raw_lookup = request.data.get("id")
-            if isinstance(raw_lookup, str) and "/" in raw_lookup:
-                lookup_value = raw_lookup.rstrip("/").split("/")[-1]
-            else:
-                lookup_value = raw_lookup
-
-            if not lookup_value:
-                return Response({"error": "Missing 'id' field in request data"}, status=400)
+            if not isinstance(raw_lookup, str):
+                return Response({"error": "Invalid 'id' field"}, status=400)
+            item = Post.objects.find_by_fqid(raw_lookup)
+            if not item:
+                return Response({"error": "Post not found"}, status=404)
+            lookup_value = str(item.uuid)
 
             request.parser_context = request.parser_context or {}
             request.parser_context["kwargs"] = {"uuid": lookup_value}
+
+            viewset_instance.lookup_field = "uuid"
+            viewset_instance.kwargs["uuid"] = lookup_value
 
         print(">>> Incoming PUT/DELETE Request")
         print("request.data =", request.data)
