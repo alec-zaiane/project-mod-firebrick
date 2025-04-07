@@ -92,7 +92,11 @@ class InboxHandler(abc.ABC):
 
         lookup_field = getattr(viewset_instance, 'lookup_field', 'pk')
         lookup_url_kwarg = getattr(viewset_instance, 'lookup_url_kwarg', lookup_field)
-        lookup_value = request.data.get(lookup_field) or request.data.get("id")
+        raw_lookup = request.data.get(lookup_field)
+        if isinstance(raw_lookup, str) and "/" in raw_lookup:
+            lookup_value = raw_lookup.rstrip("/").split("/")[-1]
+        else:
+            lookup_value = raw_lookup
 
         if lookup_value and isinstance(lookup_value, str) and "/" in lookup_value:
             lookup_value = lookup_value.rstrip("/").split("/")[-1]
