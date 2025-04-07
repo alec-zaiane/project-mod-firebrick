@@ -105,14 +105,20 @@ class Like(AuthoredApiObject):
         return LikeSerializer().to_representation(self)
 
     def _propagate_post_save_to_other_nodes(self, created: bool) -> None:
+        if not self.host_node.is_local_node:
+            return
         if not created:
             return super()._propagate_post_save_to_other_nodes(created)
         # if this is new, we need to send it to the inbox of whoever created it, as well as all of their followers
         recipients = [self.target.author] + list(self.target.author.followers.all())
+        if isinstance(self.target, Comment):
+            recipients.extend([self.target.post.author, *
+                              list(self.target.post.author.followers.all())])
+        recipients = list(set(recipients))  # remove duplicates
         for recipient in recipients:
             if recipient.host_node.is_local_node:
                 # don't send to self
-                return
+                continue
             # send to the inbox of the author of the post/comment
             recipient.host_node.send_create(
                 self.node2node_encode_as_class_json_dict(),

@@ -1,4 +1,7 @@
 from __future__ import annotations
+from uuid import UUID
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer
+from drf_spectacular.utils import extend_schema
 from typing import Optional, Any, Literal
 import abc
 
@@ -27,10 +30,6 @@ from user_management.models import Author, FollowRequest
 from core.utils.request_viewer import get_request_node, get_request_viewer
 from core.utils.redirects import API_UNAUTHORIZED, API_FORBIDDEN
 
-from drf_spectacular.utils import extend_schema
-from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer
-
-from uuid import UUID
 
 # ======================================================================================
 # Inbox handling
@@ -85,30 +84,71 @@ class InboxHandler(abc.ABC):
     def delete(self, request: Request, target_author: Author) -> Response:
         ...
 
+    # def _request_to_viewset(self, request: Request, viewset_instance: ModelViewSet[Any], method: str = "POST") -> Response:
+    #     """Make a request to a viewset with the specified method (POST/PUT/DELETE)"""
+    #     viewset_instance.setup(request)
+    #     viewset_instance.initial(request)
+
+    #     lookup_field = getattr(viewset_instance, 'lookup_field', 'pk')
+    #     lookup_url_kwarg = getattr(viewset_instance, 'lookup_url_kwarg', lookup_field)
+    #     raw_lookup = request.data.get("id")
+    #     # mypy
+    #     lookup_value: Optional[str] = raw_lookup if isinstance(raw_lookup, str) else None
+    #     # Extract UUID from full FQID if needed
+    #     if isinstance(raw_lookup, str) and "/" in raw_lookup:
+    #         lookup_value = raw_lookup.rstrip("/").split("/")[-1]
+    #     else:
+    #         lookup_value = raw_lookup
+
+    #     print(">>> Incoming PUT/DELETE Request")
+    #     print("lookup_field =", lookup_field)
+    #     print("lookup_url_kwarg =", lookup_url_kwarg)
+    #     print("request.data =", request.data)
+    #     print("lookup_value =", lookup_value)
+    #     if method.upper() in ("PUT", "DELETE"):
+    #         if not lookup_value:
+    #             return Response({"error": f"Missing '{lookup_field}' in request data"}, status=400)
+
+    #         # Inject kwargs so get_object() works
+    #         request.parser_context = request.parser_context or {}
+    #         request.parser_context["kwargs"] = {lookup_url_kwarg: lookup_value}
+
+    #     match method.upper():
+    #         case "POST":
+    #             return viewset_instance.create(request)
+    #         case "PUT":
+    #             return viewset_instance.update(request)
+    #         case "DELETE":
+    #             return viewset_instance.destroy(request)
+    #         case _:
+    #             return Response({"error": f"Unsupported method {method}"}, status=405)
+
     def _request_to_viewset(self, request: Request, viewset_instance: ModelViewSet[Any], method: str = "POST") -> Response:
         """Make a request to a viewset with the specified method (POST/PUT/DELETE)"""
         viewset_instance.setup(request)
         viewset_instance.initial(request)
 
-        lookup_field = getattr(viewset_instance, 'lookup_field', 'pk')
-        lookup_url_kwarg = getattr(viewset_instance, 'lookup_url_kwarg', lookup_field)
-        lookup_value = request.data.get(lookup_field) or request.data.get("id")
+        lookup_value: Optional[str] = None
+        if method.upper() in ("PUT", "DELETE"):
+            print("PUT/DELETE, filling in lookup_value based on `id` field")
+            # TODO this only works for posts, should be generalized to other APIObjects in the future
+            raw_lookup = request.data.get("id")
+            if not isinstance(raw_lookup, str):
+                return Response({"error": "Invalid 'id' field"}, status=400)
+            item = Post.objects.find_by_fqid(raw_lookup)
+            if not item:
+                return Response({"error": "Post not found"}, status=404)
+            lookup_value = str(item.uuid)
 
-        if lookup_value and isinstance(lookup_value, str) and "/" in lookup_value:
-            lookup_value = lookup_value.rstrip("/").split("/")[-1]
+            request.parser_context = request.parser_context or {}
+            request.parser_context["kwargs"] = {"uuid": lookup_value}
+
+            viewset_instance.lookup_field = "uuid"
+            viewset_instance.kwargs["uuid"] = lookup_value
 
         print(">>> Incoming PUT/DELETE Request")
-        print("lookup_field =", lookup_field)
-        print("lookup_url_kwarg =", lookup_url_kwarg)
         print("request.data =", request.data)
         print("lookup_value =", lookup_value)
-        if method.upper() in ("PUT", "DELETE"):
-            if not lookup_value:
-                return Response({"error": f"Missing '{lookup_field}' in request data"}, status=400)
-
-            # Inject kwargs so get_object() works
-            request.parser_context = request.parser_context or {}
-            request.parser_context["kwargs"] = {lookup_url_kwarg: lookup_value}
 
         match method.upper():
             case "POST":
@@ -361,6 +401,8 @@ class PostInboxHandler(InboxHandler):
         return self._request_to_viewset(request, PostViewSet(), method="POST")
 
     def put(self, request: Request, target_author: Author) -> Response:
+        print(">>> Incoming PUT request to PostInboxHandler")
+        print("JSON body:", request.data)
         # updating a post means that we need to make sure the request's owner is allowed to update it (they are either the owning node, or the author)
         post_fqid = request.data.get("id")
         if not post_fqid:
@@ -370,15 +412,19 @@ class PostInboxHandler(InboxHandler):
             return Response({"error": "Post not found", "fqid": post_fqid}, 404)
         node = get_request_node(request)
         viewer = get_request_viewer(request)
+        print(f">> {viewer=}, {node=}")
+        print(f">> Expecting {target_post.author=}, {target_post.host_node=}")
         if node is None and viewer is None:
             return API_UNAUTHORIZED()
-        if viewer is not None:
+        if viewer is not None and node is None:
             if not target_post.author == viewer:
                 # the viewer is not the author of the post, so they can't update it
+                print(">>> Viewer does not have access to update this post")
                 return API_FORBIDDEN()
         if node is not None:
             if not target_post.host_node == node:
                 # the node is not the host of the post, so they can't update it
+                print(">>> Node does not have access to update this post")
                 return API_FORBIDDEN()
         return self._request_to_viewset(request, PostViewSet(), method="PUT")
 

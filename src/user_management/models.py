@@ -569,7 +569,7 @@ class Node(models.Model):
                 self.save()
             pass
 
-    def send_create(self, json: dict[str, Any], to: str) -> None:
+    def send_create(self, json: dict[str, Any], to: str, catch_errors: bool=True) -> None:
         """Send an object creation to this node via the given `to` URL"""
         if self.internal_user is None:
             raise ValidationError("This node has no internal_user set (required for auth)")
@@ -577,6 +577,8 @@ class Node(models.Model):
             response = self._post(json, self._make_absolute_url(to))
             response.raise_for_status()
         except requests.RequestException as e:
+            if not catch_errors:
+                raise e
             if not DEBUG and not DEBUG_DONT_DISABLE_NODES:
                 print(f"[Node {self.name}] Failed to send CREATE to {to}: {e}, disabling node...")
                 # Disables a node that ever sends an invalid update

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import tempfile
+import requests
 from typing import Any, TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
@@ -366,6 +367,8 @@ class Post(AuthoredApiObject):
         return PostSerializer().to_representation(self)
 
     def _propagate_post_save_to_other_nodes(self, created: bool) -> None:
+        if not self.host_node.is_local_node:
+            return
         for follower in self.author.followers.all():
             if follower.is_local:
                 continue
@@ -374,10 +377,22 @@ class Post(AuthoredApiObject):
                 url = self.node2node_get_creation_url(author_for_inbox=follower)
             else:
                 url = self.node2node_get_update_url(author_for_inbox=follower)
-            follower.host_node.send_create(
-                self.node2node_encode_as_class_json_dict(),
-                to=url,
-            )
+            json_dict = self.node2node_encode_as_class_json_dict()
+            try:
+                follower.host_node.send_create(
+                    json_dict,
+                    to=url,
+                    catch_errors= False
+                )
+            except requests.exceptions.RequestException as e:
+                json_dict["type"] = "update"
+                follower.host_node.send_create(
+                    json_dict,
+                    to=url,
+                    catch_errors= True
+                )
+
+
 
     def _propagate_deletion_to_other_nodes(self) -> None:
         for follower in self.author.followers.all():
