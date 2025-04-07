@@ -282,11 +282,11 @@ class Author(ApiObject):
     def node2node_get_creation_url(self, author_for_inbox: Optional[Author] = None) -> str:
         return reverse("user_management:node2node_authors-list")
 
-    def node2node_get_update_url(self) -> str:
+    def node2node_get_update_url(self, author_for_inbox: Optional[Author] = None) -> str:
         return self.fqid
         # return reverse("user_management:node2node_authors-detail", kwargs={"fqid": self.get_encoded_fqid()})
 
-    def node2node_get_deletion_url(self) -> str:
+    def node2node_get_deletion_url(self, author_for_inbox: Optional[Author] = None) -> str:
         return self.node2node_get_update_url()
 
     def node2node_get_inbox_url(self) -> str:
@@ -375,11 +375,45 @@ class FollowRequest(ApiObject):
             return reverse("user_management:node2node_follow_requests-list")
         return author_for_inbox.node2node_get_inbox_url()
 
-    def node2node_get_update_url(self) -> str:
-        return reverse("user_management:node2node_follow_requests-detail", kwargs={"fqid": self.get_encoded_fqid()})
+    def node2node_get_update_url(self, author_for_inbox: Optional[Author] = None) -> str:
+        return reverse("user_management:node2node_follow_requests-detail", kwargs={"uuid": self.uuid})
 
-    def node2node_get_deletion_url(self) -> str:
+    def node2node_get_deletion_url(self, author_for_inbox: Optional[Author] = None) -> str:
         return self.node2node_get_update_url()
+
+    def approve(self) -> None:
+        self.follower.following.add(self.followee)
+
+        # propagate to follower's node if its external
+        if not self.follower.host_node.is_local_node:
+            from user_management.serializers import AuthorSerializer
+            follow_decision = {
+                "type": "follow-decision",
+                "decision": "true",
+                "actor": AuthorSerializer().to_representation(self.follower),
+                "object": AuthorSerializer().to_representation(self.followee),
+            }
+            self.follower.host_node.send_create(
+                follow_decision,
+                to=self.follower.node2node_get_inbox_url()
+            )
+        self.delete()
+
+    def deny(self) -> None:
+        # propagate to follower's node if its external
+        if not self.follower.host_node.is_local_node:
+            from user_management.serializers import AuthorSerializer
+            follow_decision = {
+                "type": "follow-decision",
+                "decision": "false",
+                "actor": AuthorSerializer().to_representation(self.follower),
+                "object": AuthorSerializer().to_representation(self.followee),
+            }
+            self.follower.host_node.send_create(
+                follow_decision,
+                to=self.follower.node2node_get_inbox_url()
+            )
+        self.delete()
 
 # =============================================================================
 # External Nodes
@@ -535,7 +569,7 @@ class Node(models.Model):
                 self.save()
             pass
 
-    def send_create(self, json: dict[str, Any], to: str) -> None:
+    def send_create(self, json: dict[str, Any], to: str, catch_errors: bool=True) -> None:
         """Send an object creation to this node via the given `to` URL"""
         if self.internal_user is None:
             raise ValidationError("This node has no internal_user set (required for auth)")
@@ -543,6 +577,8 @@ class Node(models.Model):
             response = self._post(json, self._make_absolute_url(to))
             response.raise_for_status()
         except requests.RequestException as e:
+            if not catch_errors:
+                raise e
             if not DEBUG and not DEBUG_DONT_DISABLE_NODES:
                 print(f"[Node {self.name}] Failed to send CREATE to {to}: {e}, disabling node...")
                 # Disables a node that ever sends an invalid update

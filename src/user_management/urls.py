@@ -9,6 +9,10 @@ from user_management.views import AuthorFollowInfoView, AuthorFollowRequests, Au
 from user_management.viewsets import AuthorViewSet, FollowRequestViewSet
 from user_management.views_api import InboxView
 
+from posts.viewsets import AuthorPostViewSet
+
+from rest_framework_nested import routers as nested_routers
+
 app_name = "user_management"
 urlpatterns: list[URLPattern | URLResolver] = [
     path('login/',
@@ -67,7 +71,20 @@ router = routers.SimpleRouter()
 router.register(r"api/authors", AuthorViewSet, basename="node2node_authors")
 router.register(r"api/follow-requests", FollowRequestViewSet, basename="node2node_follow_requests")
 
+author_router = nested_routers.NestedSimpleRouter(
+     router,
+     r"api/authors",
+     lookup="author",
+)
+author_router.register(
+    r"posts",
+    AuthorPostViewSet,
+    basename="node2node_authors_posts",
+)
+
+
 urlpatterns += router.urls
+urlpatterns += author_router.urls
 
 # suggested by copilot: register explicit approve/deny endpoints because the regex is matching the / as part of the FQID
 # for some reason, percent decoding is done before the regex is matched, making all FQIDs either break themselves, or break any trailing URL

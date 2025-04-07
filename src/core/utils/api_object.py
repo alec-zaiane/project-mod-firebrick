@@ -31,7 +31,10 @@ class ApiObjectManager(models.Manager[ModelT], Generic[ModelT]):
         return self.get(fqid=fqid)
 
     def find_by_fqid(self, fqid: str) -> Optional[ModelT]:
-        return self.filter(fqid=fqid).first()
+        fqid = fqid.rstrip("/")
+        no_slash = self.filter(fqid=fqid).first()
+        has_slash = self.filter(fqid=f"{fqid}/").first()
+        return no_slash or has_slash
 
     def find_by_encoded_fqid(self, fqid: str) -> Optional[ModelT]:
         """Find by a percent-encoded fqid"""
@@ -133,11 +136,11 @@ class ApiObject(models.Model):
         raise NotImplementedError(
             f"node2node_get_creation_url must be implemented by subclasses (perhaps in `{self.__class__}`?)")
 
-    def node2node_get_update_url(self) -> str:
+    def node2node_get_update_url(self, author_for_inbox: Optional["Author"] = None) -> str:
         raise NotImplementedError(
             f"node2node_get_update_url must be implemented by subclasses (perhaps in `{self.__class__}`?)")
 
-    def node2node_get_deletion_url(self) -> str:
+    def node2node_get_deletion_url(self, author_for_inbox: Optional["Author"] = None) -> str:
         raise NotImplementedError(
             f"node2node_get_deletion_url must be implemented by subclasses (perhaps in `{self.__class__}`?)")
     # =====================================

@@ -1,5 +1,7 @@
 from typing import Any
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
+
+from django.db.models import QuerySet
 from django.contrib.auth.models import AnonymousUser
 
 from rest_framework.permissions import IsAuthenticated
@@ -182,6 +184,11 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
                 {"error": "You do not have permission to edit this post."},
                 status=status.HTTP_403_FORBIDDEN
             )
+
+        # soft delete if visibility is set to deleted
+        if request.data.get("visibility") == "DELETED":
+            post.soft_delete()
+            return Response({"detail": "Post soft deleted"}, status=status.HTTP_200_OK)
         return super().update(request, *args, **kwargs)
 
     @extend_schema(
@@ -246,7 +253,15 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        post._propagate_deletion_to_other_nodes()
-
         post.soft_delete()
+        # post._propagate_deletion_to_other_nodes()
         return Response({"detail": "Post soft deleted"}, status=status.HTTP_204_NO_CONTENT)
+
+
+class AuthorPostViewSet(viewsets.ModelViewSet[Post]):
+    serializer_class = PostSerializer
+    lookup_url_kwarg = "post_uuid"
+
+    def get_queryset(self) -> QuerySet[Post]:
+        author_uuid = self.kwargs.get("author_uuid")
+        return Post.objects.filter(author__uuid=author_uuid)

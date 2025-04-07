@@ -91,7 +91,7 @@ class PostSerializer(serializers.ModelSerializer[Post]):
                       "src": LikeSerializer(instance.likes.all(), many=True).data,
                       },
             "published": instance.created_at.isoformat(),
-            "visibility": VISIBILITY_TYPE_WEB_MAP.get(instance.visibility_type),
+            "visibility": VISIBILITY_TYPE_WEB_MAP.get(instance.visibility_type) if not instance.is_soft_deleted else "DELETED",
             "page": instance.author.page_url,
         }
 
@@ -112,6 +112,14 @@ class PostSerializer(serializers.ModelSerializer[Post]):
 
         author = AuthorSerializer().get_or_create(data["author"])
 
+        visibility_type_fetched = VISIBILITY_TYPE_WEB_MAP_REVERSE.get(
+            data["visibility"], None)
+        if visibility_type_fetched is None:
+            visibility_type_fetched = VISIBILITY_TYPE_WEB_MAP_REVERSE["UNLISTED"] # fallback
+
+        soft_deleted = data["visibility"] == "DELETED"
+
+
         return {
             "title": data["title"],
             "fqid": data["id"],
@@ -119,7 +127,8 @@ class PostSerializer(serializers.ModelSerializer[Post]):
             "post_type": post_type,  # contentType
             "content": data["content"],
             "author": author,
-            "visibility_type": VISIBILITY_TYPE_WEB_MAP_REVERSE.get(data["visibility"]),
+            "visibility_type": visibility_type_fetched,
+            "is_soft_deleted": soft_deleted,
         }
 
     def create(self, validated_data: dict[str, Any]) -> Post:

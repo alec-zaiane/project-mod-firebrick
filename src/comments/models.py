@@ -38,7 +38,7 @@ class Comment(AuthoredApiObject):
 
     def generate_fqid(self) -> str:
         # TODO replace with reverse() call :)
-        return f"{self.host_node.host_url}comments/{self.uuid}".replace("/api/api", "/api")
+        return f"{self.host_node.host_url}/comments/{self.uuid}".replace("/api/api", "/api")
 
     def clean(self) -> None:
         super().clean()
@@ -55,6 +55,8 @@ class Comment(AuthoredApiObject):
         return CommentSerializer().to_representation(self)
 
     def _propagate_post_save_to_other_nodes(self, created: bool) -> None:
+        if not self.host_node.is_local_node:
+            return
         if not created:
             return super()._propagate_post_save_to_other_nodes(created)
         # if this is new, we need to send it to the inbox of the author of the post, as well as all of their followers
@@ -62,7 +64,7 @@ class Comment(AuthoredApiObject):
         for recipient in recipients:
             if recipient.host_node.is_local_node:
                 # don't send to self
-                return
+                continue
             # send to the inbox of the author of the post
             recipient.host_node.send_create(
                 self.node2node_encode_as_class_json_dict(),
@@ -74,9 +76,9 @@ class Comment(AuthoredApiObject):
             return reverse("comments:node2node_comments-list")
         return author_for_inbox.node2node_get_inbox_url()
 
-    def node2node_get_update_url(self) -> str:
+    def node2node_get_update_url(self, author_for_inbox: Optional[Author] = None) -> str:
         return self.fqid
         # return reverse("comments:node2node_comments-detail", kwargs={"uuid": self.uuid})
 
-    def node2node_get_deletion_url(self) -> str:
+    def node2node_get_deletion_url(self, author_for_inbox: Optional[Author] = None) -> str:
         return self.node2node_get_update_url()

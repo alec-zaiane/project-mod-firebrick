@@ -97,7 +97,7 @@ class Like(AuthoredApiObject):
 
     def generate_fqid(self) -> str:
         # TODO replace with reverse() call :)
-        return f"{self.host_node.host_url}likes/{self.uuid}".replace("/api/api", "/api")
+        return f"{self.host_node.host_url}/likes/{self.uuid}".replace("/api/api", "/api")
 
         # node2node stuff
     def node2node_encode_as_class_json_dict(self) -> dict[str, Any]:
@@ -105,14 +105,20 @@ class Like(AuthoredApiObject):
         return LikeSerializer().to_representation(self)
 
     def _propagate_post_save_to_other_nodes(self, created: bool) -> None:
+        if not self.host_node.is_local_node:
+            return
         if not created:
             return super()._propagate_post_save_to_other_nodes(created)
         # if this is new, we need to send it to the inbox of whoever created it, as well as all of their followers
         recipients = [self.target.author] + list(self.target.author.followers.all())
+        if isinstance(self.target, Comment):
+            recipients.extend([self.target.post.author, *
+                              list(self.target.post.author.followers.all())])
+        recipients = list(set(recipients))  # remove duplicates
         for recipient in recipients:
             if recipient.host_node.is_local_node:
                 # don't send to self
-                return
+                continue
             # send to the inbox of the author of the post/comment
             recipient.host_node.send_create(
                 self.node2node_encode_as_class_json_dict(),
@@ -124,10 +130,10 @@ class Like(AuthoredApiObject):
             return reverse("likes:node2node_likes-list")
         return author_for_inbox.node2node_get_inbox_url()
 
-    def node2node_get_update_url(self) -> str:
+    def node2node_get_update_url(self, author_for_inbox: Optional[Author] = None) -> str:
         return reverse("likes:node2node_likes-detail", kwargs={"fqid": self.get_encoded_fqid()})
 
-    def node2node_get_deletion_url(self) -> str:
+    def node2node_get_deletion_url(self, author_for_inbox: Optional[Author] = None) -> str:
         return self.node2node_get_update_url()
 
 
