@@ -1,3 +1,4 @@
+import base64
 from typing import Any
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
 
@@ -9,9 +10,10 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
 from rest_framework import viewsets, status
 from rest_framework.request import Request
+from rest_framework.decorators import action
 
 
-from posts.models import Post
+from posts.models import Post, PostTypes
 from posts.serializers import PostSerializer
 from posts.permissions import PostPermission
 from user_management.models import Node, Author
@@ -31,7 +33,6 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
     # suggested by copilot: lookup_field/lookup_url_kwarg/lookup_value_regex to change the lookup field to an encoded uuid
     lookup_field = "uuid"
     lookup_url_kwarg = "uuid"
-    lookup_value_regex = ".+"
     queryset = Post.visible_posts.all()
     serializer_class = PostSerializer
     # permission_classes = [IsAuthenticated, PostPermission]
@@ -256,6 +257,76 @@ class PostViewSet(viewsets.ModelViewSet[Post]):
         post.soft_delete()
         # post._propagate_deletion_to_other_nodes()
         return Response({"detail": "Post soft deleted"}, status=status.HTTP_204_NO_CONTENT)
+
+    @extend_schema(
+        summary="Get post image",
+        description="Get the image of a post. Only available for image posts.",
+        parameters=[
+            OpenApiParameter(
+                name="uuid",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="The fully qualified ID of the post",
+            )
+        ],
+        responses={
+            200: OpenApiResponse(description="Image retrieved successfully"),
+            404: OpenApiResponse(description="Post not found or no image found"),
+        },
+        tags=["Posts"],
+    )
+    @action(detail=True, methods=["get"], url_path="image")
+    def image(self, request: Request, uuid: str) -> Response:
+        """
+        GET Endpoint to retrieve a binary image from a post.
+        """
+        post = self.get_object()
+
+        if post.post_type != PostTypes.IMAGE or not post.image:
+            return Response({"error": "No image post found."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            image_file = post.image.open("rb")
+            encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
+        except Exception:
+            return Response({"error": "Image not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response(encoded_image, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        summary="Get post video",
+        description="Get the video of a post. Only available for video posts.",
+        parameters=[
+            OpenApiParameter(
+                name="uuid",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="The fully qualified ID of the post",
+            )
+        ],
+        responses={
+            200: OpenApiResponse(description="Video retrieved successfully"),
+            404: OpenApiResponse(description="Post not found or no video found"),
+        },
+        tags=["Posts"],
+    )
+    @action(detail=True, methods=["get"], url_path="video")
+    def video(self, request: Request, uuid: str) -> Response:
+        """
+        GET Endpoint to retrieve a binary video from a post.
+        """
+        post = self.get_object()
+
+        if post.post_type != PostTypes.VIDEO or not post.video:
+            return Response({"error": "No video post found."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            video_file = post.video.open("rb")
+            encoded_video = base64.b64encode(video_file.read()).decode("utf-8")
+        except Exception:
+            return Response({"error": "Video not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response(encoded_video, status=status.HTTP_200_OK)
 
 
 class AuthorPostViewSet(viewsets.ModelViewSet[Post]):

@@ -21,6 +21,10 @@ services:
       - .dockerenv/.postgres.env
     depends_on:
       - postgres
+    volumes:
+      - type: bind
+        source: ./src/media
+        target: /src/media
 
   caddy:
     image: caddy:latest

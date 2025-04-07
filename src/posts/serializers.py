@@ -1,13 +1,16 @@
+import base64
 from typing import Any
+import uuid
 from rest_framework import serializers
 from rest_framework.serializers import ValidationError
-from posts.models import Post, CONTENT_TYPE_WEB_MAP, CONTENT_TYPE_WEB_MAP_REVERSE, VISIBILITY_TYPE_WEB_MAP, VISIBILITY_TYPE_WEB_MAP_REVERSE
+from posts.models import Post, CONTENT_TYPE_WEB_MAP, CONTENT_TYPE_WEB_MAP_REVERSE, VISIBILITY_TYPE_WEB_MAP, VISIBILITY_TYPE_WEB_MAP_REVERSE, PostTypes
 from comments.models import Comment
 from user_management.models import Author
 from user_management.serializers import AuthorSerializer
 from comments.serializers import CommentSerializer
 from likes.models import Like
 from likes.serializers import LikeSerializer
+from django.core.files.base import ContentFile
 
 
 class PostSerializer(serializers.ModelSerializer[Post]):
@@ -76,13 +79,32 @@ class PostSerializer(serializers.ModelSerializer[Post]):
         # Determine the content type
         content_type = CONTENT_TYPE_WEB_MAP.get(instance.post_type)
 
+        if instance.post_type == PostTypes.IMAGE and instance.image:
+            try:
+                instance.image.open("rb")
+                image_bytes = instance.image.read()
+                encoded_content = base64.b64encode(image_bytes).decode('utf-8')
+            except Exception as e:
+                print(e)
+                encoded_content = instance.content or ""
+        elif instance.post_type == PostTypes.VIDEO and instance.video:
+            try:
+                instance.video.open("rb")
+                video_bytes = instance.video.read()
+                encoded_content = base64.b64encode(video_bytes).decode('utf-8')
+            except Exception as e:
+                print(e)
+                encoded_content = instance.content or ""
+        else:
+            encoded_content = instance.content or ""
+
         return {
             "type": "post",
             "title": instance.title,
             "id": instance.fqid,
             "description": instance.description,
             "contentType": content_type,
-            "content": instance.content,
+            "content": encoded_content,
             "author": AuthorSerializer(instance.author).data,
             "comments": {"type": "comments",
                          "src": CommentSerializer(instance.comments.all(), many=True).data
@@ -115,10 +137,9 @@ class PostSerializer(serializers.ModelSerializer[Post]):
         visibility_type_fetched = VISIBILITY_TYPE_WEB_MAP_REVERSE.get(
             data["visibility"], None)
         if visibility_type_fetched is None:
-            visibility_type_fetched = VISIBILITY_TYPE_WEB_MAP_REVERSE["UNLISTED"] # fallback
+            visibility_type_fetched = VISIBILITY_TYPE_WEB_MAP_REVERSE["UNLISTED"]  # fallback
 
         soft_deleted = data["visibility"] == "DELETED"
-
 
         return {
             "title": data["title"],
@@ -138,6 +159,22 @@ class PostSerializer(serializers.ModelSerializer[Post]):
             raise ValidationError("Post must have a valid FQID.")
         author: Author = validated_data["author"]
         host_node = author.host_node
+        post_type = validated_data["post_type"]
+        if post_type == PostTypes.IMAGE:
+            image_data = base64.b64decode(validated_data["content"])
+            validated_data["content"] = None
+            filename = f"image_{author.uuid}_{uuid.uuid4().hex}"
+            content_type = self.initial_data.get("contentType", "")
+            if content_type == "image/png;base64":
+                filename += ".png"
+            elif content_type == "image/jpeg;base64":
+                filename += ".jpeg"
+            validated_data["image"] = ContentFile(image_data, name=filename)
+        elif post_type == PostTypes.VIDEO:
+            video_data = base64.b64decode(validated_data["content"])
+            validated_data["content"] = None
+            filename = f"video_{author.uuid}_{validated_data['title']}.mp4"
+            validated_data["video"] = ContentFile(video_data, name=filename)
         return Post.objects.create(fqid=fqid, **validated_data, host_node=host_node)
 
     def get_or_create(self, data: dict[str, Any]) -> Post:
