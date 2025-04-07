@@ -31,7 +31,9 @@ class ApiObjectManager(models.Manager[ModelT], Generic[ModelT]):
         return self.get(fqid=fqid)
 
     def find_by_fqid(self, fqid: str) -> Optional[ModelT]:
-        return self.filter(fqid=fqid).first()
+        no_slash = self.filter(fqid=fqid).first()
+        has_slash = self.filter(fqid=f"{fqid}/").first()
+        return no_slash or has_slash
 
     def find_by_encoded_fqid(self, fqid: str) -> Optional[ModelT]:
         """Find by a percent-encoded fqid"""
