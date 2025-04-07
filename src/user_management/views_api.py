@@ -398,6 +398,8 @@ class PostInboxHandler(InboxHandler):
         return self._request_to_viewset(request, PostViewSet(), method="POST")
 
     def put(self, request: Request, target_author: Author) -> Response:
+        print(">>> Incoming PUT request to PostInboxHandler")
+        print("JSON body:", request.data)
         # updating a post means that we need to make sure the request's owner is allowed to update it (they are either the owning node, or the author)
         post_fqid = request.data.get("id")
         if not post_fqid:
