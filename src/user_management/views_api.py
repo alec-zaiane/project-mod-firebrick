@@ -85,34 +85,67 @@ class InboxHandler(abc.ABC):
     def delete(self, request: Request, target_author: Author) -> Response:
         ...
 
+    # def _request_to_viewset(self, request: Request, viewset_instance: ModelViewSet[Any], method: str = "POST") -> Response:
+    #     """Make a request to a viewset with the specified method (POST/PUT/DELETE)"""
+    #     viewset_instance.setup(request)
+    #     viewset_instance.initial(request)
+
+    #     lookup_field = getattr(viewset_instance, 'lookup_field', 'pk')
+    #     lookup_url_kwarg = getattr(viewset_instance, 'lookup_url_kwarg', lookup_field)
+    #     raw_lookup = request.data.get("id")
+    #     # mypy
+    #     lookup_value: Optional[str] = raw_lookup if isinstance(raw_lookup, str) else None
+    #     # Extract UUID from full FQID if needed
+    #     if isinstance(raw_lookup, str) and "/" in raw_lookup:
+    #         lookup_value = raw_lookup.rstrip("/").split("/")[-1]
+    #     else:
+    #         lookup_value = raw_lookup
+
+    #     print(">>> Incoming PUT/DELETE Request")
+    #     print("lookup_field =", lookup_field)
+    #     print("lookup_url_kwarg =", lookup_url_kwarg)
+    #     print("request.data =", request.data)
+    #     print("lookup_value =", lookup_value)
+    #     if method.upper() in ("PUT", "DELETE"):
+    #         if not lookup_value:
+    #             return Response({"error": f"Missing '{lookup_field}' in request data"}, status=400)
+
+    #         # Inject kwargs so get_object() works
+    #         request.parser_context = request.parser_context or {}
+    #         request.parser_context["kwargs"] = {lookup_url_kwarg: lookup_value}
+
+    #     match method.upper():
+    #         case "POST":
+    #             return viewset_instance.create(request)
+    #         case "PUT":
+    #             return viewset_instance.update(request)
+    #         case "DELETE":
+    #             return viewset_instance.destroy(request)
+    #         case _:
+    #             return Response({"error": f"Unsupported method {method}"}, status=405)
+
     def _request_to_viewset(self, request: Request, viewset_instance: ModelViewSet[Any], method: str = "POST") -> Response:
         """Make a request to a viewset with the specified method (POST/PUT/DELETE)"""
         viewset_instance.setup(request)
         viewset_instance.initial(request)
 
-        lookup_field = getattr(viewset_instance, 'lookup_field', 'pk')
-        lookup_url_kwarg = getattr(viewset_instance, 'lookup_url_kwarg', lookup_field)
-        raw_lookup = request.data.get(lookup_field)
-        if isinstance(raw_lookup, str) and "/" in raw_lookup:
-            lookup_value = raw_lookup.rstrip("/").split("/")[-1]
-        else:
-            lookup_value = raw_lookup
+        lookup_value: Optional[str] = None
+        if method.upper() in ("PUT", "DELETE"):
+            raw_lookup = request.data.get("id")
+            if isinstance(raw_lookup, str) and "/" in raw_lookup:
+                lookup_value = raw_lookup.rstrip("/").split("/")[-1]
+            else:
+                lookup_value = raw_lookup
 
-        if lookup_value and isinstance(lookup_value, str) and "/" in lookup_value:
-            lookup_value = lookup_value.rstrip("/").split("/")[-1]
+            if not lookup_value:
+                return Response({"error": "Missing 'id' field in request data"}, status=400)
+
+            request.parser_context = request.parser_context or {}
+            request.parser_context["kwargs"] = {"uuid": lookup_value}
 
         print(">>> Incoming PUT/DELETE Request")
-        print("lookup_field =", lookup_field)
-        print("lookup_url_kwarg =", lookup_url_kwarg)
         print("request.data =", request.data)
         print("lookup_value =", lookup_value)
-        if method.upper() in ("PUT", "DELETE"):
-            if not lookup_value:
-                return Response({"error": f"Missing '{lookup_field}' in request data"}, status=400)
-
-            # Inject kwargs so get_object() works
-            request.parser_context = request.parser_context or {}
-            request.parser_context["kwargs"] = {lookup_url_kwarg: lookup_value}
 
         match method.upper():
             case "POST":
