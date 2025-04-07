@@ -1,5 +1,6 @@
 import base64
 from typing import Any
+import uuid
 from rest_framework import serializers
 from rest_framework.serializers import ValidationError
 from posts.models import Post, CONTENT_TYPE_WEB_MAP, CONTENT_TYPE_WEB_MAP_REVERSE, VISIBILITY_TYPE_WEB_MAP, VISIBILITY_TYPE_WEB_MAP_REVERSE, PostTypes
@@ -9,6 +10,7 @@ from user_management.serializers import AuthorSerializer
 from comments.serializers import CommentSerializer
 from likes.models import Like
 from likes.serializers import LikeSerializer
+from django.core.files.base import ContentFile
 
 
 class PostSerializer(serializers.ModelSerializer[Post]):
@@ -135,10 +137,9 @@ class PostSerializer(serializers.ModelSerializer[Post]):
         visibility_type_fetched = VISIBILITY_TYPE_WEB_MAP_REVERSE.get(
             data["visibility"], None)
         if visibility_type_fetched is None:
-            visibility_type_fetched = VISIBILITY_TYPE_WEB_MAP_REVERSE["UNLISTED"] # fallback
+            visibility_type_fetched = VISIBILITY_TYPE_WEB_MAP_REVERSE["UNLISTED"]  # fallback
 
         soft_deleted = data["visibility"] == "DELETED"
-
 
         return {
             "title": data["title"],
@@ -158,6 +159,21 @@ class PostSerializer(serializers.ModelSerializer[Post]):
             raise ValidationError("Post must have a valid FQID.")
         author: Author = validated_data["author"]
         host_node = author.host_node
+        content_type = validated_data.pop("contentType")
+        if content_type == "image/png;base64" or content_type == "image/jpeg;base64":
+            image_data = base64.b64decode(validated_data["content"])
+            validated_data["content"] = None
+            filename = f"image_{author.uuid}_{uuid.uuid4().hex}"
+            if content_type == "image/png;base64":
+                filename += ".png"
+            elif content_type == "image/jpeg;base64":
+                filename += ".jpeg"
+            validated_data["image"] = ContentFile(image_data, name=filename)
+        elif content_type == "video/mp4;base64":
+            video_data = base64.b64decode(validated_data["content"])
+            validated_data["content"] = None
+            filename = f"video_{author.uuid}_{validated_data['title']}.mp4"
+            validated_data["video"] = ContentFile(video_data, name=filename)
         return Post.objects.create(fqid=fqid, **validated_data, host_node=host_node)
 
     def get_or_create(self, data: dict[str, Any]) -> Post:
