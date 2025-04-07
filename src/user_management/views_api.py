@@ -411,6 +411,8 @@ class PostInboxHandler(InboxHandler):
             return Response({"error": "Post not found", "fqid": post_fqid}, 404)
         node = get_request_node(request)
         viewer = get_request_viewer(request)
+        print(f">> {viewer=}, {node=}")
+        print(f">> Expecting {target_post.author=}, {target_post.host_node=}")
         if node is None and viewer is None:
             return API_UNAUTHORIZED()
         if viewer is not None:
