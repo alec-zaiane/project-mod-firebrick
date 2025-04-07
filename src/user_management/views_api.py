@@ -130,6 +130,7 @@ class InboxHandler(abc.ABC):
 
         lookup_value: Optional[str] = None
         if method.upper() in ("PUT", "DELETE"):
+            print("PUT/DELETE, filling in lookup_value based on `id` field")
             # TODO this only works for posts, should be generalized to other APIObjects in the future
             raw_lookup = request.data.get("id")
             if not isinstance(raw_lookup, str):
@@ -418,10 +419,12 @@ class PostInboxHandler(InboxHandler):
         if viewer is not None:
             if not target_post.author == viewer:
                 # the viewer is not the author of the post, so they can't update it
+                print(">>> Viewer does not have access to update this post")
                 return API_FORBIDDEN()
         if node is not None:
             if not target_post.host_node == node:
                 # the node is not the host of the post, so they can't update it
+                print(">>> Node does not have access to update this post")
                 return API_FORBIDDEN()
         return self._request_to_viewset(request, PostViewSet(), method="PUT")
 
