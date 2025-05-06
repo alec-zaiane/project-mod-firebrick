@@ -1,3 +1,6 @@
+> [!WARNING]
+> This repository is an archive of the end-of-term state of the project. It is not actively maintained.
+
 # Team
 - Alec Zaiane
 - Mosa Yaqoobi
